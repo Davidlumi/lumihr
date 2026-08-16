@@ -605,15 +605,50 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (l.name && !(l.name in altOf)) altOf[l.name] = o.commitment_id;
     if (l.name && !(l.name in costOf)) costOf[l.name] = l.cost_character;
   }));
-  const altMark = (list) => {
-    const seen = {};
-    return (list || []).map(a => {
-      const g = altOf[a.title];
-      const first = g && seen[g];
-      if (g) seen[g] = seen[g] || a.title;
-      return { ...a, altFirst: (first && first !== a.title) ? first : null };
+  // Alternative SETS, computed ONCE over the whole schedule (2026-08-16 ship gate):
+  // the intro counted set-mates across horizons while the table flagged only within
+  // one, so the document said "7 are alternatives" over rows carrying 3 flags. Both
+  // surfaces now read this one title-keyed map.
+  const altInfo = (() => {
+    const src = [];
+    schedule.forEach(s => (s.actions || []).forEach(a2 => src.push({ title: a2.title, hz: s.horizon, idx: src.length })));
+    if (!src.length) (((plan || {}).actions) || []).forEach(a2 => src.push({ title: a2.title, hz: a2.horizon_bucket, idx: src.length }));
+    const byG = {};
+    src.forEach(x => { const g = altOf[x.title]; if (g) (byG[g] = byG[g] || []).push(x); });
+    const m = {};
+    Object.values(byG).forEach(list => {
+      if (list.length < 2) return;
+      list.forEach(x => {
+        m[x.title] = { size: list.length,
+                       now: list.filter(y => y.title !== x.title && y.hz === x.hz).map(y => y.title),
+                       // mates ABOVE this row in the same cycle — the flag rides the
+                       // later row only, as the table always has (flagging both members
+                       // doubled the sub-lines and spilled the next-cycle sheet)
+                       nowPrior: list.filter(y => y.hz === x.hz && y.idx < x.idx).map(y => y.title) };
+      });
     });
+    return m;
+  })();
+  // the row-level flag names the SAME-CYCLE either/or — the un-minutable case; the
+  // cross-cycle membership is stated once under the schedule, not on every row
+  const altNote = (title) => {
+    const i = altInfo[title];
+    if (!i || !i.nowPrior.length) return null;
+    // terse on purpose: the long form ("alternative to X — one of the two, not both")
+    // wrapped twice in the schedule's action column and spilled the next-cycle sheet
+    return "either/or with " + rrList(i.nowPrior) + " — one of the "
+      + (i.nowPrior.length === 1 ? "two" : String(i.nowPrior.length + 1));
   };
+  // this cycle's actions grouped into DECISION UNITS: options against the same gap
+  // are one choice, not separate approvals. The server sends the grouping; the
+  // fallback derives it so an older cached payload cannot regress the ask.
+  const askUnits = (theAsk.decision_units && theAsk.decision_units.length)
+    ? theAsk.decision_units
+    : (() => { const g = {}, u = []; (theAsk.titles || []).forEach(t => {
+        const k = altOf[t] || ("t:" + t);
+        if (g[k]) g[k].titles.push(t); else { g[k] = { titles: [t] }; u.push(g[k]); }
+      }); return u; })();
+  const askChoices = askUnits.filter(u => (u.titles || []).length > 1).length;
   const saveDecision = async (cat, lever, state, reason) => {
     try {
       const r = await api("/api/strategy/option-decision",
@@ -811,8 +846,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // carried a horizon per action all along and printed them as a flat numbered run,
     // which reads as a to-do list rather than a programme (2026-08-16).
     // weight = the group heading plus a row per action, so a ten-action programme
-    // splits at a sheet boundary instead of running past A4
-    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 6);
+    // splits at a sheet boundary instead of running past A4.
+    // Groups pre-split at FOUR actions (2026-08-16 ship gate): a RETURN cell is model
+    // prose whose length moves between plan rebuilds, and a five-action group weighed
+    // by row count alone overran its sheet when the rebuilt plan wrote longer return
+    // lines. Four rows always fit; a continued group re-prints its horizon header.
+    const schedItems = [];
+    schedule.forEach(s => {
+      for (let k = 0; k < s.actions.length; k += 4)
+        schedItems.push({ horizon: s.horizon, actions: s.actions.slice(k, k + 4),
+                          contPart: k / 4, totalN: s.actions.length });
+    });
+    if (schedItems.length) Prun("The schedule", "sched", schedItems, (s) => 1 + s.actions.length, 6);
     if (plan && (plan.actions || []).length) {
       // budget 5, not 7: the first sheet also carries the summary lede, and three
       // actions with their why + return overran A4 by ~55px
@@ -962,11 +1007,24 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     const n = theAsk.actions_this_cycle || 0;
     const areas = (theAsk.areas || []).map(domainLabel);
     if (!hasPosition) {
-      return "The board is asked to approve the reward strategy set out in this document as the "
-        + "organisation's stated position on pay, benefits and the wider package. It commits lumi to "
-        + "reading every benchmark through it. No spending decision is being sought here: the position "
-        + "against the market is not yet measured, and the plan that follows from it comes back to the "
-        + "board once it is.";
+      // the ask must AGREE with the approval record two pages away: "approve the
+      // strategy as stated" printed against a record reading Approved asked the board
+      // for a decision the same document says was taken (2026-08-16 ship gate). And
+      // the board commits the ORGANISATION — lumi reading benchmarks through it is
+      // product behaviour, not what is being resolved.
+      return (ver && ver.dirty
+        ? "The board is asked to re-approve the reward strategy as amended — the approval record "
+          + "in Governance and approval shows it approved and since amended, and this document "
+          + "reads through the amended statement. "
+        : ver
+          ? "The strategy stands approved — the record is in Governance and approval — so no "
+            + "strategy decision is sought here. The board is asked to note this document as the "
+            + "current record of it. "
+          : "The board is asked to approve the reward strategy set out in this document as the "
+            + "organisation's stated position on pay, benefits and the wider package. ")
+        + "It commits the organisation to that stated position; lumi reads every benchmark "
+        + "through it. No spending decision is being sought: the position against the market is "
+        + "not yet measured, and the plan that follows from it comes back to the board once it is.";
     }
     if (!n) {
       return nGaps
@@ -978,15 +1036,26 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            + "organisation's own data currently sits in line with the position it has set, so no "
            + "corrective action is being sought.");
     }
-    // the approval's own cost, from its actions' cost characters — never the envelope
-    const nowActs = ((plan || {}).actions || []).filter(x => x.horizon_bucket === "this cycle");
-    const recurring = nowActs.filter(x => (x.cost_character || costOf[x.title]) === "recurring").length;
-    const ownCost = !nowActs.length ? ""
-      : recurring === 0
-        ? (n === 1 ? "The action itself is cost-neutral or self-funding — no new recurring spend is being approved. "
-                   : "The actions themselves are cost-neutral or self-funding — no new recurring spend is being approved. ")
-        : recurring + " of the " + nowActs.length + (recurring === 1 ? " carries" : " carry")
-          + " recurring spend; where lumi can price it the figure is in What it costs, and where it "
+    // DECISION UNITS, not rows: approving both members of a declared either/or cannot
+    // be minuted, so the ask counts choices (2026-08-16 ship gate). Recurring spend is
+    // counted per unit — a pair whose two options both recur is ONE recurring spend.
+    const nU = askUnits.length || n;
+    const unitCosts = askUnits.map(u => (u.titles || []).map(t => costOf[t]));
+    const recCertain = unitCosts.filter(cs => cs.length && cs.every(c => c === "recurring")).length;
+    const recMaybe = unitCosts.filter(cs => cs.some(c => c === "recurring") && !cs.every(c => c === "recurring")).length;
+    const choiceBit = askChoices
+      ? (askChoices === 1
+         ? " One of the " + nU + " is a choice between two alternative forms — one of the two, not both."
+         : " " + askChoices + " of the " + nU + " are choices between alternatives — one option from each, not all.")
+      : "";
+    const ownCost = !nU ? ""
+      : (recCertain === 0 && recMaybe === 0)
+        ? (nU === 1 ? "The action itself is cost-neutral or self-funding — no new recurring spend is being approved. "
+                    : "The actions themselves are cost-neutral or self-funding — no new recurring spend is being approved. ")
+        : (recCertain ? recCertain + " of the " + nU + (recCertain === 1 ? " carries" : " carry") + " recurring spend"
+                      : "None of the " + nU + " necessarily carries recurring spend")
+          + (recMaybe ? (recCertain ? ", and up to " : ", though up to ") + recMaybe + " more may, depending on which alternative is chosen" : "")
+          + "; where lumi can price it the figure is in What it costs, and where it "
           + "cannot, the budget is yours to set before approval. ";
     const cost = money.investment_to_p50_gbp
       ? ("Separately, the indicative cost of closing every gap lumi can price is "
@@ -994,13 +1063,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
          + (nPriced < nGaps ? " — that envelope covers " + nPriced + " of the " + nGaps
             + " gaps and is not the cost of this approval." : "."))
       : "None of the gaps in this review carries a price from lumi's model.";
+    // which strategy the gaps are measured against — a paper whose cover says
+    // "amended; re-approval pending" owes the reader that line (2026-08-16 ship gate)
+    const verBit = (ver && ver.dirty)
+      ? "The gaps are measured against the strategy as amended; its re-approval is pending "
+        + "(see Governance and approval). "
+      : "";
     return "The board — or the remuneration committee, where reward is delegated to it — "
-      + "is asked to approve " + n + " action" + (n === 1 ? "" : "s")
+      + "is asked to approve the " + nU + " action" + (nU === 1 ? "" : "s")
       + " scheduled for this cycle" + (areas.length ? ", covering " + rrList(areas) : "")
-      + ". " + ownCost
-      + (nGaps ? ((n === 1 ? "It is the first step of a response to " : "They are the first cycle of a response to ")
+      + "." + choiceBit + " " + ownCost
+      + (nGaps ? ((nU === 1 ? "It is the first step of a response to " : "They are the first cycle of a response to ")
         + nGaps + " gap" + (nGaps === 1 ? "" : "s") + " this review found between the strategy as stated and the "
-        + "organisation's own benchmarked position. ") : "") + cost;
+        + "organisation's own benchmarked position"
+        + (askUnits.length && nGaps ? ", of which " + (askUnits.length === 1 ? "one is" : askUnits.length + " are") + " acted on now" : "")
+        + ". ") : "") + verBit + cost;
   };
   const costProse = () => {
     if (!nPriced) {
@@ -1024,8 +1101,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       + (nPriced < nGaps ? ": the remainder are changes lumi does not price, and their cost has to be "
          + "modelled by you rather than read off a benchmark." : "."));
     parts.push(money.fte_known
-      ? "Figures use the midpoint of your stated FTE band and lumi's published salary and level-mix "
-        + "assumptions. They are an order of magnitude for a board discussion, not a budget."
+      ? "Figures use the midpoint of your stated FTE band ("
+        + (money.fte_band ? money.fte_band.replace(/-/g, "–") + " FTE, midpoint " : "")
+        + ((money.unit_rates || {}).fte || "—") + ") and lumi's published salary and level-mix "
+        + "assumptions. Peer rates are medians of " + cutLabel + ", which spans organisations of "
+        + "every size — the £ scales on your headcount while the rates reflect that sample. "
+        + "They are an order of magnitude for a board discussion, not a budget."
       : "Your FTE band is not recorded, so these figures rest on lumi's default headcount assumption. "
         + "Setting the band in your company details will sharpen them materially.");
     return parts.join(" ");
@@ -1056,14 +1137,20 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (!schedule.length) return "No actions are scheduled yet.";
     const n = schedule.reduce((a, s) => a + s.actions.length, 0);
     const now = (schedule.find(s => s.horizon === "this cycle") || {}).actions || [];
-    // alternatives are one decision, not two — the count says so (2026-08-16 panel)
-    const allA = schedule.reduce((a, s2) => a.concat(s2.actions), []);
-    const altPairs = allA.filter(a2 => altMark(allA).find(x => x.title === a2.title && x.altFirst)).length;
-    return n + " action" + (n === 1 ? "" : "s")
-      + (altPairs ? " (" + altPairs + " " + (altPairs === 1 ? "is an alternative" : "are alternatives")
-         + " to another — one of each pair, not both)" : "")
-      + " across " + schedule.length + " horizon"
+    // options against the same gap are one DECISION STREAM, not separate commitments —
+    // the old count ("7 are alternatives ... one of each pair") was arithmetically
+    // impossible against the 3 flags the table carried (2026-08-16 ship gate)
+    const inSets = schedule.reduce((a, s2) => a.concat(s2.actions), [])
+      .filter(a2 => altInfo[a2.title]).length;
+    const gapsInSets = new Set();
+    schedule.forEach(s2 => s2.actions.forEach(a2 => { if (altInfo[a2.title]) gapsInSets.add(altOf[a2.title]); }));
+    return n + " action" + (n === 1 ? "" : "s") + " across " + schedule.length + " horizon"
       + (schedule.length === 1 ? "" : "s") + ", sequenced by how quickly each one can realistically land. "
+      + (inSets ? ((inSets === n ? "They are not " + n + " separate commitments: every one is an option against one of "
+                    : inSets + " of them are options against ")
+         + gapsInSets.size + " gap" + (gapsInSets.size === 1 ? "" : "s")
+         + " — one option per gap in any one cycle; where two sit in the same cycle they are "
+         + "alternatives, one of them, not both. ") : "")
       + (now.length ? now.length + " " + (now.length === 1 ? "sits" : "sit") + " in the current cycle; "
          + "the rest are held deliberately, not deferred by omission."
          : "Nothing sits in the current cycle — every action here needs a longer runway than the "
@@ -1110,10 +1197,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         + "Treat the direction as a pointer and the position as provisional.");
     }
     if (aim.stance) {
-      const w = { on_target: "which matches the position your strategy sets",
-                  behind: "which sits short of the position your strategy sets",
-                  ahead: "which sits past the position your strategy sets" }[aim.alignment];
-      bits.push("You aim " + RR_STANCE_WORD[aim.stance] + " here" + (w ? ", " + w : "") + ".");
+      // two clauses, two subjects: "you aim on market here, which sits short of the
+      // position your strategy sets" hung the shortfall on the AIM — and on an
+      // on-market aim read as self-contradictory (2026-08-16 ship gate, six pages)
+      const w = { on_target: "the live read matches that aim",
+                  behind: "the live read sits short of that aim",
+                  ahead: "the live read sits past that aim" }[aim.alignment];
+      bits.push("You aim " + RR_STANCE_WORD[aim.stance] + " here" + (w ? "; " + w : "") + ".");
     } else {
       bits.push("No aim is set for " + name + ", so lumi reads it neutrally.");
     }
@@ -1127,6 +1217,33 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
     return bits.join(" ");
   };
+  // PRE-DATA tensions are deterministic and intent-only (2026-08-16 ship gate): the
+  // cached model commentary describes a measured position, and rendering it on a
+  // fresh org put the FULL variant's verdicts above a stat card reading "awaiting
+  // your data". Before the read unlocks, only what the strategy itself states can
+  // honestly be printed here.
+  const tensionPre = () => {
+    const dt = strat.domain_targets || {};
+    const overall = strat.market_position;
+    const diff = Object.keys(dt).filter(k => dt[k] && overall && dt[k] !== overall);
+    const bits = ["A tension is a stated choice pulling against another stated choice, or "
+      + "against what your data later shows — only the first is testable now."];
+    if (overall && diff.length) {
+      bits.push("From the strategy alone: the overall dial says "
+        + (RR_STANCE_WORD[overall] || overall) + ", while "
+        + rrList(diff.map(domainLabel)) + " " + (diff.length === 1 ? "states" : "state")
+        + " a different aim — a deliberate spread is legitimate, and stating it makes it "
+        + "visible here rather than discovered later.");
+    } else if (overall) {
+      bits.push("From the strategy alone: every stated area aim sits with the overall dial — "
+        + "no internal pull is visible in what has been stated so far.");
+    }
+    return bits.join(" ");
+  };
+  const watchPre = () => "Coverage itself: " + commitments.length
+    + " commitment" + (commitments.length === 1 ? " is" : "s are") + " stated and every one "
+    + "waits on evidence. Once your data is in, this page names the areas where position and "
+    + "aim disagree; until then a stated aim stays a stated aim, not a finding.";
   // ------------------------------------------------------------------ bodies ----
   const Body = ({ kindOf, items, part, parts, start, num, block, half, levSlice, levPart, levParts, ptId }) => {
     const first = !part;                       // only sheet 1 of a run carries the intro
@@ -1171,8 +1288,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div><span>Benchmark basis</span>${cutLabel}</div>
           <div><span>Data collection</span>${(al.snapshot || {}).window || "Current window"}${
             (al.snapshot || {}).date ? " · " + al.snapshot.date : ""}</div>
+          ${/* the two labels sit adjacent, so the cover itself points at the page
+               that reconciles them (2026-08-16 ship gate) */ ""}
           ${doc.comparator_label && doc.comparator_label !== cutLabel
-            ? html`<div><span>Stated peer group</span>${doc.comparator_label}</div>` : null}
+            ? html`<div><span>Stated peer group</span>${doc.comparator_label + " — see Method and basis"}</div>` : null}
           ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
           <div><span>Classification</span>Private ${"&"} confidential</div>
         </div>
@@ -1208,7 +1327,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "exec") return html`
       <${RrH} n=${num} sub=${"The position, the ask and the basis, in one page. Everything asserted here is "
         + "set out in full and evidenced in the parts that follow."}>Executive summary<//>
-      ${aiWaiting ? html`<p class="rr-p rr-muted">Writing the commentary…</p>`
+      ${/* PRE-DATA the lede is deterministic: the model reads (diagnosis/commentary)
+           are locked until data unlocks, so on a genuinely fresh org they are empty —
+           and a cached read would describe a position this page's own stat card says
+           is awaiting data (2026-08-16 ship gate, caught on the fresh variant). */ ""}
+      ${!hasPosition ? html`<${Prose} k="exec_summary" className="rr-lede" generated=${
+          "This document records the reward strategy as stated, and the commitments it makes. "
+          + "Your position against " + cutLabel + " fills in as your data arrives — "
+          + Math.round((al.data_state || {}).core_pct || 0) + "% of the core set is in — and Part B "
+          + "becomes the measured read, the gaps and the plan at that point."} />`
+      : aiWaiting ? html`<p class="rr-p rr-muted">Writing the commentary…</p>`
         : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
             rrCase((wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
             || (cm && cm.parts && cm.parts.reading) || "")} />`}
@@ -1218,7 +1346,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${hasPosition ? null : html`<${RrStats} items=${[
         { v: commitments.length, k: "commitments stated", note: "from your reward strategy" },
         { v: Math.round((al.data_state || {}).core_pct || 0) + "%", k: "of your data in",
-          note: (al.data_state || {}).answered + " of " + (al.data_state || {}).basis_total + " core metrics" },
+          note: (al.data_state || {}).answered + " of " + (al.data_state || {}).basis_total + " core questions" },
         { v: "—", k: "position", note: "awaiting your data" },
       ]} />`}
       ${/* two columns: a per-domain report runs to ~20 sections and a single-column
@@ -1230,8 +1358,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             const belowN = domains.filter(d => (d.target || {}).alignment === "behind").length;
             const aboveN = domains.filter(d => (d.target || {}).alignment === "ahead").length;
             const onN = domains.filter(d => (d.target || {}).alignment === "on_target").length;
+            // BOTH frames, labelled at first use: "below the aim" and "below the
+            // market" are different counts and the page carried both unbridged —
+            // an area can be on-market yet behind an above-market aim (ship gate)
+            const bothN = domains.filter(d => (d.target || {}).alignment === "behind"
+              && ((d.position || {}).verdict) === "below").length;
             return "Of " + domains.length + " benchmarked areas, " + belowN + " sit below the position "
-              + "the strategy sets, " + aboveN + " above it and " + onN + " on it — "
+              + "the strategy sets" + (belowN && bothN < belowN
+                ? " (" + bothN + " of those also sit below the market itself; the rest are at "
+                  + "market but behind an above-market aim)"
+                : bothN ? " (all of them also below the market itself)" : "")
+              + ", " + aboveN + " above it and " + onN + " on it — "
               + gaps.length + " of " + commitments.length + " commitments off strategy in all. ";
           })()
             + "The board is asked to " + rrCase(theAsk.decision || "note this review") + ". "
@@ -1268,11 +1405,22 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               if (p.body2) rows.push({ kind: "sec", no: SEC_NO[p.body2], title: p.title2,
                                        n: i + 1, inPart: !!p.pt });
             });
+            // PRE-DATA the lettering ran A → B → D: Part C needs data to exist at all,
+            // and the silent gap read as a rendering bug while wasting the one moment
+            // the contents could say what the data unlocks (2026-08-16 ship gate).
+            if (!hasPosition && RR_PART.C && !rows.some(r => r.kind === "part" && r.id === "C")) {
+              const di = rows.findIndex(r => r.kind === "part" && r.id === "D");
+              const lockRow = { kind: "locked", id: "C", title: RR_PART.C.title };
+              if (di >= 0) rows.splice(di, 0, lockRow); else rows.push(lockRow);
+            }
             // buttons, not divs: a 41-sheet contents you cannot click is a tease on
             // screen. Styled as plain rows so the printed page is unchanged. (A plain
             // JS comment — this block is an arrow body, NOT a template literal, and an
             // htm-style ${/* … */} here is a syntax error that kills the whole file.)
-            return rows.map((r, i) => r.kind === "part"
+            return rows.map((r, i) => r.kind === "locked"
+              ? html`<div key=${i} class="rr-toc-part rr-toc-locked" aria-disabled="true">
+                  <span>Part ${r.id} — ${r.title}</span><b>unlocks with your data</b></div>`
+              : r.kind === "part"
               ? html`<button key=${i} type="button" class="rr-toc-part rr-jump"
                   onClick=${() => goSheet(r.n - 1)}>
                   <span>Part ${r.id} — ${r.title}</span><b>${r.n}</b></button>`
@@ -1352,6 +1500,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <div class="rr-grid2">
           <${RrCard} head="Who we compare ourselves to">
             <p class="rr-p">${orgCompareWords(null, doc)}</p>
+            ${/* the reconciliation lives here too — this card is the only comparator
+                 statement with any detail, and the first place a reader asks which
+                 basis actually governs the figures (2026-08-16 ship gate) */ ""}
+            ${doc.comparator_label && doc.comparator_label !== cutLabel ? html`
+              <p class="rr-p rr-sm rr-muted">${"The reads in this document run on " + cutLabel
+                + "; Method and basis explains how that relates to this stated group."}</p>` : null}
           <//>
           <${RrCard} tone="cream" head="What constrains us">
             ${(cons.selected || []).length || cons.notes
@@ -1371,8 +1525,23 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </table>`;
 
     if (kindOf === "tension") return html`
-      <${RrH} n=${num} sub="Where the stated strategy pulls against itself, or against what the data shows.">Tensions and what to watch<//>
-      ${cm && cm.parts ? html`
+      <${RrH} n=${num} sub=${hasPosition
+        ? "Where the stated strategy pulls against itself, or against what the data shows."
+        : "Where the stated strategy pulls against itself — what can be tested before your data is in."}>Tensions and what to watch<//>
+      ${/* PRE-DATA this section is deterministic and intent-only: the model commentary
+           describes a measured position, and a cached or stale read printed the FULL
+           org's verdicts on a document whose own pages say the position is awaiting
+           data (2026-08-16 ship gate, all five reviewers). */ ""}
+      ${!hasPosition ? html`
+        <div class="rr-grid2">
+          <${RrCard} label="Tensions">
+            <${Prose} k="tensions" generated=${tensionPre()} />
+          <//>
+          <${RrCard} tone="cream" label="What to watch">
+            <${Prose} k="watch" generated=${watchPre()} />
+          <//>
+        </div>`
+      : cm && cm.parts ? html`
         <div class="rr-grid2">
           <${RrCard} label="Tensions">
             <${Prose} k="tensions" generated=${rrCase(cm.parts.tensions)} />
@@ -1412,6 +1581,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </tbody>
       </table>
       <//>
+      ${/* which strategy the document's reads run against — a paper stamped "amended;
+           re-approval pending" that asks for decisions owes the reader this line
+           (2026-08-16 ship gate) */ ""}
+      ${ver && ver.dirty ? html`
+        <p class="rr-p rr-sm rr-muted">${"Every read in this document is taken against the strategy "
+          + "as it stands today — the amended statement, not the earlier approved version. "
+          + "Re-approval of the amendments is recorded here when it happens."}</p>` : null}
       ${(ver && (ver.unstated || []).length) ? html`
         <${RrCard} tone="cream" head="What was unstated at approval">
           <p class="rr-p rr-sm">${ver.unstated.length + " section" + (ver.unstated.length === 1 ? " was" : "s were")
@@ -1533,7 +1709,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <p class="rr-p rr-sm rr-muted">${"The signals above are the most material in "
               + domainLabel(b.name) + ", which is not the same as the most representative: none of "
               + "them happens to read " + RR_POS_WORD[pos.verdict] + ", while the area overall does. "
-              + "The split at the top of this page is the fuller picture."}</p>` : null}` : null}`}
+              + "The split at the top of this page is the fuller picture."}</p>` : null}
+          ${/* "(2 of 5)" told the reader something was withheld and not where it lives —
+               the Time off sentence was the correct handling, applied everywhere a
+               header truncates (2026-08-16 ship gate) */ ""}
+          ${b.signal_count > sigShown.length ? html`
+            <p class="rr-src">${"The remaining " + (b.signal_count - sigShown.length) + " signal"
+              + (b.signal_count - sigShown.length === 1 ? " is" : "s are") + " set out in full under "
+              + domainLabel(b.name) + " in the app."}</p>` : null}` : null}`}
 
         ${isRead ? null : html`
           ${/* the gap statements in a sky card, the options in a white one — the follow
@@ -1557,7 +1740,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                   <td class="rr-sm">${l.speed}${l.reversibility === "hard" ? html`<br /><span class="rr-muted">hard to reverse</span>` : ""}</td>
                   <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
             </table><//>`
-          : html`<p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>`}`}
+          : html`<p class="rr-p rr-sm rr-muted">${rrCase((b.options.find(o => o.coverage_note) || {}).coverage_note || "")}</p>`}`}
 
         ${isRead && !(b.gaps || []).length ? html`
           <p class="rr-p rr-sm">Nothing in ${domainLabel(b.name)} currently runs against your stated aim.</p>` : null}
@@ -1565,7 +1748,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ${isRead && (b.gaps || []).length && (parts || 1) === 1 ? html`
           <h3 class="rr-sh">What follows for ${domainLabel(b.name)}</h3>
           ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
-          <p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>` : null}
+          <p class="rr-p rr-sm rr-muted">${rrCase((b.options.find(o => o.coverage_note) || {}).coverage_note || "")}</p>` : null}
 
         <div class="rr-gap-foot no-print">
           <button class="rp-go" onClick=${() => toSignals(b.name, aim.alignment)}>
@@ -1582,7 +1765,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-lede">Your strategy above is stated and in force: lumi is already reading every
         benchmark through it. What it cannot yet do is tell you where you actually sit against it.</p>
         <${RrStats} items=${[
-          { v: Math.round(dstate.core_pct || 0) + "%", k: "of your key metrics answered",
+          { v: Math.round(dstate.core_pct || 0) + "%", k: "of your core questions answered",
             note: (dstate.answered || 0) + " of " + (dstate.basis_total || 0) },
           { v: need, k: need === 1 ? "answer to unlock" : "answers to unlock",
             note: "to reach the " + (dstate.target_pct || 0) + "% threshold" },
@@ -1592,6 +1775,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-p">Once your data is in, these pages complete the document: your position against
         each stated aim, the gaps that opens, what the market does about each one, and a sequenced plan
         with what each action returns.</p>
+        ${/* the new customer's first question is "what happens next" — answer it with
+             the same flow device the ask page uses (2026-08-16 ship gate) */ ""}
+        <${RrCard} tone="navy" label="What happens next">
+          <${RrFlow} steps=${[
+            { t: "Enter your data", d: (dstate.target_pct || 60) + "% unlocks the read" },
+            { t: "Position unlocks", d: "every area placed against peers" },
+            { t: "Gaps price", d: "where lumi has a cost model" },
+            { t: "The plan builds", d: "options sequenced across cycles" },
+            { t: "This document completes", d: "ready for your board" },
+          ]} />
+        <//>
         ${canEditDoc ? html`
           <div class="rr-cta no-print">
             <button class="btn primary" onClick=${() => nav("/your-data")}>Add your data</button>
@@ -1689,7 +1883,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                       <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
                       <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
                 </table>`
-              : ob && ob.coverage_note ? html`<p class="rr-p rr-sm rr-muted">${ob.coverage_note}</p>` : null}
+              : ob && ob.coverage_note ? html`<p class="rr-p rr-sm rr-muted">${rrCase(ob.coverage_note)}</p>` : null}
             </div>`; })}
           <div class="rr-gap-foot no-print">
             <button class="rp-go" onClick=${() => toSignals(g.cat, g.align)}>
@@ -1707,9 +1901,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
              carded (2026-08-16 panel pass) */ ""}
         <${RrCard}>
         <ol class="rr-plan" start=${start || 1}>
-          ${altMark(items).map((a, i) => html`
+          ${(items || []).map((a, i) => html`
             <li key=${i}>
-              <div class="rr-plan-t">${a.title}${a.altFirst ? html` <span class="rr-sm rr-muted">· alternative to ${a.altFirst}</span>` : ""}
+              <div class="rr-plan-t">${a.title}${altNote(a.title) ? html` <span class="rr-sm rr-muted">· ${altNote(a.title)}</span>` : altInfo[a.title] ? html` <span class="rr-sm rr-muted">· ${"one of " + altInfo[a.title].size + " options against this gap"}</span>` : ""}
                 <span class="rr-sm"> · from ${domainLabel(a.category || "")}${
                   SEC_NO["domain:" + a.category] ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""} · ${a.horizon}</span></div>
               <p class="rr-p">${rrCase(rrProse(a.why))}</p>
@@ -1728,7 +1922,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // from the plan and the envelope; only the wording is the author's.
     if (kindOf === "ask") {
       const nowTitles = theAsk.titles || [];
-      const rest = Math.max(0, (theAsk.gaps_total || 0) - nowTitles.length);
+      // the remainder counts GAPS, and this cycle's actions cover one gap per decision
+      // unit — "remaining 6" (10 − 4 rows) overstated coverage when two rows were an
+      // either/or against one gap (2026-08-16 ship gate)
+      const covered = askUnits.length || nowTitles.length;
+      const rest = Math.max(0, (theAsk.gaps_total || 0) - covered);
       return html`
         <${RrH} n=${num} sub="The decision this paper seeks, what it would cost, and what it deliberately leaves open.">What we're asking the board to approve<//>
         <${RrCard} tone="navy" label="Decision sought">
@@ -1738,7 +1936,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ${hasPosition ? html`<${RrStats} items=${[
           { v: theAsk.actions_this_cycle || 0,
             k: (theAsk.actions_this_cycle === 1) ? "action this cycle" : "actions this cycle",
-            note: (theAsk.areas || []).map(domainLabel).join(", ") || "none scheduled" },
+            note: ((theAsk.areas || []).map(domainLabel).join(", ") || "none scheduled")
+              + (askChoices ? " — incl. " + (askChoices === 1 ? "one either/or" : askChoices + " either/ors") : "") },
           // four reviewers read this card as the PRICE OF THE APPROVAL — it is the
           // envelope of every priced gap, which may not even be in this cycle.
           // (Plain JS comment: this is an array literal, not a template.)
@@ -1752,7 +1951,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <div class="rr-grid2">
         ${nowTitles.length ? html`
           <${RrCard} head="What approval covers">
-            <ul class="rr-ul">${nowTitles.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>
+            ${/* grouped by decision unit: an either/or renders as ONE item naming the
+                 choice — flat bullets asked the board to approve both members of a
+                 pair the schedule declares exclusive (2026-08-16 ship gate) */ ""}
+            <ul class="rr-ul">${(askUnits.length ? askUnits : nowTitles.map(t => ({ titles: [t] }))).map((u, i) =>
+              (u.titles || []).length > 1
+                ? html`<li key=${i}><b>One of:</b> ${u.titles.join(", or ")}<br />
+                    <span class="rr-sm rr-muted">alternatives against the same gap — approval is for one of the ${u.titles.length === 2 ? "two" : String(u.titles.length)}, not ${u.titles.length === 2 ? "both" : "all"}</span></li>`
+                : html`<li key=${i}>${(u.titles || [])[0]}</li>`)}</ul>
           <//>` : null}
         ${rest ? html`
           <${RrCard} tone="cream" head="What it does not cover">
@@ -1774,7 +1980,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               { t: "Movement", d: "reported against this baseline" },
               { t: "Next review", d: "the strategy re-tested" },
             ]} />
-          <//>` : null}`;
+          <//>` : html`
+          ${/* the pre-data decision page was ~85% whitespace and never said what the
+               approval sets in motion — the same flow device, measured steps held
+               back until they are real (2026-08-16 ship gate) */ ""}
+          <${RrCard} tone="navy" label="What this approval sets in motion">
+            <${RrFlow} steps=${[
+              { t: "Approve", d: "the strategy as the stated position" },
+              { t: "Evidence", d: "your data arrives against it" },
+              { t: "Position", d: "measured once the core set is in" },
+              { t: "The plan", d: "returns to this board, priced" },
+            ]} />
+          <//>`}`;
     }
 
     // ---- MOVEMENT ---------------------------------------------------------------
@@ -1822,17 +2039,33 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <table class="rr-table tight rr-sched-tbl">
         <thead><tr><th>Action</th><th>Area</th><th>Return</th></tr></thead>
         ${(items || []).map(s => html`
-          <tbody key=${s.horizon}>
+          <tbody key=${s.horizon + ":" + (s.contPart || 0)}>
             <tr class="rr-hz-row"><th colSpan="3">
-              <span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}</span>
-              <i>${s.actions.length} ${s.actions.length === 1 ? "action" : "actions"}</i></th></tr>
-            ${altMark(s.actions).map((a, i) => html`
-              <tr key=${i}><td><b>${a.title}</b>${a.altFirst ? html`<br /><span class="rr-sm rr-muted">${"alternative to " + a.altFirst + " — one of the two, not both"}</span>` : ""}</td>
+              <span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}${s.contPart ? " (cont.)" : ""}</span>
+              ${s.contPart ? "" : html`<i>${(s.totalN || s.actions.length)} ${(s.totalN || s.actions.length) === 1 ? "action" : "actions"}</i>`}</th></tr>
+            ${s.actions.map((a, i) => html`
+              <tr key=${i}><td><b>${a.title}</b>${altNote(a.title) ? html`<br /><span class="rr-sm rr-muted">${altNote(a.title)}</span>` : ""}</td>
                 <td class="rr-sm">${domainLabel(a.category || "")}${SEC_NO["domain:" + a.category]
                   ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""}</td>
                 <td class="rr-sm">${a.roi}</td></tr>`)}
           </tbody>`)}
       </table><//>
+      ${/* set membership ONCE, under the table — flagging all ten rows would drown the
+           schedule, and flagging only same-cycle pairs hid the cross-cycle sets whose
+           count the intro states (2026-08-16 ship gate) */ ""}
+      ${part === (parts || 1) - 1 && Object.keys(altInfo).length ? html`
+        <p class="rr-p rr-sm rr-muted">${(() => {
+          const byG = {};
+          schedule.forEach(s2 => (s2.actions || []).forEach(a2 => {
+            const g = altOf[a2.title];
+            if (g && altInfo[a2.title]) (byG[g] = byG[g] || { area: a2.category, n: 0 }).n += 1;
+          }));
+          const sets = Object.values(byG);
+          return "Options against one gap are one decision stream — "
+            + rrList(sets.map(x => domainLabel(x.area) + " carries " + x.n))
+            + ". A later option returns to the board in its own cycle, read against what the "
+            + "earlier change moved; approving one never pre-commits the rest.";
+        })()}</p>` : null}
       ${(items || []).find(s => s.horizon === "unscheduled") ? html`
         <p class="rr-p rr-sm rr-muted">${"Actions shown as unscheduled carry a timing lumi could not "
           + "place against a cycle. They are listed rather than dropped — an action missing from a "
@@ -1870,7 +2103,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${(money.assumptions && Object.keys(money.assumptions).length) ? html`
         <h3 class="rr-sh">The assumptions behind it</h3>
         <p class="rr-p rr-sm">${"Median salary " + gbp((money.assumptions || {}).median_salary_gbp)
-          + " and your headcount" + ((money.unit_rates || {}).fte ? " (" + money.unit_rates.fte + " FTE, your stated band's midpoint)" : " (from your stated FTE band)")
+          + " and your headcount" + ((money.unit_rates || {}).fte
+            ? " (" + money.unit_rates.fte + " FTE, the midpoint of your stated "
+              + (money.fte_band ? money.fte_band.replace(/-/g, "–") + " " : "") + "band)"
+            : " (from your stated FTE band)")
           + " drive every figure above. Cost per leaver ("
           + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0) + "% of salary) and the agency premium ("
           + ((money.assumptions || {}).agency_premium_pct || 0) + "%) apply only where attrition or agency metrics "
@@ -1949,11 +2185,24 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
            before an expression and printed "rests on55 of the 77 questions" */ ""}
       <div class="rr-grid2">
-      ${al.completeness ? html`<${RrCard} label="Completeness"><p class="rr-p rr-sm">
-      ${"This document rests on " + al.completeness.answered + " of the " + al.completeness.of
-        + " questions lumi treats as the core set (" + al.completeness.pct + "%). Areas answered thinly "
-        + "carry an indicative read, marked as such in their own section; unanswered ones say so "
-        + "rather than being estimated."}</p><//>` : null}
+      ${/* SINGLE-SOURCED from data_state, the same counters the pre-data pages print —
+           a separate completeness block let this page claim 96% while page 9 of the
+           same document said 12% (2026-08-16 ship gate, all five reviewers). The
+           fallback keeps an older cached payload rendering rather than blank. */ ""}
+      ${(al.data_state || al.completeness) ? html`<${RrCard} label="Completeness"><p class="rr-p rr-sm">
+      ${(() => {
+        const ds = al.data_state || {};
+        const answered = ds.answered != null ? ds.answered : (al.completeness || {}).answered;
+        const of = ds.basis_total != null ? ds.basis_total : (al.completeness || {}).of;
+        const pct = ds.core_pct != null ? Math.round(ds.core_pct) : (al.completeness || {}).pct;
+        return "This document rests on " + answered + " of the " + of
+          + " questions lumi treats as the core set (" + pct + "%). "
+          + (hasPosition
+             ? "Areas answered thinly carry an indicative read, marked as such in their own "
+               + "section; unanswered ones say so rather than being estimated."
+             : "Until that set reaches " + Math.round(ds.target_pct || 60) + "%, the position "
+               + "pages state what is missing rather than estimating anything.");
+      })()}</p><//>` : null}
       ${al.snapshot ? html`<${RrCard} label="Data vintage"><p class="rr-p rr-sm">
       ${"Peer figures are the " + (al.snapshot.window || "current") + " collection"
         + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
@@ -1961,17 +2210,29 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">${"Positions come from your own "
       + "submitted data against " + cutLabel + ", on the engine and suppression rules that govern every "
       + "figure in lumi. An area's verdict weighs every metric's position; its percentile is depth alone — "
-      + "near the band's edge the two can differ. Alignment is counts against your commitments — never a "
-      + "score, index or grade."}</p><//>
+      + "near the band's edge the two can differ. Alignment is a count against your commitments — never a "
+      + "score, index or grade."
+      // the stated peer group vs the benchmark basis, reconciled where a reader can
+      // find it — the cover carries both labels side by side and no page said why
+      // they differ, which is the first question a board asks (2026-08-16 ship gate)
+      + (doc.comparator_label && doc.comparator_label !== cutLabel
+         ? " The strategy names " + doc.comparator_label + " as its stated peer group; the reads "
+           + "in this document run on " + cutLabel + " — the basis every lumi figure rests on, "
+           + "with the widest sample behind each number. Reads on the stated group are available "
+           + "in the app wherever its sample clears the suppression floor, and the two can differ."
+         : "")}</p><//>
       <${RrCard} tone="cream" label="What it will not do"><p class="rr-p rr-sm">${"Positions blend "
       + "your whole workforce: where populations differ (hourly store against salaried head office), "
       + "a blended percentile can mask offsetting gaps, and this document does not split them."}</p>
       <p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
-      estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
+      estimating: ${hasPosition
+        ? (unevid.length + " commitment" + (unevid.length === 1 ? " sits" : "s sit") + " unevidenced today.")
+        : (commitments.length + " commitment" + (commitments.length === 1 ? " awaits" : "s await")
+           + " evidence until your data is in.")}
       Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
       model has a figure for the area in question. Written commentary is generated from the figures here and
       validated before it is shown: it cannot introduce a number that is not on the page, direct you to act,
-      or make a legal determination. Where validation fails, a plainer standard wording is used.</p><//>
+      or make a legal determination. Where validation fails, lumi’s plain standard wording is used.</p><//>
       </div>
       <p class="rr-src">Company facts and choices, not employee data — organisation-level, set by an
       Admin, shaping how your results are read, never what your people see.</p>`;

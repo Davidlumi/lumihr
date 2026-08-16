@@ -5135,6 +5135,10 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   border-bottom: 1px solid var(--border); font-family: var(--font-head);
   font-size: var(--fs-caption); font-weight: 700; color: var(--blue-deep); }
 .rr-toc-part:first-child { margin-top: 0; }
+/* the pre-data contents: Part C exists but is locked — greyed, inert, and honest
+   about what unlocks it, so the A→B→D lettering gap stops reading as a bug */
+.rr-toc-locked { opacity: .55; cursor: default; }
+.rr-toc-locked b { font-weight: 600; font-size: 0.86em; font-style: italic; }
 .rr-toc-row.is-in { padding-left: var(--s3); }
 .rr-toc-row i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--ink-faint);
   margin-right: 7px; }
