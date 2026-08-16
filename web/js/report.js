@@ -206,6 +206,33 @@ function RrNav({ items, total, onGo }) {
     </div>`;
 }
 
+// ---- CARDS ---------------------------------------------------------------------
+// The reference (LUMI_Future_of_Reward_2035_Report_V3) builds every page out of cards
+// on a tinted ground: white cards carry evidence, a cream card carries the "so what",
+// and a small-caps pill labels each one. This document was a white paper — single
+// column, prose and tables — which is why charts alone did not make it read as a
+// consultancy deliverable (2026-08-16).
+function RrCard({ label, head, tone, children, className }) {
+  return html`
+    <div class=${"rr-card" + (tone ? " t-" + tone : "") + (className ? " " + className : "")}>
+      ${label ? html`<div class="rr-card-k">${label}</div>` : null}
+      ${head ? html`<div class="rr-card-h">${rrTypeAny(head)}</div>` : null}
+      ${children}
+    </div>`;
+}
+
+// A figure, what it is, and where it came from — the reference cites a source under
+// every number, which is most of why its stats read as evidence rather than decoration.
+function RrStats({ items }) {
+  return html`
+    <div class="rr-statgrid">
+      ${items.filter(Boolean).map((x, i) => html`
+        <div key=${i} class="rr-statcard">
+          <b>${x.v}</b><span>${x.k}</span>${x.note ? html`<i>${x.note}</i>` : null}
+        </div>`)}
+    </div>`;
+}
+
 // ---- CHARTS ------------------------------------------------------------------
 // David, 2026-08-16: "I still do not think this is big 4 consultancy standard." He was
 // right, and the largest single reason was that forty-one pages of benchmarking carried
@@ -1112,17 +1139,20 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
             rrCase((wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
             || (cm && cm.parts && cm.parts.reading) || "")} />`}
-      <div class="rr-stats">
-        ${hasPosition ? html`
-          <div><b>${domains.length}</b><span>areas benchmarked</span></div>
-          <div><b>${gaps.length}</b><span>${gaps.length === 1 ? "gap to close" : "gaps to close"}</span></div>
-          <div><b>${holding.length}</b><span>${holding.length === 1 ? "commitment holding" : "commitments holding"}</span></div>`
-        : html`
-          ${/* a 0/0 gap tally before any data reads as "all is well" — it means "we cannot tell yet" */ ""}
-          <div><b>${commitments.length}</b><span>commitments stated</span></div>
-          <div><b>${Math.round((al.data_state || {}).core_pct || 0)}%</b><span>of your data in</span></div>
-          <div><b>—</b><span>position: awaiting data</span></div>`}
-      </div>
+      ${/* a 0/0 gap tally before any data reads as "all is well" — it means "we cannot
+           tell yet", so the pre-data variant counts what IS known instead */ ""}
+      <${RrStats} items=${hasPosition ? [
+        { v: domains.length, k: "areas benchmarked", note: "against " + cutLabel },
+        { v: gaps.length, k: gaps.length === 1 ? "gap to close" : "gaps to close",
+          note: "your data vs your stated strategy" },
+        { v: holding.length, k: holding.length === 1 ? "commitment holding" : "commitments holding",
+          note: "evidenced by your own answers" },
+      ] : [
+        { v: commitments.length, k: "commitments stated", note: "from your reward strategy" },
+        { v: Math.round((al.data_state || {}).core_pct || 0) + "%", k: "of your data in",
+          note: (al.data_state || {}).answered + " of " + (al.data_state || {}).basis_total + " core metrics" },
+        { v: "—", k: "position", note: "awaiting your data" },
+      ]} />
       ${/* two columns: a per-domain report runs to ~20 sections and a single-column
            contents list pushed this sheet past A4 (2026-08-16). Continuation pages
            are dropped — a reader wants the section, not every sheet it spans. */ ""}
@@ -1331,31 +1361,25 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
         ${!isRead ? null : html`
         ${/* count + market position, side by side — the two facts a reader wants first */ ""}
-        <div class="rr-dom-head">
-          <div class="rr-dom-stat">
-            <span class="rr-dom-k">Metrics benchmarked</span>
-            <b>${cnt.metrics || 0}</b>
-            ${/* the peer SAMPLE, not the org's own metric count — see the server note */ ""}
-            <span class="rr-sm">${cnt.peer_n
-              ? "typically " + cnt.peer_n.median + " peers per metric (" + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
-              : "on your own data"}</span>
-          </div>
-          <div class="rr-dom-stat">
-            <span class="rr-dom-k">Market position</span>
-            <b class=${"rr-verdict v-" + (pos.verdict || "none")}>${RR_POS_WORD[pos.verdict] || "no read yet"}${
-              cnt.strict === false ? html`<span class="rr-indic"> indicative</span>` : ""}</b>
-            <span class="rr-sm">${pos.pctl != null ? "around the " + rrOrdinal(pos.pctl) + " percentile" : "not enough comparable data"}</span>
-          </div>
-          <div class="rr-dom-stat">
-            <span class="rr-dom-k">Against your aim</span>
-            <b class=${"rr-align a-" + (aim.alignment || "none")}>${readWord || "No aim set"}</b>
-            <span class="rr-sm">${aim.stance ? "you aim " + RR_STANCE_WORD[aim.stance] : "read neutrally"}</span>
-          </div>
-        </div>
+        <${RrStats} items=${[
+          { v: cnt.metrics || 0, k: "metrics benchmarked",
+            note: cnt.peer_n ? "typically " + cnt.peer_n.median + " peers each (" + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
+                             : "on your own data" },
+          { v: (RR_POS_WORD[pos.verdict] || "no read yet") + (cnt.strict === false ? " *" : ""),
+            k: "market position",
+            note: pos.pctl != null ? "around the " + rrOrdinal(pos.pctl) + " percentile"
+                                   : "not enough comparable data" },
+          { v: readWord || "No aim set", k: "against your aim",
+            note: aim.stance ? "you aim " + RR_STANCE_WORD[aim.stance] : "read neutrally" },
+        ]} />
+        ${cnt.strict === false ? html`<p class="rr-src">${"* indicative — fewer than "
+          + cnt.domain_min + " benchmarked metrics stand behind this read."}</p>` : null}
 
         ${/* the position as a picture, before the counts that produce it */ ""}
-        <${RrDomainChart} band=${mband} label=${domainLabel(b.name)}
-          pctl=${pos.pctl} verdict=${pos.verdict} stance=${aim.stance} />
+        <${RrCard} label="Where you sit">
+          <${RrDomainChart} band=${mband} label=${domainLabel(b.name)}
+            pctl=${pos.pctl} verdict=${pos.verdict} stance=${aim.stance} />
+        <//>
 
         ${/* the split bar is GONE (2026-08-16): it and the chart above both draw "where
              you sit", and two bars saying the same thing pushed Pay and Time off past
@@ -1365,8 +1389,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
         ${!isRead ? null : html`
         ${/* commentary on alignment to market — the analytic heart of the section */ ""}
-        <h3 class="rr-sh">How this reads</h3>
-        <${Prose} k=${"domain:" + b.name} generated=${domProse(b)} />
+        <${RrCard} tone="cream" head="How this reads">
+          <${Prose} k=${"domain:" + b.name} generated=${domProse(b)} />
+        <//>
 
         ${/* a sheet that ALSO carries the follow content has room for fewer signals —
              sized so the combined sheet still lands inside A4 */ ""}
@@ -1375,8 +1400,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             + (b.signal_count === 1 ? "" : "s") + "; they are set out in full under "
             + domainLabel(b.name) + " in the app, and the options against them follow below."}</p>` : null}
         ${(sigShown || []).length ? html`
-          <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > sigShown.length
-            ? html` <span class="rr-sm">(${sigShown.length} of ${b.signal_count})</span>` : ""}</h3>
+          <${RrCard} head=${"What " + domainLabel(b.name) + " is flagging"
+            + (b.signal_count > sigShown.length ? " (" + sigShown.length + " of " + b.signal_count + ")" : "")}>
           <${RrEx} ex=${EXH["dom-sig:" + b.name]} />
           <table class="rr-table tight">
             <thead><tr><th>Signal</th><th>Yours</th><th>Reads</th></tr></thead>
@@ -1389,6 +1414,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           </table>
           ${/* a below-market area whose only flagged signal reads above market looks, on a
                board page, like the evidence refuting the verdict. Say why it doesn't. */ ""}
+          <//>
           ${pos.verdict && sigShown.length && !sigShown.some(x => x.position === pos.verdict) ? html`
             <p class="rr-p rr-sm rr-muted">${"The signals above are the most material in "
               + domainLabel(b.name) + ", which is not the same as the most representative: none of "
@@ -1436,11 +1462,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <${RrH} n=${num} sub="This half of the document is written from your own submitted data, read against your peer group. It fills in as your data arrives — nothing here is estimated in the meantime.">Where you'll stand<//>
         <p class="rr-lede">Your strategy above is stated and in force: lumi is already reading every
         benchmark through it. What it cannot yet do is tell you where you actually sit against it.</p>
-        <div class="rr-stats">
-          <div><b>${Math.round(dstate.core_pct || 0)}%</b><span>of your key metrics answered</span></div>
-          <div><b>${need}</b><span>${need === 1 ? "answer to unlock" : "answers to unlock"}</span></div>
-          <div><b>${commitments.length}</b><span>commitments waiting on evidence</span></div>
-        </div>
+        <${RrStats} items=${[
+          { v: Math.round(dstate.core_pct || 0) + "%", k: "of your key metrics answered",
+            note: (dstate.answered || 0) + " of " + (dstate.basis_total || 0) },
+          { v: need, k: need === 1 ? "answer to unlock" : "answers to unlock",
+            note: "to reach the " + (dstate.target_pct || 0) + "% threshold" },
+          { v: commitments.length, k: "commitments waiting on evidence",
+            note: "from your stated strategy" },
+        ]} />
         <p class="rr-p">Once your data is in, these pages complete the document: your position against
         each stated aim, the gaps that opens, what the market does about each one, and a sequenced plan
         with what each action returns.</p>
@@ -1455,6 +1484,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position at a glance<//>
       ${/* the picture first, the table under it — eight verdicts across fifteen sheets
            had no view that showed them together (2026-08-16) */ ""}
+      <${RrCard}>
       <${RrEx} ex=${EXH["portfolio"]} />
       <${RrPortfolioChart} band=${mband} rows=${domains.map(d => ({
         name: d.name,
@@ -1473,6 +1503,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <span><i class="rrc-k-dot v-above"></i>above market</span>
         <span><i class="rrc-k-aim"></i>where your strategy aims</span>
       </div>
+      <//>
       <p class="rr-p rr-sm">${"The chart above covers the " + domains.length + " areas lumi "
         + "benchmarks. Elsewhere this document counts COMMITMENTS — an area carries one for the "
         + "position your strategy sets, plus one for each coherence check that applies to it — so "
@@ -1544,17 +1575,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const rest = Math.max(0, (theAsk.gaps_total || 0) - nowTitles.length);
       return html`
         <${RrH} n=${num} sub="The decision this paper seeks, what it would cost, and what it deliberately leaves open.">What we're asking the board to approve<//>
-        <div class="rr-ask">
-          <div class="rr-ask-k">Decision sought</div>
+        <${RrCard} tone="navy" label="Decision sought">
           <div class="rr-ask-v">${rrCap(rrCase(theAsk.decision || "note this review"))}</div>
-        </div>
+        <//>
         <${Prose} k="the_ask" className="rr-lede" generated=${askProse()} />
-        ${hasPosition ? html`
-          <div class="rr-stats">
-            <div><b>${theAsk.actions_this_cycle || 0}</b><span>${(theAsk.actions_this_cycle === 1) ? "action this cycle" : "actions this cycle"}</span></div>
-            <div><b>${money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—"}</b><span>${money.investment_to_p50_gbp ? "indicative, a year" : "no priced cost"}</span></div>
-            <div><b>${theAsk.gaps_total || 0}</b><span>${(theAsk.gaps_total === 1) ? "gap in scope" : "gaps in scope"}</span></div>
-          </div>` : null}
+        ${hasPosition ? html`<${RrStats} items=${[
+          { v: theAsk.actions_this_cycle || 0,
+            k: (theAsk.actions_this_cycle === 1) ? "action this cycle" : "actions this cycle",
+            note: (theAsk.areas || []).map(domainLabel).join(", ") || "none scheduled" },
+          { v: money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—",
+            k: money.investment_to_p50_gbp ? "indicative, a year" : "no priced cost",
+            note: nPriced + " of " + nGaps + " gaps priced" },
+          { v: theAsk.gaps_total || 0,
+            k: (theAsk.gaps_total === 1) ? "gap in scope" : "gaps in scope",
+            note: "strategy vs your own data" },
+        ]} />` : null}
         ${nowTitles.length ? html`
           <h3 class="rr-sh">What approval covers</h3>
           <ul class="rr-ul">${nowTitles.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>` : null}
@@ -1634,14 +1669,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // director asks of it had no answer on the page (2026-08-16).
     if (kindOf === "cost") return html`
       <${RrH} n=${num} sub=${"What closing these gaps costs, as far as lumi can price it on " + cutLabel + "."}>What it costs<//>
-      <div class="rr-stats">
-        <div><b>${money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—"}</b><span>indicative investment, a year</span></div>
-        <div><b>${money.savings_to_p50_gbp ? gbp(money.savings_to_p50_gbp) : "—"}</b><span>indicative saving, a year</span></div>
-        <div><b>${nPriced} of ${nGaps}</b><span>${nGaps === 1 ? "gap priced" : "gaps priced"}</span></div>
-      </div>
+      <${RrStats} items=${[
+        { v: money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—",
+          k: "indicative investment, a year", note: "to reach the peer median" },
+        { v: money.savings_to_p50_gbp ? gbp(money.savings_to_p50_gbp) : "—",
+          k: "indicative saving, a year", note: "where you sit above it" },
+        { v: nPriced + " of " + nGaps, k: nGaps === 1 ? "gap priced" : "gaps priced",
+          note: "lumi's cost model, published assumptions" },
+      ]} />
       <${Prose} k="cost" generated=${costProse()} />
       ${(money.items || []).length ? html`
-        <h3 class="rr-sh">Where the figure comes from</h3>
+        <${RrCard} head="Where the figure comes from">
         <${RrEx} ex=${EXH["cost"]} />
         <table class="rr-table tight">
           <thead><tr><th>Metric</th><th>Area</th><th class="num">To median</th><th class="num">To upper quartile</th></tr></thead>
@@ -1650,7 +1688,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               <td class="rr-sm">${domainLabel(it.category || "")}</td>
               <td class="num">${gbp(it.to_p50_gbp)}${it.direction === "saving" ? html` <span class="rr-sm">saving</span>` : ""}</td>
               <td class="num rr-sm">${gbp(it.to_p75_gbp)}</td></tr>`)}</tbody>
-        </table>` : null}
+        </table><//>` : null}
       ${(money.assumptions && Object.keys(money.assumptions).length) ? html`
         <h3 class="rr-sh">The assumptions behind it</h3>
         <p class="rr-p rr-sm">${"Median salary " + gbp((money.assumptions || {}).median_salary_gbp)
