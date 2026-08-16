@@ -201,6 +201,40 @@ if foot_re and page_mark:
 check("A8.4 verifier FOOT_RE matches the document's own page mark",
       ok_lock, "footer form and verifier regex have drifted apart", owner="verifier-lockstep")
 
+# ---------------------------------------------------------- v3.1 additions --
+# Each owns a defect the v3.1 review found in the shipped build. Where a check
+# would encode a ruling David has not made, it is advisory and says which ruling.
+
+# --- A1.5 the plan renders the LIBRARY's description, never stored prose (D032)
+check("A1.5 the plan renders lever descriptions from the live library",
+      "descOf[a.title]" in SRC,
+      "the plan still prints the stored action prose as the lever's description — a plan "
+      "built before a library repair then carries superseded reward content", owner="D032")
+
+# --- A4.7 the htm newline trap, which is a typography defect in disguise ----
+# `${` on its own line after a word collapses to "the area.Written commentary".
+newline_expr = re.findall(r"[a-z]\.\s*\n\s*\$\{_?[a-zA-Z]", SRC)
+check("A4.7 no template expression opens a line directly after a sentence",
+      not newline_expr, newline_expr[:2], owner="D039/htm")
+
+# --- A6 no dangling promise of options (D026, D027) ------------------------
+check("A6 the 'options follow below' clause is gated on the options branch",
+      "_allLev.length ? \", and the options against them follow below.\"" in SRC,
+      "the clause is unconditional", owner="D027")
+check("A6 the 'Options above…' caption is gated on options existing",
+      re.search(r"findings \|\| \[\]\)\.some\(f =>", SRC) is not None,
+      "the caption renders unconditionally", owner="D026")
+
+# --- D037 the cover addressee claims nothing unless a body was named --------
+check("D037 the cover addressee is derived, never defaulted",
+      "ver.approver_body" in cover and '"The Board"' not in cover,
+      "the cover still falls back to an addressee the approval record contradicts",
+      owner="D037")
+
+# --- D047 empty Part A boxes are suppressed, not printed --------------------
+check("D047 empty principles/constraints render as a line, not as cards",
+      "(doc.principles || []).length ? html`" in SRC, owner="D047")
+
 # --- A5.3 ordinal aims as a bracket — ADVISORY, pending David's ruling -----
 check("A5.3 ordinal aim renders as a bracket from the band edge, not a point",
       "RR_AIM_BRACKET" in SRC,
@@ -363,11 +397,41 @@ if "--pdf" in sys.argv:
               (not two_part) or re.search(r"asked for two decisions", ask_pg) is not None,
               "banner seeks re-approval; the body states one ask", owner="D014")
 
+    # --- v3.1 artefact-level checks ---------------------------------------
+    # D033 the singular grammar leak
+    check("D033 no 'one of 1' grammar leak", not re.search(r"one of 1\b", text), owner="D033")
+    # D066 no tag the library does not carry
+    check("D066 no unevidenced 'self-funding' claim",
+          "self-funding" not in text, owner="D066")
+    # D029 a signal's own name is not repeated inside its detail
+    dupes = re.findall(r"([A-Z][a-z]+(?: [a-z]+){1,4}) — \(\1", text)
+    check("D029 no signal name repeated inside its own detail", not dupes, dupes[:2], owner="D029")
+    # D028 every peer-median comparison carries both sides
+    bare = re.findall(r"vs the peer median", text)
+    check("D028 no comparator-less peer-median comparison", not bare,
+          "%d signal detail(s) print 'vs the peer median' with no number" % len(bare), owner="D028")
+    # D052 the cover states the divergence where it asserts both labels
+    check("D052 the cover says the stated peer group is not the basis",
+          ("not the basis for the reads" in pages[0]) if "Stated peer group" in pages[0] else True,
+          owner="D052")
+    # D042 one canonical area order — the contents and the chart agree
+    check("D042 area order is the stored taxonomy order",
+          "_q_all.values() if q.sub_power" in open(os.path.join(HERE, "app.py")).read(),
+          "the alignment endpoint still orders areas by first appearance", owner="D042")
+
     # A6.5 — people, not logins. ADVISORY: the record IS an account today, and
-    # rendering a name needs a captured field. Held for David (R-H).
+    # rendering a name needs a captured field. Held for David (R-U).
     check("A6.5 approvers render as a person, not an account identifier",
           not re.search(r"Approved by [\w.]+@", text),
-          "the approval record still shows a login", owner="D013", advisory=True)
+          "the approval record still shows a login", owner="D036", advisory=True)
+    # D034 — ADVISORY pending R-V/engine work: gap attribution is lost because the
+    # plan drops alt_group and candidates dedupe globally by (category, lever_id).
+    check("D034 the schedule's gap count matches the register's off-strategy count",
+          False,
+          "plan actions carry no gap key (alt_group is dropped by both plan builders), "
+          "so per-area gap counts are re-derived from lever names and collapse to one. "
+          "Engine change — held with the diagnostic on the ruling sheet.",
+          owner="D034", advisory=True)
 
 
 # ================================================================== verdict ==
