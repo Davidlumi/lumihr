@@ -203,6 +203,10 @@ run_gate qa_commentary
 # strategy alignment engine (2026-08-14, RS-3): pure computation — no server, no DB;
 # proves the four-status contract, counts invariant and statement cleanliness.
 run_gate qa_strategy_align
+# the DOCUMENT's own gate (2026-08-16, external QA spec v2): source + content
+# libraries + live pool figure. No server, no browser — the rendered-artefact half
+# runs with --pdf beside verify_report_pdf.py before a release.
+run_gate qa_strategy_doc
 
 # --- freeze gate (Diff 12): qa_plausibility Check C, ENFORCING. Root-dir script
 #     (not server/); honours LUMI_DB so it validates the suite's throwaway, not live.
