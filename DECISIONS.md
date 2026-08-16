@@ -18942,3 +18942,66 @@ sites, both rebuilt as concatenation, pattern commented and swept to zero.
 Pagination followed the content: three signal rows on a read sheet rather than four, one fewer
 where the thin-evidence caveat also prints, and a 1px trim on tight table rows. **32 sheets, none
 over A4, at both data depths.** Suite 15/15. ?v=671.
+
+## 2026-08-16 — Six gaps between a report and a board paper
+
+*"How else can we improve the strategy document?"* — then, to all six: **"do all 6."**
+
+**It never asked for anything.** Thirty-two pages describing a position, options and gaps, with
+no ask and no decision required anywhere on them. That is the structural difference between a
+report and a board paper: a RemCo paper opens with the position, the recommendation, the cost,
+and the decision it needs today. A director had to supply that framing themselves in the room.
+The ask now sits directly behind the executive summary — the place a reader who reads two pages
+and nothing else will look. Before any data is in it reads *"approve the strategy as stated — no
+spending decision is being sought here"*, which is the honest ask for a company at step two.
+
+**The CFO's number was computed and missing.** `money_opportunities` has produced
+`total_investment_to_p50_gbp` since the board pack was built. `grep` for it across the strategy
+document returned **zero**. So the document that goes to a board could not answer the first
+question a finance director asks of it, while lumi knew the answer. It now carries the envelope —
+and says how much of the work the envelope actually covers: **1 of 9 gaps** on the demo org. A
+total quietly standing for a ninth of the plan would be worse than no total.
+
+**Nothing recorded what was turned down.** Every area listed its levers and captured no decision
+against any of them, so a year later a rejected option and one nobody read looked identical.
+Decisions are keyed by *(category, lever)* — the same lever is offered against two commitments in
+Benefits & Lifestyle and can be decided differently in each; keyed by lever alone the record
+printed the row twice under one React key.
+
+**The plan was a list.** Every action already carried a horizon and they printed as a flat
+numbered run. Grouped now — and the horizon became a schema **enum**, because *"over the next 18
+months"* bucketed as unscheduled: honest, but fixable at the source rather than at the reader.
+
+**No risks.** Seven are derivable, and the discipline is that each one is an *exposure*, not a
+forecast and never advice — a risk section is the easiest place in a scrupulously non-directive
+document to start giving instructions by accident. So the derivation moved to `strategy_align`
+(pure, no DB, no request) purely so the no-server gate can hold every string it emits to the same
+`DIRECTIVE_RE` / `LEGAL_RE` / no-score bar as the lever library. **Both silences are gated too**:
+affordability stays quiet without a price or with an investing budget, the no-prior-period risk
+disappears once a second window exists, and a clean org gets none. A risk section that fires on
+everything is worth nothing.
+
+**Movement cannot be built, and the document now says so.** `SELECT ... FROM snapshots` returns
+exactly one row (`2026 H1`). `prev_items` is *prevalence*, not a previous period. So "are we
+getting better or worse?" — the second question after "where are we" — has no answer, and won't
+until a second collection window closes. That is a data-calendar dependency, not an engineering
+one. The section exists now, states plainly that every figure is a baseline, and fills itself the
+moment H2 lands, rather than the gap being found by whoever asks.
+
+**A regression I introduced, caught by measuring rather than by looking.** The decision badge and
+its reason added a line to every lever row and pushed three *"what follows"* sheets ~200px past
+A4 — sheets that were fine before this change. Four levers a sheet now, reason beside the badge
+instead of under it. The verification that caught it was a render harness serving the **real**
+captured payloads with the network stubbed, which also let the new sections be stressed past
+anything the demo org can produce: **7 risks, a 10-action plan, 13 recorded decisions → 45
+sheets, none over A4, contents pointing at the right paper.** Fresh org, no data: 11 sheets, with
+cost, risks, schedule and the not-taken record correctly *absent* rather than empty.
+
+Two copy defects the fixtures caught and the demo org never would: *"Recommendations in that area
+areas rest…"* and *"Each of these sits…"* for a single area.
+
+Suite **15/15**, `qa_strategy_align` **60/60**, seventeen new HTTP checks. ?v=672.
+
+**Open for David.** R7 (8 coherence rules) and R8 (24 of 36 levers) are still DRAFT — and the
+levers now carry recorded decisions, so their wording is quoted back in a board paper. Anonymous
+share links remain deliberately unbuilt pending the privacy ruling.
