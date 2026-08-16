@@ -1016,8 +1016,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     const contd = parts > 1 ? " (" + (part + 1) + " of " + parts + ")" : "";
     if (kindOf === "cover") return html`
       <div class="rr-cover-in">
-        ${window.LUMI_LOGO_SVG
-          ? html`<div class="bp-logo" dangerouslySetInnerHTML=${{ __html: window.LUMI_LOGO_SVG }}></div>`
+        ${/* the REVERSED mark: this sheet is a full-bleed colour field now, and the
+             navy-on-navy original was invisible on it (2026-08-16) */ ""}
+        ${window.LUMI_LOGO_SVG_REVERSED || window.LUMI_LOGO_SVG
+          ? html`<div class="bp-logo" dangerouslySetInnerHTML=${{
+              __html: window.LUMI_LOGO_SVG_REVERSED || window.LUMI_LOGO_SVG }}></div>`
           : html`<div class="rr-wordmark">lumi</div>`}
         <div class="rr-eyebrow">${K.eyebrow}</div>
         <div class="rr-accent"></div>
@@ -1054,6 +1057,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         .filter(x => x.p.pt === ptId && !x.p.divider && x.p.title && !/\(cont\.\)$/.test(x.p.title));
       return html`
         <div class="rr-div-in">
+          ${/* the letter as a typographic device, the way a consultancy divider carries
+               its part — reversed out of the colour field (2026-08-16) */ ""}
+          <div class="rr-div-mark" aria-hidden="true">${ptId}</div>
           <div class="rr-div-k">Part ${ptId}</div>
           <h2 class="rr-div-t">${P_.title}</h2>
           <div class="rr-accent"></div>

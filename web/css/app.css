@@ -5147,6 +5147,43 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   color: var(--ink-soft); margin-left: 10px; }
 
 
+/* ---- COLOUR SHEETS (2026-08-16): the cover and the part dividers -----------------
+   David: "make all the changes to get us to the mercer level." A cover that is a logo
+   on white reads as a printout however good the pages behind it are. These two sheet
+   types carry a full-bleed brand field with everything reversed out of it; the body
+   pages stay white, which is what makes the parts read as chapters. print-color-adjust
+   is mandatory — without it the field drops out of the PDF and the white type prints
+   onto nothing. */
+.rr-cover, .rr-div-sheet { background: var(--blue-deep) !important; color: #fff;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.rr-cover .pack-footer, .rr-div-sheet .pack-footer { border-top-color: rgba(255,255,255,.28); }
+.rr-cover .pack-footer span, .rr-div-sheet .pack-footer span { color: rgba(255,255,255,.72); }
+.rr-cover .rr-eyebrow { color: rgba(255,255,255,.82); }
+.rr-cover .rr-title { color: #fff; }
+.rr-cover .rr-subtitle { color: rgba(255,255,255,.88); }
+.rr-cover .rr-lead { color: rgba(255,255,255,.74); }
+.rr-cover .rr-accent { background: var(--lumi-coral); width: 88px; }
+.rr-cover .rr-cover-meta { border-top-color: rgba(255,255,255,.28); }
+.rr-cover .rr-cover-meta div { color: #fff; }
+.rr-cover .rr-cover-meta span { color: rgba(255,255,255,.62); }
+.rr-cover .bp-logo svg { width: 132px; height: auto; }
+
+/* the part letter, set large and low-contrast as a device rather than a label */
+.rr-div-sheet .rr-div-in { position: relative; }
+.rr-div-mark { position: absolute; right: -4mm; top: -34mm; font-family: var(--font-head);
+  font-size: 190px; font-weight: 700; line-height: 1; letter-spacing: -0.04em;
+  color: rgba(255,255,255,.10); pointer-events: none; }
+.rr-div-sheet .rr-div-k { color: rgba(255,255,255,.82); }
+.rr-div-sheet .rr-div-t { color: #fff; }
+.rr-div-sheet .rr-accent { background: var(--lumi-coral); }
+.rr-div-sheet .rr-div-lead { color: rgba(255,255,255,.78); }
+.rr-div-sheet .rr-div-list { border-top-color: rgba(255,255,255,.28); }
+.rr-div-sheet .rr-toc-row { border-bottom-color: rgba(255,255,255,.16); }
+.rr-div-sheet .rr-toc-row span, .rr-div-sheet .rr-toc-row b { color: #fff; }
+.rr-div-sheet .rr-toc-row i { color: rgba(255,255,255,.55); }
+.rr-div-sheet .rr-jump:hover { background: rgba(255,255,255,.10); }
+.rr-div-sheet .rr-jump:hover span { color: #fff; }
+
 /* ---- charts (2026-08-16) --------------------------------------------------------
    Forty-one pages of benchmarking with no chart is why this did not read as
    consultancy output. Every colour here is a token already in the palette, and the
