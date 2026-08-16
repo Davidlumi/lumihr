@@ -19218,3 +19218,27 @@ showed a blue dot appearing nowhere on a chart whose dots are verdict-coloured.
 **Not done, and honestly still short of the bar:** 13 of 41 pages remain under 55% full — most are
 continuation tails, but not all. The cover is still a logo on white with no colour field or device.
 Those were the "full visual identity" half of the choice, deliberately not taken this pass.
+
+## 2026-08-16 — Mercer level: the colour half
+
+*"Make all the changes to get us to the mercer level."*
+
+**The cover and the four part dividers are colour sheets now.** A cover that is a logo on white
+reads as a printout however good the pages behind it are. Both sheet types that exist to *announce*
+something carry a full-bleed brand field with everything reversed out; the body stays white, which
+is what makes the parts read as chapters rather than as more pages. The reversed mark from
+`lumi_brand_kit` is wired for the first time — the navy-on-navy original was invisible on a navy
+field. The part letter is set at 190px in 10% white as a device.
+
+**Coral is the accent rule and nothing else.** The palette says *"NEVER use as text (2.42:1)"*; on
+this navy it reaches 4.28:1 — fine for a graphic element against the 3:1 floor, short of AA for the
+15px bold label I first tried it on. Labels are white at 82%.
+
+`print-color-adjust: exact` on both, without which the field drops out of the PDF and the white
+type prints onto nothing.
+
+**Still open, and I am not claiming otherwise:** 13 of 41 pages remain under 55% full. Most are
+continuation tails, which are normal in any document, but not all of them are. Fixing the rest
+means letting short sections share a sheet — a change to the one-section-per-sheet model that
+touches running heads, section numbering and the contents map, and is a bigger piece than it
+looks.
