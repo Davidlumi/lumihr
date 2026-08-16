@@ -1,5 +1,5 @@
 {
-  "_readme": "REWARD LEVER INVENTORY — DAVID OWNS THIS FILE (R8; same doctrine as signal_lenses.json). The named mechanisms that exist in UK reward practice, surfaced in an Options block beside a gap — NEVER ranked, scored, starred or ordered by fit (file order only; an ordered list is an implied recommendation). Every lever carries a trade_off — a lever with no stated downside is marketing. No vendor, provider or product is ever named. register_effect says which register the lever moves: 'Substance' (position/provision — what you offer or how much) or 'Approach' (practice — how you operate); a member behind on POSITION needs a Substance lever, one CONTRADICTED on practice needs an Approach lever. typical_shape is domain knowledge unless prevalence_metric_id links a measured metric (then peer take-up renders live). v1 tranche per R8: Pay, Benefits & Lifestyle, Time Off & Family (the three densest evidence categories); Governance is the ruled second tranche. TRANCHE 2 (2026-08-16): extended from three categories to ALL EIGHT so no domain section in the reward report ends on 'a later tranche' where the reader expects recommendations. Every category now carries BOTH registers (Substance for a position gap, Approach for a coherence contradiction), so no gap can land without options. The 20 new levers are CLAUDE-DRAFTED and need David's review the same way the first 12 did. STATUS: drafted 2026-08-14 — pending David's content sign-off; refine, reject or extend freely. REPAIR 2026-08-16: PEN-CONTRIBUTION carried prevalence_metric_id 'REW26_BEN_PENS_EMPLOYER', which does not exist in the question bank — the link resolved to nothing and the lever rendered with no peer take-up, silently. The key is REMOVED rather than repointed: every other prevalence link reads a yes_no or single_select ('what share of peers do this'), and an employer contribution RATE is a matrix benchmark, not a prevalence. If you want a link here, the candidates are REW26_BEN_PENSION_MATCH (matching offered) or REW264_PEN_CONTRIBTIER (contributions rise with service/level) — both are practices, not rates. See R7_R8_RULING_SHEET_2026-08-16.md.",
+  "_readme": "REWARD LEVER INVENTORY — DAVID OWNS THIS FILE (R8; same doctrine as signal_lenses.json). The named mechanisms that exist in UK reward practice, surfaced in an Options block beside a gap — NEVER ranked, scored, starred or ordered by fit (file order only; an ordered list is an implied recommendation). Every lever carries a trade_off — a lever with no stated downside is marketing. No vendor, provider or product is ever named. register_effect says which register the lever moves: 'Substance' (position/provision — what you offer or how much) or 'Approach' (practice — how you operate); a member behind on POSITION needs a Substance lever, one CONTRADICTED on practice needs an Approach lever. typical_shape is domain knowledge unless prevalence_metric_id links a measured metric (then peer take-up renders live). v1 tranche per R8: Pay, Benefits & Lifestyle, Time Off & Family (the three densest evidence categories); Governance is the ruled second tranche. TRANCHE 2 (2026-08-16): extended from three categories to ALL EIGHT so no domain section in the reward report ends on 'a later tranche' where the reader expects recommendations. Every category now carries BOTH registers (Substance for a position gap, Approach for a coherence contradiction), so no gap can land without options. The 20 new levers are CLAUDE-DRAFTED and need David's review the same way the first 12 did. STATUS: drafted 2026-08-14 — pending David's content sign-off; refine, reject or extend freely. REPAIR 2026-08-16: PEN-CONTRIBUTION carried prevalence_metric_id 'REW26_BEN_PENS_EMPLOYER', which does not exist in the question bank — the link resolved to nothing and the lever rendered with no peer take-up, silently. The key is REMOVED rather than repointed: every other prevalence link reads a yes_no or single_select ('what share of peers do this'), and an employer contribution RATE is a matrix benchmark, not a prevalence. If you want a link here, the candidates are REW26_BEN_PENSION_MATCH (matching offered) or REW264_PEN_CONTRIBTIER (contributions rise with service/level) — both are practices, not rates. See R7_R8_RULING_SHEET_2026-08-16.md. REPAIR 2026-08-16 (practitioner panel): BEN-SALSAC described pre-2017 salary-sacrifice law (cars/technology NI advantage removed by the OpRA rules) — five of five reviewers flagged it; INC-RECOGNITION was mis-costed one-off (voucher spend is recurring and taxable); BEN-GRISK claimed claims-experience re-rating, wrong for a unit-rated scheme at this size; PEN-CONTRIBUTION was mis-anchored to the AE minimum and overstated candidate visibility and lock-in; GOV-RANGES-INTERNAL recast one-off for its correction cases. Factual repairs only — David's R8 sign-off still owed on all wording.",
   "levers": [
     {
       "lever_id": "PAY-BANDS",
@@ -69,14 +69,14 @@
       "lever_id": "BEN-SALSAC",
       "category": "Benefits & Lifestyle",
       "name": "Salary-sacrifice arrangements",
-      "what_it_is": "Benefits funded from gross pay — pension, cars, technology — sharing the NI saving between employer and employee.",
+      "what_it_is": "Benefits funded from gross pay where the tax rules still allow it — pension, cycle-to-work, ultra-low-emission cars — with automatic-enrolment compliance preserved and pay never sacrificed below the wage floor.",
       "typical_shape": "Pension by default, with car and technology schemes added where the workforce profile suits.",
       "cost_character": "cost-saving",
       "speed": "next cycle",
       "reversibility": "easy",
       "prevalence_metric_id": "REW26_BEN_SALSAC",
       "register_effect": "Substance",
-      "trade_off": "Lower-paid employees near the wage floor may be unable to participate — the benefit lands unevenly by design."
+      "trade_off": "Since the 2017 rules most other benefits lost the advantage, and the employer chooses whether to share its NI saving; announced NIC changes may cap the pension saving in future."
     },
     {
       "lever_id": "BEN-GRISK",
@@ -89,7 +89,7 @@
       "reversibility": "easy",
       "prevalence_metric_id": "REW_BEN_046",
       "register_effect": "Substance",
-      "trade_off": "Premiums re-rate with claims experience and workforce age — the cost is not fixed at purchase."
+      "trade_off": "At this workforce size schemes are typically unit-rated, so premiums move with workforce age, profile and market rates at each review — the cost is not fixed at purchase."
     },
     {
       "lever_id": "BEN-VOLUNTARY",
@@ -171,11 +171,11 @@
       "name": "A non-cash recognition scheme",
       "what_it_is": "A structured way for colleagues and managers to mark good work, usually with vouchers, points or awards rather than salary.",
       "typical_shape": "A small per-award value with a budget per manager, plus an annual awards moment; spend is visible and capped.",
-      "cost_character": "one-off",
+      "cost_character": "recurring",
       "speed": "this cycle",
       "reversibility": "easy",
       "register_effect": "Substance",
-      "trade_off": "Recognition lands as a substitute for pay if it arrives in a year when base pay moves little — the two are read together, not separately."
+      "trade_off": "An annual award budget, not a one-off: voucher and points awards are taxable earnings unless each sits within the trivial-benefits exemption, so the real cost includes the tax treatment."
     },
     {
       "lever_id": "INC-DIFFERENTIATION",
@@ -206,13 +206,13 @@
       "lever_id": "PEN-CONTRIBUTION",
       "category": "Pensions & Savings",
       "name": "A higher employer contribution",
-      "what_it_is": "Raising what the employer puts in above the auto-enrolment minimum, either across the board or at defined levels.",
+      "what_it_is": "Raising what the employer puts in beyond its current rate towards the market's, either across the board or at defined levels.",
       "typical_shape": "A flat uplift of one or two percentage points, or a new top band for longer-service or senior populations.",
       "cost_character": "recurring",
       "speed": "next cycle",
       "reversibility": "hard",
       "register_effect": "Substance",
-      "trade_off": "Pension spend is invisible to most candidates at offer stage and near-impossible to withdraw later — it buys retention far better than attraction."
+      "trade_off": "Pension spend is rarely weighed by candidates at offer stage, and reducing employer contributions later means consultation and a real goodwill cost — it buys retention far better than attraction."
     },
     {
       "lever_id": "PEN-MATCHING",
@@ -356,7 +356,7 @@
       "name": "Publishing pay ranges internally",
       "what_it_is": "Making the range for a role visible to the people in it, with the rules for moving through it.",
       "typical_shape": "Range and progression rules visible on the intranet or in the HR system, released alongside a manager briefing.",
-      "cost_character": "cost-neutral",
+      "cost_character": "one-off",
       "speed": "next cycle",
       "reversibility": "hard",
       "prevalence_metric_id": "PAYTR_02_131bd412",

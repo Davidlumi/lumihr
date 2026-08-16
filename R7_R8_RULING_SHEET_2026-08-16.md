@@ -87,8 +87,8 @@ None — every referenced metric exists, is active, is the right question type, 
 | Register | Substance |
 | What it is | A structured way for colleagues and managers to mark good work, usually with vouchers, points or awards rather than salary. |
 | Typical shape | A small per-award value with a budget per manager, plus an annual awards moment; spend is visible and capped. |
-| Cost / speed / reversibility | one-off · this cycle · easy |
-| **Trade-off** (printed in the document) | Recognition lands as a substitute for pay if it arrives in a year when base pay moves little — the two are read together, not separately. |
+| Cost / speed / reversibility | recurring · this cycle · easy |
+| **Trade-off** (printed in the document) | An annual award budget, not a one-off: voucher and points awards are taxable earnings unless each sits within the trivial-benefits exemption, so the real cost includes the tax treatment. |
 | Peer take-up read from | — |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
@@ -135,10 +135,10 @@ None — every referenced metric exists, is active, is the right question type, 
 | | |
 |---|---|
 | Register | Substance |
-| What it is | Benefits funded from gross pay — pension, cars, technology — sharing the NI saving between employer and employee. |
+| What it is | Benefits funded from gross pay where the tax rules still allow it — pension, cycle-to-work, ultra-low-emission cars — with automatic-enrolment compliance preserved and pay never sacrificed below the wage floor. |
 | Typical shape | Pension by default, with car and technology schemes added where the workforce profile suits. |
 | Cost / speed / reversibility | cost-saving · next cycle · easy |
-| **Trade-off** (printed in the document) | Lower-paid employees near the wage floor may be unable to participate — the benefit lands unevenly by design. |
+| **Trade-off** (printed in the document) | Since the 2017 rules most other benefits lost the advantage, and the employer chooses whether to share its NI saving; announced NIC changes may cap the pension saving in future. |
 | Peer take-up read from | `REW26_BEN_SALSAC` · Pensions & Savings · *Is pension offered via salary sacrifice by default?* |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
@@ -150,7 +150,7 @@ None — every referenced metric exists, is active, is the right question type, 
 | What it is | Life assurance, income protection and critical illness bought together as an insured bundle. |
 | Typical shape | Life cover for all staff with income protection layered on for salaried populations. |
 | Cost / speed / reversibility | recurring · next cycle · easy |
-| **Trade-off** (printed in the document) | Premiums re-rate with claims experience and workforce age — the cost is not fixed at purchase. |
+| **Trade-off** (printed in the document) | At this workforce size schemes are typically unit-rated, so premiums move with workforce age, profile and market rates at each review — the cost is not fixed at purchase. |
 | Peer take-up read from | `REW_BEN_046` · Health & Protection · *Does your organisation offer income protection?* |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
@@ -321,10 +321,10 @@ None — every referenced metric exists, is active, is the right question type, 
 | | |
 |---|---|
 | Register | Substance |
-| What it is | Raising what the employer puts in above the auto-enrolment minimum, either across the board or at defined levels. |
+| What it is | Raising what the employer puts in beyond its current rate towards the market's, either across the board or at defined levels. |
 | Typical shape | A flat uplift of one or two percentage points, or a new top band for longer-service or senior populations. |
 | Cost / speed / reversibility | recurring · next cycle · hard |
-| **Trade-off** (printed in the document) | Pension spend is invisible to most candidates at offer stage and near-impossible to withdraw later — it buys retention far better than attraction. |
+| **Trade-off** (printed in the document) | Pension spend is rarely weighed by candidates at offer stage, and reducing employer contributions later means consultation and a real goodwill cost — it buys retention far better than attraction. |
 | Peer take-up read from | — |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
@@ -423,7 +423,7 @@ None — every referenced metric exists, is active, is the right question type, 
 | Register | Approach |
 | What it is | Making the range for a role visible to the people in it, with the rules for moving through it. |
 | Typical shape | Range and progression rules visible on the intranet or in the HR system, released alongside a manager briefing. |
-| Cost / speed / reversibility | cost-neutral · next cycle · hard |
+| Cost / speed / reversibility | one-off · next cycle · hard |
 | **Trade-off** (printed in the document) | Publishing ranges surfaces every anomaly at once — the correction budget and the manager script both need to exist before the release, not after. |
 | Peer take-up read from | `PAYTR_02_131bd412` · Pay · *Are pay bands or salary ranges visible to employees?* |
 | **Your ruling** | KEEP / EDIT / CUT — |
