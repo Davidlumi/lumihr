@@ -18870,3 +18870,42 @@ five judgement calls left for David.**
   unstated, rather than saying so.
 
 Suite 15/15. 30 sheets, contents verified pointing true on every line, none over A4. ?v=656.
+
+## 2026-08-16 (l) — The five judgement calls, actioned
+
+All five items the persona review left open are now closed.
+
+**1. An absent provision is closed by adding it.** The sharpest finding. Wellbeing stated its gap
+as *"no Employee Assistance Programme shows in your responses"* and then offered a framework and
+manager training — the one option that answers that sentence was **unreachable**, because a
+coherence rule drew Approach levers whatever its status. A coherence rule covers two different
+failures: `contradicted` means practice runs *against* intent (an Approach problem), while
+`behind_intent` almost always means a provision is **absent**. A shortfall now draws both
+registers; a contradiction still draws Approach alone. Wellbeing's options lead with *"An
+employee assistance programme"*.
+
+**2. The plan no longer contradicts its own domain section.** It read *"Incentives & recognition
+aims above market yet nothing is evidenced there"* three pages after that section reported 17
+benchmarked metrics. The payload now carries `evidence_by_area` and the prompt forbids the claim;
+the summary cites counts instead — *"Incentives & Recognition (17 metrics benchmarked, reading
+below)"*.
+
+**3. Signals lead with what agrees with the verdict.** Materiality ordering is right for a triage
+feed; on a board page a below-market area whose only shown signal reads above market looks like
+the evidence refuting the verdict. Where none agrees — Wellbeing has exactly one — the page now
+says the signals are the most material, not the most representative, and points at the split.
+
+**4. The tally reconciles, or explains why it doesn't.** The table counts areas, the figures
+beneath count commitments (one per position plus one per coherence check). Both labelled, with a
+line explaining the difference.
+
+**5. Two sections that under-delivered now say so** — unstated principles and unrecorded
+constraints are stated as such rather than silently omitted.
+
+**Three htm traps hit while doing this**, each now commented at the site: a spread inside `${}`,
+a bare `>` comparison inside `${}` (htm reads it as the tag closing), and angle brackets inside a
+`${/* comment */}`. Plus a stray paren left from converting a `flatMap`. Worth knowing: htm
+reports all four as *"Missing } in template expression"*, which points nowhere near the cause.
+
+32 sheets, none over A4, contents verified pointing true. `qa_strategy_align` 45/45 with both
+register behaviours asserted. Suite 15/15. ?v=664.
