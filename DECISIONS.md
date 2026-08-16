@@ -19273,3 +19273,39 @@ rather than reasoning about it.
 pages remain under 55% and each is now structural rather than sloppy: continuation tails, the
 Movement page that is honestly empty until a second collection window exists, and a domain with
 few signals. Suite 15/15. ?v=677.
+
+## 2026-08-16 — The gap was the page grammar
+
+*"Still not Willis Towers Watson quality — look at the project files under research to see examples."*
+
+**There is no research folder.** I searched the repo, Documents, Desktop and Downloads. What I
+found, and what David confirmed as the reference, is lumi's own
+`LUMI_Future_of_Reward_2035_Report_V3` on the Desktop.
+
+Comparing the two made the gap obvious, and it was not polish — it was the **page grammar**. The
+reference is built from **cards on a tinted ground**, two columns, tinted panels for the "so what",
+small-caps pills labelling each card, a source note under every figure, headlines that are
+assertions rather than labels. This document was a white paper: single column, prose and tables.
+**Adding charts to a white paper does not make it a consultancy deliverable** — which is why two
+previous passes moved the needle and did not close it.
+
+**The palette is measured out of the reference PDF, not guessed**: ground `#F3F5F7`, card
+`#FFFFFF` on a `#D6DEE8` edge, navy `#173E6B`, cream `#FFF4EA`, accent `#F28C38`, hairline
+`#E4EAF1`. Scoped to the document and deliberately **not** reconciled with the app's own tokens —
+the reference navy is greener than the app blue and its orange is oranger than lumi coral. Two
+palettes, held apart on purpose.
+
+Every stat band became stat cards with an orange top rule and **a source note under each figure**,
+which is most of why the reference reads as evidence rather than decoration. The domain chart,
+commentary and signal table each became a card, the commentary in cream. Risks became a
+two-column card grid. The decision sought became a navy card.
+
+Cards cost vertical space and the first render spilled four sheets. Metrics came down against the
+print PDF, then a **print-only trim**: at 10.5pt a card's padding is proportionally larger on paper
+than on screen — the same class of trap that produced the original page-count defect, in a new
+form.
+
+**36 pages, zero spills, exhibits sequential, contents intact.** Suite 15/15. ?v=678.
+
+**Still short of the reference:** it uses genuine two-column card layouts on most pages; this is
+still largely single column with cards stacked. That is the next piece.
