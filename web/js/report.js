@@ -60,6 +60,24 @@ const RR_PARTS = [
 const RR_PART = {};
 RR_PARTS.forEach(p => { RR_PART[p.id] = p; });
 
+// Typographic punctuation. A document set in straight typewriter quotes reads as a
+// printout however good the words are, and it is the cheapest mark of care available.
+// Applied to the document's own voice — headings, decks, prose and captions — and to
+// the engine strings that flow through them; never to code, ids or numbers.
+function rrType(s) {
+  if (typeof s !== "string") return s;
+  return s
+    .replace(/(\w)'(\w)/g, "$1’$2")          // don't -> don’t
+    .replace(/(^|[\s(\[—-])'/g, "$1‘")  // an opening single quote
+    .replace(/'/g, "’")                      // anything left closes
+    .replace(/(^|[\s(\[—-])"/g, "$1“")  // an opening double quote
+    .replace(/"/g, "”");
+}
+// htm hands a heading its children as a string or an array of them
+function rrTypeAny(x) {
+  return Array.isArray(x) ? x.map(rrTypeAny) : rrType(x);
+}
+
 // A model part that came back on the deterministic floor still reads as prose, so the
 // document never says which is which inline — the provenance line on the last page does.
 function rrProse(s) { return (s || "").trim(); }
@@ -70,7 +88,7 @@ function rrProse(s) { return (s || "").trim(); }
 // headings beside them use the house sentence case ("Incentives & recognition").
 // Both on one sheet read as sloppy, so prose is normalised to the house form.
 function rrCase(text) {
-  let out = text || "";
+  let out = rrType(text || "");
   ["Incentives & Recognition", "Benefits & Lifestyle", "Time Off & Family",
    "Pensions & Savings", "Health & Protection", "Governance & Transparency"].forEach(c => {
     out = out.split(c).join(domainLabel(c));
@@ -102,7 +120,8 @@ function rrList(items) {
 
 function RrSheet({ page, total, foot, prov, children, cover, divider, head }) {
   return html`
-    <div class=${"pack-page rr-sheet" + (cover ? " rr-cover" : "") + (divider ? " rr-div-sheet" : "")}>
+    <div id=${"rr-sheet-" + page}
+      class=${"pack-page rr-sheet" + (cover ? " rr-cover" : "") + (divider ? " rr-div-sheet" : "")}>
       ${/* the running head — a reader holding sheet 31 of a printed document has no
            other way to know where they are. Cover and part dividers carry their own
            identity and would only be repeating themselves. */ ""}
@@ -123,6 +142,62 @@ function RrSheet({ page, total, foot, prov, children, cover, divider, head }) {
     </div>`;
 }
 
+// WHERE AM I, and how do I get somewhere else. Forty-one sheets is a long scroll, and
+// the only way to find a section used to be to scroll past everything before it.
+//
+// Its OWN component, deliberately: reading position changes on every scroll tick, and
+// holding that state in the page meant re-rendering all forty-one sheets each time. The
+// readout ran a whole probe behind because the re-render could not keep up — the visible
+// symptom of a real cost. Nothing outside this component re-renders while you scroll.
+function RrNav({ items, total, onGo }) {
+  const [here, setHere] = useState(0);
+  useEffect(() => {
+    // IntersectionObserver, not a scroll listener. The hand-rolled version measured
+    // rects on scroll + a trailing timeout and still went stale: a fast jump fires one
+    // event, sometimes before the browser has committed the offset, and once you are
+    // stationary nothing arrives to correct it. The observer is told when visibility
+    // changes rather than having to guess, costs nothing while you are not scrolling,
+    // and cannot miss the event that matters.
+    const sheets = [].slice.call(document.querySelectorAll(".rr-sheet"));
+    if (!sheets.length || typeof IntersectionObserver === "undefined") return undefined;
+    // The observer is the TRIGGER; the measurement is taken fresh from the DOM each
+    // time. Remembering each entry's height instead looked tidier and was wrong: on a
+    // long jump the destination reports itself but a departing sheet does not always
+    // report its exit, so its stale height kept winning and the readout sat on "Cover"
+    // while you were on sheet 12. Recomputing costs 41 rects on a visibility change.
+    const measure = () => {
+      const vh = window.innerHeight;
+      let best = -1, cur = 0;
+      for (let i = 0; i < sheets.length; i++) {
+        const r = sheets[i].getBoundingClientRect();
+        if (r.bottom < 0 || r.top > vh) continue;
+        const shown = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+        if (shown > best) { best = shown; cur = i; }
+      }
+      setHere(cur);
+    };
+    const io = new IntersectionObserver(measure,
+      { threshold: [0, 0.02, 0.25, 0.5, 0.75, 1] });
+    sheets.forEach(s => io.observe(s));
+    return () => io.disconnect();
+  }, [total]);
+  const cur = items[here] || {};
+  return html`
+    <div class="rr-nav">
+      <span class="rr-nav-at">
+        <b>${cur.cover ? "Cover" : cur.divider ? "Part " + cur.pt : rrType(cur.title || "")}</b>
+        <i>${here + 1} / ${total}</i>
+      </span>
+      <select class="ctl rr-nav-go" aria-label="Jump to a section"
+        value=${String(here)} onChange=${e => onGo(Number(e.target.value))}>
+        ${items.filter(x => x.cover || x.divider || (x.title && !x.cont)).map(x => html`
+          <option key=${x.i} value=${String(x.i)}>${x.cover ? "Cover"
+            : x.divider ? "Part " + x.pt + " — " + x.partTitle
+            : (x.no ? x.no + "  " : "") + rrType(x.title)}</option>`)}
+      </select>
+    </div>`;
+}
+
 // Exhibit caption. Every table in a consultancy document is numbered and named, so it
 // can be referred to in a meeting ("look at exhibit 12") and so a reader can tell a
 // figure that was produced from one that was asserted. Numbers are DERIVED from a walk
@@ -130,7 +205,7 @@ function RrSheet({ page, total, foot, prov, children, cover, divider, head }) {
 function RrEx({ ex }) {
   if (!ex) return null;
   return html`
-    <div class="rr-ex"><span class="rr-ex-n">Exhibit ${ex.n}</span>${ex.cap}</div>`;
+    <div class="rr-ex"><span class="rr-ex-n">Exhibit ${ex.n}</span>${rrType(ex.cap)}</div>`;
 }
 
 function RrH({ n, children, sub, edit }) {
@@ -138,10 +213,10 @@ function RrH({ n, children, sub, edit }) {
     <div class="rr-h">
       ${n ? html`<span class="rr-h-n">${n}</span>` : null}
       <div class="rr-h-row">
-        <h2 class="rr-h-t">${children}</h2>
+        <h2 class="rr-h-t">${rrTypeAny(children)}</h2>
         ${edit || null}
       </div>
-      ${sub ? html`<p class="rr-h-s">${sub}</p>` : null}
+      ${sub ? html`<p class="rr-h-s">${rrTypeAny(sub)}</p>` : null}
     </div>`;
 }
 
@@ -158,7 +233,7 @@ function RrProse({ value, generated, sectionKey, canEdit, onSave, className }) {
   if (!editing) {
     return html`
       <div class=${"rr-prose" + (edited ? " is-edited" : "")}>
-        <p class=${className || "rr-p"}>${rrProse(shown)}</p>
+        <p class=${className || "rr-p"}>${rrType(rrProse(shown))}</p>
         ${canEdit ? html`
           <div class="rr-prose-tools no-print">
             ${edited ? html`<span class="rr-edited">Your wording</span>` : null}
@@ -240,7 +315,7 @@ const RR_DRIVES = {
   family_position: "The family-support bar the organisation is held to.",
   primary_objective: "The lens the whole document is read through.",
   budget_direction: "Whether saving or investment is weighed more heavily.",
-  acute_pressure: "The operating condition the year's choices are made in.",
+  acute_pressure: "The operating condition the year’s choices are made in.",
   risk_appetite: "How early the organisation expects to move on emerging practice.",
 };
 
@@ -570,6 +645,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   pages.forEach(p => { if (p.divider && LIVE_PARTS.indexOf(p.pt) < 0) LIVE_PARTS.push(p.pt); });
 
   const TOTAL = pages.length;
+  // Jump to a sheet. Screen-only behaviour — the printed document keeps its page
+  // numbers and needs no help; on screen a contents you cannot click is a tease.
   // Section numbers derive from the page list rather than being written into each body:
   // once the two spines merge into one document, hardcoded "02"s collide and skip.
   const SEC_NO = {};
@@ -611,6 +688,30 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         break;
     }
   });
+
+  // a flat, cheap description of the spine for the navigator — it must not need
+  // SEC_NO, secKey or the page objects themselves
+  const navItems = pages.map((p, i) => ({
+    i: i, cover: !!p.cover, divider: !!p.divider, pt: p.pt,
+    partTitle: (RR_PART[p.pt] || {}).title,
+    title: p.title, no: SEC_NO[secKey(p)],
+    cont: !!(p.title && /\(cont\.\)$/.test(p.title)),
+  }));
+  const goSheet = (i) => {
+    const el = document.getElementById("rr-sheet-" + (i + 1));
+    if (!el) return;
+    // Smooth is delightful across two sheets and disorienting across thirty — jumping
+    // from the contents to sheet 36 is a 38,000px ride past everything the reader
+    // deliberately skipped. Smooth when it is near, instant when it is not, and never
+    // animated for a reader who has asked the system not to.
+    const near = Math.abs(el.getBoundingClientRect().top) < window.innerHeight * 3;
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: (near && !still) ? "smooth" : "auto", block: "start" });
+    // and a brief cue on the sheet you landed on, so the eye knows where it arrived
+    el.classList.remove("rr-landed");
+    void el.offsetWidth;                       // restart the animation, not queue it
+    el.classList.add("rr-landed");
+  };
 
   // ---- deterministic defaults for the board-paper sections ------------------
   // Composed from the document's own figures, so they are instant, always grounded
@@ -799,9 +900,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <p class="rr-div-lead">${P_.lead}</p>
           <div class="rr-div-list">
             ${inside.map(x => html`
-              <div key=${x.n} class="rr-toc-row">
-                <span><i>${SEC_NO[secKey(x.p)]}</i>${x.p.title}</span><b>${x.n}</b>
-              </div>`)}
+              <button key=${x.n} type="button" class="rr-toc-row rr-jump"
+                onClick=${() => goSheet(x.n - 1)}>
+                <span><i>${SEC_NO[secKey(x.p)]}</i>${rrType(x.p.title)}</span><b>${x.n}</b>
+              </button>`)}
           </div>
         </div>`;
     }
@@ -852,10 +954,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               if (!p.title || /\(cont\.\)$/.test(p.title)) return;
               rows.push({ kind: "sec", no: SEC_NO[secKey(p)], title: p.title, n: i + 1, inPart: !!p.pt });
             });
+            // buttons, not divs: a 41-sheet contents you cannot click is a tease on
+            // screen. Styled as plain rows so the printed page is unchanged. (A plain
+            // JS comment — this block is an arrow body, NOT a template literal, and an
+            // htm-style ${/* … */} here is a syntax error that kills the whole file.)
             return rows.map((r, i) => r.kind === "part"
-              ? html`<div key=${i} class="rr-toc-part"><span>Part ${r.id} — ${r.title}</span><b>${r.n}</b></div>`
-              : html`<div key=${i} class=${"rr-toc-row" + (r.inPart ? " is-in" : "")}>
-                  <span><i>${r.no}</i>${r.title}</span><b>${r.n}</b></div>`);
+              ? html`<button key=${i} type="button" class="rr-toc-part rr-jump"
+                  onClick=${() => goSheet(r.n - 1)}>
+                  <span>Part ${r.id} — ${r.title}</span><b>${r.n}</b></button>`
+              : html`<button key=${i} type="button" class=${"rr-toc-row rr-jump" + (r.inPart ? " is-in" : "")}
+                  onClick=${() => goSheet(r.n - 1)}>
+                  <span><i>${r.no}</i>${rrType(r.title)}</span><b>${r.n}</b></button>`);
           })()}
         </div>
       </div>`;
@@ -1208,7 +1317,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
         </ol>
-        ${part === parts - 1 ? html`<p class="rr-p rr-sm">${plan.basis}${plan.built_at ? " Built " + fmtDate(plan.built_at) + "." : ""}</p>` : null}`
+        ${part === parts - 1 ? html`<p class="rr-p rr-sm">${rrType(plan.basis)}${plan.built_at ? " Built " + fmtDate(plan.built_at) + "." : ""}</p>` : null}`
       : html`<p class="rr-p rr-muted">${planBusy
           ? "Sequencing your gaps into a plan…"
           : "No plan is stored yet. Use Rebuild plan above to sequence these gaps into actions with their indicative return."}</p>`}`;
@@ -1269,7 +1378,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       : html`
         <div class="rr-empty-note">
           <h3 class="rr-sh">What will appear here</h3>
-          <p class="rr-p">${"Once a second collection window is aggregated, this page carries each area's "
+          <p class="rr-p">${"Once a second collection window is aggregated, this page carries each area’s "
             + "position then and now, and separates the two reasons a position can change: your own "
             + "package moving, or the peer group moving around you. Both matter to a board and they "
             + "are routinely confused."}</p>
@@ -1322,12 +1431,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <h3 class="rr-sh">Where the figure comes from</h3>
         <${RrEx} ex=${EXH["cost"]} />
         <table class="rr-table tight">
-          <thead><tr><th>Metric</th><th>Area</th><th>To median</th><th>To upper quartile</th></tr></thead>
+          <thead><tr><th>Metric</th><th>Area</th><th class="num">To median</th><th class="num">To upper quartile</th></tr></thead>
           <tbody>${(money.items || []).map(it => html`
             <tr key=${it.label}><td><b>${it.label}</b><br /><span class="rr-sm">${it.formula}</span></td>
               <td class="rr-sm">${domainLabel(it.category || "")}</td>
-              <td>${gbp(it.to_p50_gbp)}${it.direction === "saving" ? html` <span class="rr-sm">saving</span>` : ""}</td>
-              <td class="rr-sm">${gbp(it.to_p75_gbp)}</td></tr>`)}</tbody>
+              <td class="num">${gbp(it.to_p50_gbp)}${it.direction === "saving" ? html` <span class="rr-sm">saving</span>` : ""}</td>
+              <td class="num rr-sm">${gbp(it.to_p75_gbp)}</td></tr>`)}</tbody>
         </table>` : null}
       ${(money.assumptions && Object.keys(money.assumptions).length) ? html`
         <h3 class="rr-sh">The assumptions behind it</h3>
@@ -1390,9 +1499,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
       same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
       counts against the commitments your strategy makes — never as a score, index or grade.</p>
-      <p class="rr-p">Where a commitment's evidence is unanswered, this document says so rather than
+      <p class="rr-p">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
-      Indicative figures come from lumi's cost model on its published assumptions, and appear only where that
+      Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
       model has a figure for the area in question.</p>
       <p class="rr-p">Written commentary is generated from the figures in this document and validated before
       it is shown: it cannot introduce a number that is not here, direct you to act, or make a legal
@@ -1412,6 +1521,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <div class="row rr-bar-l">
           ${hideBack ? null : html`<button class="btn quiet" onClick=${() => nav(kind === "plan" ? "/plan" : "/strategy")}>← Back</button>`}
           ${chips || null}
+          ${/* reading position + jump — its own component, so scrolling never
+               re-renders the document behind it */ ""}
+          <${RrNav} items=${navItems} total=${TOTAL} onGo=${goSheet} />
         </div>
         <div class="row">
           ${aiWaiting ? html`<${Chip} kind="accent">Writing commentary…<//>` : null}
@@ -1429,7 +1541,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           divider=${p.divider}
           head=${p.cover || p.divider ? null : {
             left: K.title + " · " + orgName,
-            right: p.pt ? "Part " + p.pt + " · " + (RR_PART[p.pt] || {}).title : (p.title || "") }}
+            right: p.pt ? "Part " + p.pt + " · " + (RR_PART[p.pt] || {}).title : rrType(p.title || "") }}
           prov=${i === TOTAL - 1 ? prov : null}>
           <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} levSlice=${p.levSlice} levPart=${p.levPart} levParts=${p.levParts} ptId=${p.pt} />
         <//>`)}

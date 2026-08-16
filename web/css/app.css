@@ -5093,6 +5093,38 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-ex-n { font-family: var(--font-head); font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--blue-deep); margin-right: 8px; }
 
+/* ---- reading position + jump (screen only) ------------------------------------
+   A 41-sheet scroll with no way to find a section is the one thing the printed
+   version does better than the screen. This closes that. */
+.rr-nav { display: inline-flex; align-items: center; gap: var(--s2); margin-left: var(--s2);
+  padding-left: var(--s3); border-left: 1px solid var(--border); }
+.rr-nav-at { display: inline-flex; align-items: baseline; gap: 6px; max-width: 20em; }
+.rr-nav-at b { font-size: var(--fs-caption); font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rr-nav-at i { font-style: normal; font-size: var(--fs-micro); color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rr-nav-go { max-width: 15em; font-size: var(--fs-caption); padding: 4px 8px; }
+
+/* the sheet you landed on, briefly — so the eye knows where it arrived */
+@keyframes rrLanded { from { box-shadow: 0 0 0 3px var(--blue); }
+                        to { box-shadow: 0 0 0 3px transparent; } }
+.rr-landed { animation: rrLanded 1.1s ease-out; }
+@media (prefers-reduced-motion: reduce) { .rr-landed { animation: none; } }
+@media print { .rr-landed { animation: none; box-shadow: none; } }
+
+/* a contents row is a button on screen and a plain line on paper */
+.rr-jump { display: flex; width: 100%; text-align: left; background: none; border: 0;
+  font: inherit; color: inherit; cursor: pointer; border-radius: 5px;
+  /* the hover tint needs air either side without shifting the text off its column */
+  padding-inline: 6px; margin-inline: -6px;
+  transition: background var(--dur-fast, .12s) ease, color var(--dur-fast, .12s) ease; }
+.rr-jump:hover { background: var(--blue-tint); }
+.rr-jump:hover span { color: var(--blue-deep); }
+.rr-jump:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+@media print {
+  .rr-jump { background: none !important; cursor: auto; border-radius: 0; }
+}
+
 .rr-toc-part { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
   break-inside: avoid; margin: var(--s4) 0 3px; padding-bottom: 3px;
   border-bottom: 1px solid var(--border); font-family: var(--font-head);
@@ -5108,6 +5140,21 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-sched-tbl tbody:first-of-type .rr-hz-row th { padding-top: var(--s2); }
 .rr-hz-row i { font-style: normal; font-size: var(--fs-micro); font-weight: 500;
   color: var(--ink-soft); margin-left: 10px; }
+
+
+/* ---- typographic craft (2026-08-16 polish pass) --------------------------------
+   The details that separate a laid-out document from a typeset one. */
+/* a heading or deck that drops one word onto its own line looks like a mistake */
+.rr-h-t, .rr-div-t, .rr-title { text-wrap: balance; }
+.rr-h-s, .rr-div-lead, .rr-lede, .rr-p, .rr-ex { text-wrap: pretty; }
+/* an exhibit caption stranded at the foot of a page, its table overleaf, is worse
+   than no caption — they are one object */
+.rr-ex { break-after: avoid; page-break-after: avoid; }
+/* figures in a table must not wobble between rows, and money reads right-aligned */
+.rr-table { font-variant-numeric: tabular-nums; }
+.rr-table td.num, .rr-table th.num { text-align: right; white-space: nowrap; }
+/* the whole schedule row-group should stay with at least its first action */
+.rr-sched-tbl tbody { break-inside: avoid; page-break-inside: avoid; }
 
 /* ---- board-paper sections (2026-08-16): the ask, the schedule, cost, risk, the
    not-taken record. All of it prints; only the decision controls are screen-only. */
