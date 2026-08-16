@@ -220,7 +220,7 @@ def matrix_depth_signals(conn, questions, org_id, seen_q):
         sigs.append({
             "lens": spec.get("lens", "retain"), "kind": "depth", "question_id": qid,
             "name": short, "tag": "HIGHER THAN MARKET" if pct >= 50 else "LOWER THAN MARKET", "worth": False,
-            "stand": "reaches %d of %d levels, market median %d" % (mine, nlev, median),
+            "stand": "reaches %d of %d levels, peer median %d" % (mine, nlev, median),
             "value_display": "%d of %d levels" % (mine, nlev),
             "label_short": "%s · reaches %d of %d levels" % (short, mine, nlev),
             "detail": "%s reaches %d of %d role levels — peer median %d" % (short, mine, nlev, median),
@@ -283,7 +283,9 @@ def _compare(mine, med, higher):
     # reads as a name, not a missing word (P3 sweep 2026-08-13)
     _plain = lambda v: bool(re.match(r"^[£$€]?[\d.,%×x+\-–\s]+[a-z%×]*$", v, re.I))
     q = lambda v: v if _plain(v) else "“%s”" % v
-    return "you %s, market median %s" % (q(mine), q(med))
+    # "peer median", matching the costing sections and the method page — the report
+    # mixed the two names for one statistic in a single exhibit (2026-08-16 ship gate)
+    return "you %s, peer median %s" % (q(mine), q(med))
 
 
 def _ordinal_leak(vd):
@@ -294,7 +296,7 @@ def _ordinal_leak(vd):
     m = _re.match(r"^\s*(\d+)\s*/\s*100\s*$", str(vd or ""))
     if not m:
         return None
-    return "you provide none, the market provides it" if m.group(1) == "0" else "below the market median"
+    return "you provide none, the market provides it" if m.group(1) == "0" else "below the peer median"
 
 
 def _signal_position(sig, cls):
@@ -542,7 +544,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 "lens": money_lenses[qid], "kind": "money", "question_id": qid,
                 "name": _label(qid, q, it.get("label")),
                 "tag": "£ GAP", "fav": "bad", "worth": False,
-                "stand": "%s below the market median" % _fmt_gbp(gbp),
+                "stand": "%s below the peer median" % _fmt_gbp(gbp),
                 "value_display": _fmt_gbp(gbp),
                 "label_short": "%s — gap to median" % _short(q.display_title if q else it.get("label", "")),
                 "detail": "%s gap to the peer median" % (q.display_title if q else it.get("label", "")),
@@ -651,7 +653,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             "value_display": "P%d" % round(i["percentile"]),
             "label_short": "%s · %s vs %s" % (_short(i["label"].split(" — ")[0], row_lbl),
                                               i["value_display"], i["p50_display"] or "median"),
-            "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
+            "detail": "%s — %s vs %s peer median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
             "impact": 80000 + (adj - ahead_at) * 100,
         })
         seen_q.add(qid)
@@ -816,7 +818,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 "stand": _compare(i["value_display"], i["p50_display"] or "n/a", high),
                 "value_display": i["value_display"],
                 "label_short": "%s · %s vs %s" % (nm, i["value_display"], i["p50_display"] or "median"),
-                "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
+                "detail": "%s — %s vs %s peer median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
                 "impact": 28000 + abs(i["percentile"] - 50) * 100,
             })
         seen_q.add(qid)
