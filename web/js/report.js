@@ -228,7 +228,20 @@ function RrStats({ items }) {
     <div class="rr-statgrid">
       ${items.filter(Boolean).map((x, i) => html`
         <div key=${i} class="rr-statcard">
-          <b>${x.v}</b><span>${x.k}</span>${x.note ? html`<i>${x.note}</i>` : null}
+          <b class=${x.tone ? "rrst-" + x.tone : ""}>${x.v}</b><span>${x.k}</span>${x.note ? html`<i>${x.note}</i>` : null}
+        </div>`)}
+    </div>`;
+}
+
+// The reference's mechanism device: a navy band of chevron steps. Used once, on the
+// ask page, to show what approval sets in motion — the loop is lumi's actual model,
+// so this is the one diagram the document can draw without inventing anything.
+function RrFlow({ steps }) {
+  return html`
+    <div class="rr-flowband">
+      ${steps.map((st, i) => html`
+        <div key=${i} class="rr-flowstep">
+          <b>${st.t}</b><span>${st.d}</span>
         </div>`)}
     </div>`;
 }
@@ -466,6 +479,8 @@ const RR_DRIVES = {
   risk_appetite: "How early the organisation expects to move on emerging practice.",
 };
 
+// the model's per-finding caveat, stripped at render and stated once per page
+const RR_FRAMING_RE = /Organisations in this position often size up[^.]*\.\s*(A starting point, not advice\.)?\s*/gi;
 const RR_ALIGN_WORD = { on_target: "On strategy", ahead: "Above strategy", behind: "Below strategy" };
 const RR_POS_WORD = { below: "below market", at: "on market", above: "above market" };
 const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
@@ -738,12 +753,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   } else if (wantsPlan) {
     PART("B");
     P("Position at a glance", "position");
-    // Movement belongs with the position read, not at the back. It cannot be built
-    // today — there is one aggregated collection window — and the page says so rather
-    // than the absence being discovered by whoever asks "are we improving?".
-    P("Movement since the last review", "trend");
+    // Movement only earns its own page once a second collection window exists. Until
+    // then it is one honest card on the Position page — a full page of "what will
+    // appear here" was dead weight in a client paper (2026-08-16 panel, 3 reviewers).
+    if (trend.available) P("Movement since the last review", "trend");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
-      Prun("Findings", "findings", dg.parts.findings, () => 2, 8);
+      Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
     // THE MAIN PART OF THE REPORT (David 2026-08-16): one dedicated section per domain
     // — its count and market position, its signals, a commentary on how it sits against
     // the market, and the recommendations that follow. The flat "gaps by area" run is
@@ -755,7 +770,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // Split only when there is a real options table to show. An OVERSPEND domain's
       // "what follows" is a statement and a two-line explanation — printing that on its
       // own A4 sheet used 17% of the page and read as padding in a board document.
-      const allLev = (b.options || []).flatMap(o => (o.levers || []));
+      // deduped: one lever offered against two commitments is ONE option to a reader,
+      // and printing it twice cost the document its credibility (2026-08-16 panel)
+      const _seenLev = new Set();
+      const allLev = (b.options || []).flatMap(o => (o.levers || []))
+        .filter(l => !_seenLev.has(l.lever_id) && _seenLev.add(l.lever_id));
       const hasFollow = (b.gaps || []).length > 0 && allLev.length > 0;
       // A coherence shortfall now draws BOTH registers, so an options table can run to ten
       // rows and overflow its sheet. Chunk at five — the same weight discipline the rest of
@@ -776,7 +795,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // which reads as a to-do list rather than a programme (2026-08-16).
     // weight = the group heading plus a row per action, so a ten-action programme
     // splits at a sheet boundary instead of running past A4
-    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 10);
+    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 6);
     if (plan && (plan.actions || []).length) {
       // budget 5, not 7: the first sheet also carries the summary lede, and three
       // actions with their why + return overran A4 by ~55px
@@ -784,7 +803,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const ordered = schedule.length
         ? schedule.reduce((a, s) => a.concat(s.actions), [])
         : plan.actions;
-      Prun("The plan", "planp", ordered, () => 2, 8);
+      Prun("The plan", "planp", ordered, () => 2, 5);
     } else {
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
     }
@@ -875,10 +894,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         if (p.half === "read" && (b.signals || []).length
             && !((b.gaps || []).length && (p.parts || 1) === 1))
           exReg("dom-sig:" + b.name, "Signals in " + domainLabel(b.name) + ", with your value and how each one reads against " + cutLabel);
-        if (p.half === "follow")
+        if (p.half === "follow") {
+          // three reviewers: seven captions promised "the decision on each" over tables
+          // with no decision column — the clause now appears only when one is recorded
+          const _hasDec = (b.options || []).some(o => (o.levers || [])
+            .some(l => decisions[decKey(b.name, l.lever_id)]));
           exReg("dom-opt:" + b.name + ":" + p.levPart,
-                "Options against the " + domainLabel(b.name) + " gaps, and the decision on each"
+                "Options against the " + domainLabel(b.name) + " gaps"
+                + (_hasDec ? ", and the decision recorded on each" : "")
                 + ((p.levParts || 1) > 1 ? " (" + ((p.levPart || 0) + 1) + " of " + p.levParts + ")" : ""));
+        }
         break;
     }
   };
@@ -936,17 +961,25 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            + "organisation's own data currently sits in line with the position it has set, so no "
            + "corrective action is being sought.");
     }
+    // the approval's own cost, from its actions' cost characters — never the envelope
+    const nowActs = ((plan || {}).actions || []).filter(x => x.horizon_bucket === "this cycle");
+    const recurring = nowActs.filter(x => x.cost_character === "recurring").length;
+    const ownCost = !nowActs.length ? ""
+      : recurring === 0
+        ? (n === 1 ? "The action itself is cost-neutral or self-funding — no new recurring spend is being approved. "
+                   : "The actions themselves are cost-neutral or self-funding — no new recurring spend is being approved. ")
+        : recurring + " of the " + nowActs.length + " carries recurring spend, priced in What it costs. ";
     const cost = money.investment_to_p50_gbp
-      ? ("Where lumi can price a change, the indicative cost of moving to the peer median is "
-         + gbp(money.investment_to_p50_gbp) + " a year on the assumptions published in this document"
-         + (nPriced < nGaps ? "; that figure covers " + nPriced + " of the " + nGaps + " gaps, and the "
-            + "rest are changes lumi does not put a number against." : "."))
-      : ("None of the actions below carries an indicative cost from lumi's model: their effect is on "
-         + "retention, fairness and how the package reads rather than on a figure this document can state.");
+      ? ("Separately, the indicative cost of closing every gap lumi can price is "
+         + gbp(money.investment_to_p50_gbp) + " a year"
+         + (nPriced < nGaps ? " — that envelope covers " + nPriced + " of the " + nGaps
+            + " gaps and is not the cost of this approval." : "."))
+      : "None of the gaps in this review carries a price from lumi's model.";
     return "The board is asked to approve " + n + " action" + (n === 1 ? "" : "s")
       + " scheduled for this cycle" + (areas.length ? ", covering " + rrList(areas) : "")
-      + ". " + (nGaps ? ("They are the first cycle of a response to " + nGaps + " gap"
-        + (nGaps === 1 ? "" : "s") + " this review found between the strategy as stated and the "
+      + ". " + ownCost
+      + (nGaps ? ((n === 1 ? "It is the first step of a response to " : "They are the first cycle of a response to ")
+        + nGaps + " gap" + (nGaps === 1 ? "" : "s") + " this review found between the strategy as stated and the "
         + "organisation's own benchmarked position. ") : "") + cost;
   };
   const costProse = () => {
@@ -1085,6 +1118,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <h1 class="rr-title">${orgName}</h1>
         <div class="rr-subtitle">${K.title}</div>
         <p class="rr-lead">${K.lead}</p>
+        ${/* the reference cover leads with a stat wall — white cards on the navy field.
+             Position, gaps and the priced envelope, each with its basis, so the cover
+             answers "where do we stand" before the reader opens the paper. */ ""}
+        ${hasPosition && wantsPlan ? html`
+          <${RrStats} items=${[
+            { v: domains.length, k: "areas benchmarked", note: "against " + cutLabel },
+            { v: gaps.length, k: gaps.length === 1 ? "commitment off strategy" : "commitments off strategy",
+              note: "your data vs your stated strategy" },
+            { v: money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "£0",
+              k: "priced gap envelope, a year",
+              note: (money.items || []).length === 1 ? (money.items[0].label || "") + " — see What it costs"
+                    : "see What it costs" },
+          ]} />` : null}
         ${/* the metadata block a consultancy cover carries: who produced it, when, on
              what basis, and what may be done with it. No "Prepared for" row — the
              organisation's name is the hero line directly above, and naming it twice
@@ -1099,7 +1145,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div><span>Data collection</span>${(al.snapshot || {}).window || "Current window"}${
             (al.snapshot || {}).date ? " · " + al.snapshot.date : ""}</div>
           ${doc.comparator_label && doc.comparator_label !== cutLabel
-            ? html`<div><span>Stated comparator</span>${doc.comparator_label}</div>` : null}
+            ? html`<div><span>Stated peer group</span>${doc.comparator_label}</div>` : null}
           ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
           <div><span>Classification</span>Private ${"&"} confidential</div>
         </div>
@@ -1139,23 +1185,30 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
             rrCase((wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
             || (cm && cm.parts && cm.parts.reading) || "")} />`}
-      ${/* a 0/0 gap tally before any data reads as "all is well" — it means "we cannot
-           tell yet", so the pre-data variant counts what IS known instead */ ""}
-      <${RrStats} items=${hasPosition ? [
-        { v: domains.length, k: "areas benchmarked", note: "against " + cutLabel },
-        { v: gaps.length, k: gaps.length === 1 ? "gap to close" : "gaps to close",
-          note: "your data vs your stated strategy" },
-        { v: holding.length, k: holding.length === 1 ? "commitment holding" : "commitments holding",
-          note: "evidenced by your own answers" },
-      ] : [
+      ${/* the stat wall lives on the COVER now — repeating it here was the "stat
+           readout" the Mercer reviewer failed the page for. Pre-data, the wall is
+           not on the cover, so the three what-IS-known counters stay. */ ""}
+      ${hasPosition ? null : html`<${RrStats} items=${[
         { v: commitments.length, k: "commitments stated", note: "from your reward strategy" },
         { v: Math.round((al.data_state || {}).core_pct || 0) + "%", k: "of your data in",
           note: (al.data_state || {}).answered + " of " + (al.data_state || {}).basis_total + " core metrics" },
         { v: "—", k: "position", note: "awaiting your data" },
-      ]} />
+      ]} />`}
       ${/* two columns: a per-domain report runs to ~20 sections and a single-column
            contents list pushed this sheet past A4 (2026-08-16). Continuation pages
            are dropped — a reader wants the section, not every sheet it spans. */ ""}
+      ${hasPosition && wantsPlan ? html`
+        <${RrCard} tone="navy" label="What this paper concludes">
+          <p class="rr-p">${rrType(
+            "Read against the stated strategy, " + gaps.length + " of " + commitments.length
+            + " commitments sit off strategy across " + domains.length + " benchmarked areas. "
+            + "The board is asked to " + rrCase(theAsk.decision || "note this review") + ". "
+            + (money.investment_to_p50_gbp
+               ? "The one envelope lumi can price — closing every priced gap to the peer median — is "
+                 + gbp(money.investment_to_p50_gbp) + " a year; it is not the cost of this approval."
+               : "No gap in this review carries a price from lumi's model."))}</p>
+        <//>` : null}
+
       ${/* two columns: a per-domain report runs to ~25 sections and a single-column
            contents pushed this sheet past A4 (2026-08-16). Continuation sheets are
            dropped — a reader wants the section, not every sheet it spans. Grouped by
@@ -1219,10 +1272,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             ? "The strategy as the organisation states it. Every position here is a choice; nothing on these two pages is a measurement."
             : "Continued: how the package is shaped, how performance is differentiated, and how reward is governed and communicated."}>The strategy${kindOf === "story2" ? " (cont.)" : ""}<//>
         ${stm === null ? html`<p class="rr-p rr-muted">Writing the strategy narrative…</p>`
-          : S.map(sec => html`
-            <${RrCard} key=${sec.k} head=${sec.t}>
-              <${Prose} k=${sec.k} generated=${rrCase(P6[sec.k] || "")} />
-            <//>`)}`;
+          : html`
+            ${/* one full-width card, then a pair — the reference varies its rhythm and
+                 fifteen identical stacks was the creative director's chief complaint */ ""}
+            <${RrCard} head=${S[0].t}>
+              <${Prose} k=${S[0].k} generated=${rrCase(P6[S[0].k] || "")} />
+            <//>
+            <div class="rr-grid2">
+              ${S.slice(1).map(sec => html`
+                <${RrCard} key=${sec.k} head=${sec.t}>
+                  <${Prose} k=${sec.k} generated=${rrCase(P6[sec.k] || "")} />
+                <//>`)}
+            </div>`}`;
     }
 
     if (kindOf === "dials") return html`
@@ -1303,16 +1364,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrEx} ex=${EXH["gov"]} />
       <table class="rr-table">
         <tbody>
-          <tr><td>Status</td><td><b>${ver ? "Approved" : "Draft — not yet approved"}</b>${ver && ver.dirty ? html` <span class="rr-sm">(edits since approval)</span>` : ""}</td></tr>
+          <tr><td>Status</td><td><b>${ver ? "Approved" : "Draft — not yet approved"}</b>${ver && ver.dirty ? html` <span class="rr-sm">— amended since; the amendments await re-approval</span>` : ""}</td></tr>
           ${ver ? html`<tr><td>Version</td><td><b>${ver.version}</b></td></tr>` : null}
+          ${/* every value cell in this record is bold — the print review caught the
+               column mixing weights (2026-08-16) */ ""}
           ${/* a raw login email as "approved by" in a board paper reads as unfinished —
                prefer the recorded body, and mark a bare account as what it is */ ""}
-          ${ver ? html`<tr><td>Approved by</td><td>${ver.approver_body
-            || (ver.approved_by ? html`<span class="rr-sm">Recorded against the account ${ver.approved_by} — no approving body was named</span>` : "—")}</td></tr>` : null}
-          ${ver && ver.approval_date ? html`<tr><td>Date of approval</td><td>${ver.approval_date}</td></tr>` : null}
-          ${ver && ver.effective_date ? html`<tr><td>Effective from</td><td>${ver.effective_date}</td></tr>` : null}
-          ${ver && ver.next_review ? html`<tr><td>Next review</td><td>${ver.next_review}</td></tr>` : null}
-          ${st.completed_at ? html`<tr><td>Strategy captured</td><td>${fmtDate(st.completed_at)}</td></tr>` : null}
+          ${ver ? html`<tr><td>Approved by</td><td><b>${ver.approver_body
+            || (ver.approved_by ? ver.approved_by : "—")}</b>${!ver.approver_body && ver.approved_by
+            ? html`<br /><span class="rr-sm">the approving account; no board or committee was named at approval</span>` : ""}</td></tr>` : null}
+          ${ver && ver.approval_date ? html`<tr><td>Date of approval</td><td><b>${ver.approval_date}</b></td></tr>` : null}
+          ${ver && ver.effective_date ? html`<tr><td>Effective from</td><td><b>${ver.effective_date}</b></td></tr>` : null}
+          ${ver && ver.next_review ? html`<tr><td>Next review</td><td><b>${ver.next_review}</b></td></tr>` : null}
+          ${st.completed_at ? html`<tr><td>Strategy captured</td><td><b>${fmtDate(st.completed_at)}</b></td></tr>` : null}
         </tbody>
       </table>
       <//>
@@ -1331,7 +1395,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const inlineFollow = isRead && (b.gaps || []).length && (parts || 1) === 1;
       const cntStrictFalse = (b.count || {}).strict === false;
       // computed OUTSIDE the template: htm's tokenizer cannot parse a spread inside ${}
-      const _allLev = (b.options || []).reduce((a, o) => a.concat(o.levers || []), []);
+      const _seen2 = new Set();
+      const _allLev = (b.options || []).reduce((a, o) => a.concat(o.levers || []), [])
+        .filter(l => !_seen2.has(l.lever_id) && _seen2.add(l.lever_id));
       const levShown = levSlice ? _allLev.slice(levSlice[0], levSlice[1]) : _allLev;
       // a bare ">" inside ${} makes htm think the tag closed — compare outside the template
       const followSuffix = (!isRead && (levParts || 1) > 1)
@@ -1380,10 +1446,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             note: cnt.peer_n ? "typically " + cnt.peer_n.median + " peers each (" + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
                              : "on your own data" },
           { v: (RR_POS_WORD[pos.verdict] || "no read yet") + (cnt.strict === false ? " *" : ""),
-            k: "market position",
+            k: "market position", tone: pos.verdict ? "v-" + pos.verdict : null,
             note: pos.pctl != null ? "around the " + rrOrdinal(pos.pctl) + " percentile"
                                    : "not enough comparable data" },
-          { v: readWord || "No aim set", k: "against your aim",
+          // sentence-case parity with "below market" beside it (copy editor)
+          { v: readWord ? readWord.charAt(0).toLowerCase() + readWord.slice(1) : "No aim set", k: "against your aim",
+            tone: aim.alignment ? "a-" + aim.alignment : null,
             note: aim.stance ? "you aim " + RR_STANCE_WORD[aim.stance] : "read neutrally" },
         ]} />
         ${cnt.strict === false ? html`<p class="rr-src">${"* indicative — fewer than "
@@ -1436,10 +1504,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               + "The split at the top of this page is the fuller picture."}</p>` : null}` : null}`}
 
         ${isRead ? null : html`
-          ${/* the sheet heading already names the domain and says "what follows";
-               repeating it as an h3 underneath said the same thing twice */ ""}
-          ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
+          ${/* the gap statements in a sky card, the options in a white one — the follow
+               sheets were the last bare tables once everything else was carded */ ""}
+          ${(levPart || 0) === 0 ? html`
+            <${RrCard} tone="sky" label=${(b.gaps || []).length === 1 ? "The gap" : "The gaps"}>
+              ${b.gaps.map(c => html`<p key=${c.id} class="rr-p rr-sm">${rrCase(c.statement)}</p>`)}
+            <//>` : null}
           ${levShown.length ? html`
+            <${RrCard}>
             <${RrEx} ex=${EXH["dom-opt:" + b.name + ":" + (levPart || 0)]} />
             <table class="rr-table tight">
               <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
@@ -1451,7 +1523,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                     canEdit=${!!canEditDoc} onSave=${(s, w) => saveDecision(b.name, l.lever_id, s, w)} /></td>
                   <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
                   <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
-            </table>`
+            </table><//>`
           : html`<p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>`}`}
 
         ${isRead && !(b.gaps || []).length ? html`
@@ -1510,14 +1582,28 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${/* the key must show the colours the chart actually uses — a single blue dot
            labelled "where you sit" appeared nowhere on the chart, whose dots are
            coloured by verdict (2026-08-16) */ ""}
-      <div class="rrc-key">
-        <span><i class="rrc-k-band"></i>the range lumi reads as on market</span>
-        <span><i class="rrc-k-dot v-below"></i>you, below market</span>
-        <span><i class="rrc-k-dot v-at"></i>on market</span>
-        <span><i class="rrc-k-dot v-above"></i>above market</span>
-        <span><i class="rrc-k-aim"></i>where your strategy aims</span>
-      </div>
+      ${(() => {
+        const present = new Set(domains.map(d => (d.position || {}).verdict).filter(Boolean));
+        const SW = [["below", "verdict: below market"], ["at", "verdict: on market"], ["above", "verdict: above market"]];
+        return html`
+          <div class="rrc-key">
+            <span><i class="rrc-k-band"></i>the range lumi reads as on market</span>
+            ${SW.filter(([k]) => present.has(k)).map(([k, l]) => html`
+              <span key=${k}><i class=${"rrc-k-dot v-" + k}></i>${l}</span>`)}
+            <span><i class="rrc-k-aim"></i>where your strategy aims</span>
+          </div>
+          <p class="rr-src">${"A dot's place is its depth percentile; its colour is lumi's overall "
+            + "verdict, which weighs every metric in the area — so two areas near the band's edge can "
+            + "share a percentile and read differently."}</p>`;
+      })()}
       <//>
+      ${trend.available ? null : html`
+        <${RrCard} tone="sky" label="Movement">
+          <p class="rr-p rr-sm">${"This is lumi's first aggregated collection window ("
+            + ((al.snapshot || {}).window || "current") + "), so every position above is a baseline. "
+            + "Movement — your package shifting, or the peer group shifting around you — becomes "
+            + "measurable when the next window closes, and will appear here as a page of its own."}</p>
+        <//>`}
       <p class="rr-p rr-sm">${"The chart above covers the " + domains.length + " areas lumi "
         + "benchmarks. Elsewhere this document counts COMMITMENTS — an area carries one for the "
         + "position your strategy sets, plus one for each coherence check that applies to it — so "
@@ -1526,14 +1612,33 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "findings") return html`
       <${RrH} n=${num} sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
-      ${(items || []).map((f, i) => html`
-        <div key=${i} class="rr-finding">
-          <div class="rr-finding-h">${rrCase(f.headline)}</div>
-          <p class="rr-p">${rrCase(rrProse(f.detail))}</p>
-          ${f.option ? html`<p class="rr-p rr-opt"><span>Options</span>${rrCase(rrProse(f.option))}</p>` : null}
-        </div>`)}
-      ${part === parts - 1 && (dg.on_plan || []).length ? html`
-        <p class="rr-p rr-sm">Tracking with intent: ${(dg.on_plan || []).map(domainLabel).join(", ")}.</p>` : null}`;
+      ${(items || []).map((f, i) => {
+        // the generic sizing-up caveat printed VERBATIM under every finding — template
+        // output, not judgement (5 of 7 reviewers). Said once, at the foot of the run.
+        const opt = rrProse(f.option || "").replace(RR_FRAMING_RE, "").trim();
+        return html`
+        <${RrCard} key=${i} head=${rrCase(f.headline)}>
+          <p class="rr-p rr-sm">${rrCase(rrProse(f.detail))}</p>
+          ${opt ? html`<p class="rr-p rr-sm rr-opt"><span>Options</span>${rrCase(opt)}</p>` : null}
+        <//>`; })}
+      ${part === parts - 1 ? html`
+        ${(() => {
+          // NOT dg.on_plan: that list means "not flagged by the diagnosis", and it filed
+          // Governance as tracking while the domain pages read it Below strategy — the
+          // WTW reviewer caught the contradiction. The alignment payload is this
+          // document's authority, so the sentence derives from it.
+          const onT = domains.filter(d => (d.target || {}).alignment === "on_target").map(d => d.name);
+          const past = domains.filter(d => (d.target || {}).alignment === "ahead").map(d => d.name);
+          return html`
+            ${onT.length ? html`<p class="rr-p rr-sm">${rrList(onT.map(domainLabel))
+              + (onT.length === 1 ? " is" : " are") + " tracking with the stated intent."}</p>` : null}
+            ${past.length ? html`<p class="rr-p rr-sm">${rrList(past.map(domainLabel))
+              + (past.length === 1 ? " sits" : " sit") + " above a deliberately lower aim — an "
+              + "aim-setting question rather than a delivery gap, taken up in "
+              + (past.length === 1 ? "its" : "their") + " own section" + (past.length === 1 ? "" : "s") + "."}</p>` : null}`;
+        })()}
+        <p class="rr-src">Options above are what organisations in this position commonly weigh — a starting
+        point sized against budget and the roles affected, never a recommendation.</p>` : null}`;
 
     if (kindOf === "gapsp") return html`
       <${RrH} n=${num} sub=${first ? "One entry per area, with what the market commonly does about it and what each option costs you elsewhere." : null}>The gaps, by area${contd}<//>
@@ -1565,6 +1670,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrH} n=${num} sub=${first ? "This is the roll-up of the sections above: every action below is one of the options already set out under its own domain, sequenced across all of them." : null}>The plan${contd}<//>
       ${plan ? html`
         ${first ? html`<${Prose} k="plan_summary" className="rr-lede" generated=${rrCase(plan.summary)} />` : null}
+        ${/* the one section still sitting bare on the ground once everything else was
+             carded (2026-08-16 panel pass) */ ""}
+        <${RrCard}>
         <ol class="rr-plan" start=${start || 1}>
           ${(items || []).map((a, i) => html`
             <li key=${i}>
@@ -1575,7 +1683,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
         </ol>
-        ${part === parts - 1 ? html`<p class="rr-p rr-sm">${rrType(plan.basis)}${plan.built_at ? " Built " + fmtDate(plan.built_at) + "." : ""}</p>` : null}`
+        <//>
+        ${part === parts - 1 ? html`<p class="rr-src">${rrType(plan.basis)}${plan.built_at ? " Built " + fmtDate(plan.built_at) + "." : ""}</p>` : null}`
       : html`<p class="rr-p rr-muted">${planBusy
           ? "Sequencing your gaps into a plan…"
           : "No plan is stored yet. Use Rebuild plan above to sequence these gaps into actions with their indicative return."}</p>`}`;
@@ -1597,9 +1706,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           { v: theAsk.actions_this_cycle || 0,
             k: (theAsk.actions_this_cycle === 1) ? "action this cycle" : "actions this cycle",
             note: (theAsk.areas || []).map(domainLabel).join(", ") || "none scheduled" },
+          // four reviewers read this card as the PRICE OF THE APPROVAL — it is the
+          // envelope of every priced gap, which may not even be in this cycle.
+          // (Plain JS comment: this is an array literal, not a template.)
           { v: money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—",
-            k: money.investment_to_p50_gbp ? "indicative, a year" : "no priced cost",
-            note: nPriced + " of " + nGaps + " gaps priced" },
+            k: money.investment_to_p50_gbp ? "all priced gaps, a year" : "no priced cost",
+            note: "the envelope, not this approval's cost — see What it costs" },
           { v: theAsk.gaps_total || 0,
             k: (theAsk.gaps_total === 1) ? "gap in scope" : "gaps in scope",
             note: "strategy vs your own data" },
@@ -1618,7 +1730,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             + " not part of this approval. They are held deliberately, not overlooked — the "
             + "schedule says when each one is expected to come back."}</p>
           <//>` : null}
-        </div>`;
+        </div>
+        ${hasPosition ? html`
+          <${RrCard} tone="navy" label="What approval sets in motion">
+            <${RrFlow} steps=${[
+              { t: "Approve", d: "the actions for this cycle" },
+              { t: "Deliver", d: "changes land in the package" },
+              { t: "Re-measure", d: "the next collection window" },
+              { t: "Movement", d: "reported against this baseline" },
+              { t: "Next review", d: "the strategy re-tested" },
+            ]} />
+          <//>` : null}`;
     }
 
     // ---- MOVEMENT ---------------------------------------------------------------
@@ -1711,17 +1833,20 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${(money.assumptions && Object.keys(money.assumptions).length) ? html`
         <h3 class="rr-sh">The assumptions behind it</h3>
         <p class="rr-p rr-sm">${"Median salary " + gbp((money.assumptions || {}).median_salary_gbp)
-          + " · cost per leaver " + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0)
-          + "% of salary · agency premium " + ((money.assumptions || {}).agency_premium_pct || 0)
-          + "% · headcount from your stated FTE band. Change any of these in your company details and "
-          + "every figure above moves with it."}</p>` : null}`;
+          + " and your headcount" + ((money.unit_rates || {}).fte ? " (" + money.unit_rates.fte + " FTE, your stated band's midpoint)" : " (from your stated FTE band)")
+          + " drive every figure above. Cost per leaver ("
+          + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0) + "% of salary) and the agency premium ("
+          + ((money.assumptions || {}).agency_premium_pct || 0) + "%) apply only where attrition or agency metrics "
+          + "are priced. Change any input in your company details and the figures move with it."}</p>` : null}`;
 
     // ---- WHAT A POINT IS WORTH -------------------------------------------------
     // Its own section, not a block under "What it costs": it is a different idea
     // (sensitivity, not cost), it earns a contents entry, and together the two ran
     // 41px past A4 on one sheet.
     if (kindOf === "worth") return html`
-      <${RrH} n=${num} sub="What a single percentage point of movement is worth on your headcount — the multiplier for the actions lumi cannot price.">What a point is worth<//>
+      <${RrH} n=${num} sub=${"What a single percentage point of movement is worth on your own headcount — "
+        + ((money.unit_rates || {}).fte ? "{n} FTE, the midpoint of your stated band. ".replace("{n}", String(money.unit_rates.fte)) : "")
+        + "The multiplier for the actions lumi cannot price."}>What a point is worth<//>
       <${Prose} k="worth" className="rr-lede" generated=${worthProse()} />
       <${RrCard}>
       <${RrEx} ex=${EXH["worth"]} />
@@ -1746,13 +1871,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "risks") return html`
       <${RrH} n=${num} sub=${first ? "What this review found that bears on delivery, affordability or the strength of the evidence." : null}>Risks and exposures${contd}<//>
       ${first ? html`<${Prose} k="risks" className="rr-lede" generated=${risksProse()} />` : null}
-      ${(items || []).map(r => html`
-        <div key=${r.id} class="rr-risk">
-          ${/* engine strings carry raw category names ("Incentives & Recognition");
-               every other line on the sheet uses the house sentence case */ ""}
-          <div class="rr-risk-h"><span class="rr-risk-c">${r.class}</span>${rrCase(r.title)}</div>
-          <p class="rr-p">${rrCase(r.detail)}</p>
-        </div>`)}
+      ${/* This conversion was in a batch that ABORTED on a later assertion, so it was
+           silently never written — the fragment-dropping failure mode again: the page
+           shipped in the old bare style while every neighbour was carded (2026-08-16).
+           rrCase because engine strings carry raw category names. */ ""}
+      <div class="rr-grid2">
+        ${(items || []).map(r => html`
+          <${RrCard} key=${r.id} label=${r.class} head=${rrCase(r.title)}>
+            <p class="rr-p rr-sm">${rrCase(r.detail)}</p>
+          <//>`)}
+      </div>
       ${/* the caveat belongs once, on the last sheet of the run — not under every chunk */ ""}
       ${part !== parts - 1 ? null : html`
         <p class="rr-p rr-sm rr-muted">${"lumi can only name exposures its own data shows. Anything outside "
@@ -1808,7 +1936,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     return null;
   };
 
-  const prov = "Positions on " + cutLabel + " · " + (sources.length ? "Commentary: " + sources.join(", ") : "Standard wording");
+  // three reviewers: the old line printed raw engine vocabulary ("commentary
+  // deterministic, findings model") and collided with the running footer
+  const _modeled = sources.filter(x => / model$/.test(x)).length;
+  const prov = "Benchmarked on " + cutLabel + ". "
+    + (_modeled === 0
+       ? "All written commentary uses lumi's standard wording."
+       : _modeled === sources.length
+         ? "Written commentary was generated by lumi's model and validated before display."
+         : "Written commentary was generated by lumi's model where available, validated before display, with standard wording elsewhere.");
 
   return html`
     <div class="rr-wrap">

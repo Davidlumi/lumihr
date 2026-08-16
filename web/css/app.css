@@ -5189,6 +5189,9 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-card-h { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
   color: var(--rr-navy); margin: 0 0 var(--s2); }
 .rr-card.t-navy .rr-card-h { color: #fff; }
+/* the decision banner: its value style predates the navy card and printed near-black
+   on navy — the one contrast failure both print reviewers called (2026-08-16) */
+.rr-card.t-navy .rr-ask-v { color: #fff; }
 
 /* two columns, the reference's own proportion (249pt cards, 17pt gutter) */
 .rr-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin: 0 0 var(--s3); }
@@ -5205,6 +5208,23 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   text-transform: uppercase; color: var(--ink-soft); margin-top: 4px; }
 .rr-statcard i { display: block; font-style: normal; font-size: var(--fs-micro);
   color: var(--ink-faint); margin-top: 5px; }
+/* status is the one place colour should work (2026-08-16 panel): verdict tones the
+   value only, never the label */
+.rr-statcard b.rrst-v-below, .rr-statcard b.rrst-a-behind, .rr-statcard b.rrst-a-ahead { color: var(--neutral-perf-ink); }
+.rr-statcard b.rrst-v-at, .rr-statcard b.rrst-a-on_target { color: var(--favourable-ink); }
+.rr-statcard b.rrst-v-above { color: var(--blue-deep); }
+
+/* the mechanism band: chevron steps reversed out of a navy card (reference device) */
+.rr-flowband { display: flex; gap: 6px; }
+.rr-flowstep { flex: 1; position: relative; background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.22); border-radius: 8px; padding: 8px 10px 9px;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.rr-flowstep:not(:last-child)::after { content: "\2192"; position: absolute; right: -7px; top: 50%;
+  transform: translateY(-50%); color: rgba(255,255,255,.55); font-size: 11px; z-index: 1; }
+.rr-flowstep b { display: block; font-family: var(--font-head); font-size: var(--fs-caption);
+  font-weight: 700; color: #fff; }
+.rr-flowstep span { display: block; font-size: var(--fs-micro); color: rgba(255,255,255,.72);
+  margin-top: 2px; }
 
 /* the sources line the reference carries at the foot of every content page */
 .rr-src { font-size: var(--fs-micro); color: var(--ink-faint); margin: var(--s4) 0 0; }
@@ -5241,6 +5261,7 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-cover .rr-cover-meta div { color: #fff; }
 .rr-cover .rr-cover-meta span { color: rgba(255,255,255,.62); }
 .rr-cover .bp-logo svg { width: 132px; height: auto; }
+.rr-cover .rr-statgrid { margin-top: var(--s5); }
 
 /* the part letter, set large and low-contrast as a device rather than a label */
 .rr-div-sheet .rr-div-in { position: relative; }
