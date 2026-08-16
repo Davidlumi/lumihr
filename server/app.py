@@ -5503,7 +5503,12 @@ async def build_action_plan(request: Request):
         _ev = d.get("position_evidence") or {}
         _n = (_ev.get("polarised") or 0) + (_ev.get("practice") or 0)
         if _n:
+            # the below-count travels WITH the total so the model can state the split.
+            # Without it, "reads below on 37 benchmarked metrics" was the only grounded
+            # sentence available — and a board reader takes that as all 37 failing,
+            # triple the real severity (2026-08-16 ship gate).
             _evidence[d["name"]] = {"metrics_benchmarked": _n,
+                                    "below_market": (d.get("position") or {}).get("below"),
                                     "verdict": (d.get("position") or {}).get("verdict")}
     payload = {"objective": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
                "objective_weights": (st.get("strategy") or {}).get("objective_weights") or {},
@@ -6047,6 +6052,7 @@ async def get_strategy_alignment(request: Request):
         "investment_to_p50_gbp": _sig_money.get("total_investment_to_p50_gbp") or 0,
         "savings_to_p50_gbp": _sig_money.get("total_savings_to_p50_gbp") or 0,
         "fte_known": _sig_money.get("fte_known"),
+        "fte_band": _sig_money.get("fte_band"),
         "priced": len(_mi),
         # every gap, priced or not — the ENVELOPE is only as wide as what lumi can
         # price, and saying so is what keeps the total honest
@@ -6104,18 +6110,57 @@ async def get_strategy_alignment(request: Request):
     # figures are the engine's, the wording around them is the author's to replace.
     _now = [a for a in ((_plan or {}).get("actions") or [])
             if a.get("horizon_bucket") == "this cycle"]
+    # DECISION UNITS (2026-08-16 ship gate): options against the same commitment are
+    # one choice, not separate approvals. The unqualified "approve the 4 actions"
+    # asked the board to approve both members of a pair the schedule itself declares
+    # either/or — a resolution that cannot be minuted. Group by the commitment each
+    # action's lever was offered against, so the ask counts decisions, not rows.
+    _alt_of = {}
+    for _ob in (out.get("options") or []):
+        for _lev in (_ob.get("levers") or []):
+            _alt_of.setdefault(_lev.get("name"), _ob.get("commitment_id"))
+    _units, _by_g = [], {}
+    for a in _now:
+        _g = _alt_of.get(a.get("title")) or ("title:%s" % a.get("title"))
+        if _g in _by_g:
+            _by_g[_g]["titles"].append(a.get("title"))
+        else:
+            _by_g[_g] = {"area": a.get("category"), "titles": [a.get("title")]}
+            _units.append(_by_g[_g])
+    _choices = len([u for u in _units if len(u["titles"]) > 1])
+    # the strategy's approval state decides what a PRE-DATA paper can honestly ask:
+    # "approve the strategy as stated" printed above a record reading Approved asked
+    # the board for a decision the same document says was already taken
+    _ver_state = st.get("version") or None
+    if _now:
+        if _choices:
+            _decision = ("approve the %d action%s scheduled for this cycle — %s"
+                         % (len(_units), "" if len(_units) == 1 else "s",
+                            ("one of them an explicit choice between alternatives"
+                             if _choices == 1 else
+                             "%d of them explicit choices between alternatives" % _choices)))
+        else:
+            _decision = ("approve the action scheduled for this cycle" if len(_now) == 1
+                         else "approve the %d actions scheduled for this cycle" % len(_now))
+    elif out["money"]["gaps_total"]:
+        _decision = "agree how the outstanding gaps are to be addressed"
+    elif _ver_state and _ver_state.get("dirty"):
+        _decision = "re-approve the strategy as amended"
+    elif _ver_state:
+        _decision = "note this document — the strategy stands approved"
+    else:
+        _decision = "approve the strategy as stated"
     out["the_ask"] = {
         "actions_this_cycle": len(_now),
         "areas": sorted({a.get("category") for a in _now if a.get("category")}),
         "investment_to_p50_gbp": out["money"]["investment_to_p50_gbp"],
         "gaps_total": out["money"]["gaps_total"],
         "titles": [a.get("title") for a in _now][:6],
+        # grouped: one entry per gap acted on this cycle; >1 title = an either/or
+        "decision_units": _units,
+        "gaps_covered": len(_units),
         # what the board is being asked to settle, in the document's own vocabulary
-        "decision": (("approve the action scheduled for this cycle" if len(_now) == 1
-                      else "approve the %d actions scheduled for this cycle" % len(_now))
-                     if _now else
-                     ("approve the strategy as stated" if not out["money"]["gaps_total"]
-                      else "agree how the outstanding gaps are to be addressed")),
+        "decision": _decision,
     }
     out["ok"] = True
     return out

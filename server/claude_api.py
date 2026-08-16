@@ -1875,11 +1875,16 @@ Rules, all hard:
    £ where one is supplied, otherwise the retention/engagement/fairness effect the
    lever is known for. Where no figure exists, say so plainly rather than implying one.
 6. No vendor, product or provider names.
+7. When you state how an area reads, give the split, never a bare total: write
+   "reads below overall — X of its N benchmarked metrics sit below market" (both
+   numbers from evidence_by_area), NEVER "reads below on N benchmarked metrics".
+   A reader takes the bare form as all N metrics failing, which overstates it.
 Return JSON only.
-`evidence_by_area` tells you how many metrics are benchmarked in each area and how each
-one reads. NEVER say an area has nothing evidenced, no data, or is unmeasured when it
-appears there — a commitment being unevidenced is not the same as an area being
-unmeasured, and the reader has that area's metric count in front of them.
+`evidence_by_area` tells you how many metrics are benchmarked in each area
+(metrics_benchmarked), how many of them sit below market (below_market), and how the
+area reads overall (verdict). NEVER say an area has nothing evidenced, no data, or is
+unmeasured when it appears there — a commitment being unevidenced is not the same as an
+area being unmeasured, and the reader has that area's metric count in front of them.
 """
 
 PLAN_SCHEMA = {
@@ -1909,7 +1914,7 @@ PLAN_SCHEMA = {
     "required": ["summary", "actions"],
     "additionalProperties": False,
 }
-PLAN_GEN_VERSION = "2026-08-15.plan-v1"
+PLAN_GEN_VERSION = "2026-08-16.plan-v2"      # v2: evidence carries the below-split; rule 7
 
 
 def _plan_numbers(payload):

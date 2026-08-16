@@ -681,6 +681,12 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
         "total_investment_to_p50_gbp": round(total_invest),
         "assumptions": a,
         "fte_known": fte is not None,
+        # the band ITSELF, not just its midpoint: every £ scales on "150 FTE, your
+        # stated band's midpoint" and the document never said which band that was —
+        # the one input a reader could not verify (2026-08-16 ship gate).
+        # Subscript, not .get(): callers pass sqlite3.Row as well as dict (the same
+        # contract the fte lookup above already relies on).
+        "fte_band": org["fte_band"],
         "unit_rates": unit_rates,
         "indicative": True,
     }
