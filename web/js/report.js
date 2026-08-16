@@ -663,6 +663,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // actions", the stat cards counted 4 (option ROWS, not decisions) and the lede
   // mentioned no re-approval at all (QA v2, D014). A decision unit resolves to one
   // action; the extra rows are alternatives inside it.
+  // Which plan action is the FIRST against its gap, computed once over the ordered run
+  // so the gap statement prints once however the plan is chunked across sheets. Derived,
+  // never mutated during render — a per-sheet accumulator would restate it at every
+  // sheet boundary (D068 rebuild).
+  const planFirstOfGap = (() => {
+    const ordered = schedule.length
+      ? schedule.reduce((a, s) => a.concat(s.actions || []), [])
+      : (((plan || {}).actions) || []);
+    const seen = {}, out = {};
+    ordered.forEach(a => {
+      const g = altOf[a.title] || ("t:" + a.title);
+      if (!seen[g]) { seen[g] = 1; out[a.title] = true; }
+    });
+    return out;
+  })();
   const askActs = askUnits.length || theAsk.actions_this_cycle || 0;
   const askRows = (theAsk.titles || []).length || theAsk.actions_this_cycle || 0;
   // askTwoPart lives with hasPosition, further down — a const referenced above its
@@ -802,8 +817,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     P("The strategy", "story1");
     P("The strategy (cont.)", "story2");
     P("How we position reward", "dials");
-    const _hasPrin = (doc.principles || []).length || doc.comparator_cut != null
+    const _hasPrinRaw = (doc.principles || []).length || doc.comparator_cut != null
       || ((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes;
+    // D074 (v3.2): with principles AND constraints both empty, §05 was a page carrying
+    // two absences and one cross-reference, and its principles sentence duplicated the
+    // one §03 already makes. The v3.1 fix merged the boxes and left the duplication
+    // standing. The section now stands down entirely — the comparator fact it carried
+    // is on the cover ("not the basis for the reads") and in Method and basis, so
+    // nothing is lost but the repetition.
+    const _prinEmpty = !((doc.principles || []).length)
+      && !((((doc.constraints || {}).selected) || []).length) && !((doc.constraints || {}).notes);
+    const _hasPrin = _hasPrinRaw && !_prinEmpty;
     if ((doc.population_targets || []).length) {
       if (_hasPrin) P("Principles, peers and constraints", "prin");
       P("Position by employee population", "pops");
@@ -1238,7 +1262,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     bits.push(name + " reads " + (RR_POS_WORD[p.verdict] || p.verdict) + " overall"
       + (p.pctl != null ? ", around the " + rrOrdinal(p.pctl) + " percentile of " + cutLabel : "")
       + ", on " + cnt.metrics + " benchmarked " + (cnt.metrics === 1 ? "metric" : "metrics")
-      + (cnt.peer_n ? " with a median of " + cnt.peer_n.median + " peers behind each" : "") + ".");
+      // D075 (v3.2): one noun for the pool ("profiles", the ruled word, on the cover and
+      // in the colophon) and one for the per-metric base ("comparable organisations")
+      // wherever a base is counted. This site said "peers" two inches from a header
+      // saying "comparable organisations" for the same number.
+      + (cnt.peer_n ? " with a median of " + cnt.peer_n.median
+                      + " comparable organisations behind each" : "") + ".");
     const parts = [];
     if (p.below) parts.push(p.below + " " + (p.below === 1 ? "sits" : "sit") + " below market");
     if (p.at) parts.push(p.at + " " + (p.at === 1 ? "sits" : "sit") + " on it");
@@ -1629,11 +1658,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>
         ${/* the absences are stated once, in a line, rather than as two empty cards */ ""}
         ${!((doc.principles || []).length) || !((cons.selected || []).length || cons.notes) ? html`
-          <p class="rr-src">${rrList([].concat(
-              (doc.principles || []).length ? [] : ["no separate set of reward principles"],
-              ((cons.selected || []).length || cons.notes) ? [] : ["no recorded constraints"]))
-            + " has been written down against this strategy; the positions stated in Part A carry "
-            + "the philosophy in their place."}</p>` : null}`;
+          ${/* D069 (v3.2): the v3.1 fix shipped "no separate set … and no recorded
+               constraints has been written down" — lowercase sentence start, a compound
+               subject on a singular verb, and constraints "written down" when they are
+               recorded. Three errors in twenty-three words on a circulated page. */ ""}
+          <p class="rr-src">${(() => {
+            const miss = [].concat(
+              (doc.principles || []).length ? [] : ["a separate set of reward principles"],
+              ((cons.selected || []).length || cons.notes) ? [] : ["any constraints on what can change"]);
+            return "This strategy records neither " + rrList(miss).replace(/^and /, "")
+              + ". The positions stated in Part A carry the philosophy in their place.";
+          })()}</p>` : null}`;
     }
 
     if (kindOf === "pops") return html`
@@ -1856,10 +1891,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           ${/* a below-market area whose only flagged signal reads above market looks, on a
                board page, like the evidence refuting the verdict. Say why it doesn't. */ ""}
           <//>
+          ${/* D072 (v3.2): the plural template ran against a one-row exhibit — "The
+               signals above … none of them happens to read". The singular branch
+               existed for the ask and not here. */ ""}
           ${pos.verdict && sigShown.length && !sigShown.some(x => x.position === pos.verdict) ? html`
-            <p class="rr-p rr-sm rr-muted">${"The signals above are the most material in "
-              + domainLabel(b.name) + ", which is not the same as the most representative: none of "
-              + "them happens to read " + RR_POS_WORD[pos.verdict] + ", while the area overall does. "
+            <p class="rr-p rr-sm rr-muted">${(sigShown.length === 1
+                ? "The signal above is the most material in " + domainLabel(b.name)
+                  + ", which is not the same as the most representative: it does not read "
+                  + RR_POS_WORD[pos.verdict] + ", while the area overall does. "
+                : "The signals above are the most material in " + domainLabel(b.name)
+                  + ", which is not the same as the most representative: none of them happens to "
+                  + "read " + RR_POS_WORD[pos.verdict] + ", while the area overall does. ")
               + "The split at the top of this page is the fuller picture."}</p>` : null}
           ${/* "(2 of 5)" told the reader something was withheld and not where it lives —
                the Time off sentence was the correct handling, applied everywhere a
@@ -2109,9 +2151,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                 + (upAreas.length === 1 ? " reads" : " read") + " above " + cutLabel
                 + " overall."}</p>` : null}
               ${ups.length ? html`<ul class="rr-ul">${ups.map((s, i) => html`
-                <li key=${i} class="rr-sm">${rrCase(s.title) + " — " + rrSignalValue(s.value)
-                  + (s.detail ? " (" + rrCase(s.detail) + ")" : "")
-                  + (s.n ? ", on the " + s.n + " organisations that answered it" : "")}</li>`)}</ul>` : null}
+                ${/* D029 (v3.2): the detail is composed server-side as
+                     "<label> — <value> vs <median>", so printing it after the label
+                     repeated the name inside its own parentheses. Strip the label
+                     prefix; the detail's comparison is what earns the space. */ ""}
+                <li key=${i} class="rr-sm">${(() => {
+                  const t = rrCase(s.title);
+                  let det = rrCase(s.detail || "");
+                  if (det && det.toLowerCase().indexOf(t.toLowerCase()) === 0)
+                    det = det.slice(t.length).replace(/^\s*[—–-]\s*/, "").trim();
+                  return t + " — " + rrSignalValue(s.value)
+                    + (det ? " (" + det + ")" : "")
+                    + (s.n ? ", on the " + s.n + " comparable organisations that answered it" : "");
+                })()}</li>`)}</ul>` : null}
               <p class="rr-p rr-sm rr-muted">${"These are reads, not recommendations: an area above "
                 + "market may be exactly where the strategy wants it, or may be spend the strategy "
                 + "never asked for. Where it is past your own stated aim, its section says so."}</p>
@@ -2171,17 +2223,24 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                    superseded reward content into a board paper and contradicted the
                    section three pages earlier. The stored why supplies the reasoning
                    only where it adds something the description does not. */ ""}
-              ${descOf[a.title] ? html`<p class="rr-p">${rrCase(descOf[a.title])}</p>` : null}
               ${(() => {
-                const why = rrProse(a.why || "");
-                if (!why) return null;
-                const desc = (descOf[a.title] || "").trim();
-                // drop a stored restatement of the description, however it was worded:
-                // if the why is mostly that sentence, the live one above has said it
-                const stripped = desc ? why.split(desc).join(" ").trim() : why;
-                const rest = stripped.replace(/\s{2,}/g, " ").trim();
-                return (!descOf[a.title] || (rest && rest.length > 40))
-                  ? html`<p class="rr-p">${rrCase(rest || why)}</p>` : null;
+                // D068 (v3.2): the v3.1 fix ADDED the library description and left the
+                // stored prose in place, so item 2 printed both — three lines apart,
+                // contradicting each other on the tax treatment and on who keeps the NI
+                // saving, on the page that tells the board what it is approving. The
+                // strip compared against the CURRENT description, which is exactly the
+                // string a stale plan does not contain.
+                //
+                // Composition from the library is now the ONLY path, not the first of
+                // two: for any action whose lever is in the library, the paragraph is
+                // built here from the live register statement + the live description,
+                // and the stored `why` is never rendered. A stored plan cannot carry
+                // superseded reward content into this document by any route.
+                const inLib = !!descOf[a.title];
+                if (!inLib) return html`<p class="rr-p">${rrCase(rrProse(a.why || ""))}</p>`;
+                const stmt = planFirstOfGap[a.title]
+                  ? ((commitments.find(c => c.id === altOf[a.title]) || {}).statement || "") : "";
+                return html`<p class="rr-p">${rrCase(((stmt ? stmt + " " : "") + descOf[a.title]).trim())}</p>`;
               })()}
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
@@ -2484,11 +2543,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         return "This document rests on " + answered + " of the " + of
           + " core-set questions (" + pct + "%). "
           + (hasPosition
-             // D038 (v3.1): this promised a mark for "thinly answered" areas, which
-             // reads as a sample-size threshold that does not exist. The mechanism that
-             // DOES exist marks an area with fewer benchmarked metrics than the engine
-             // requires — so the sentence now describes that, and points at where the
-             // per-signal sample is actually shown.
+             // D070 (v3.2): the v3.1 rewrite moved the promise from SAMPLE SIZE to
+             // metric count, where no area can qualify — a safeguard that cannot fire,
+             // and a gate check that cannot fail. The document now claims only what it
+             // does: it marks a thin-metric area, and it DISCLOSES the sample range on
+             // every area header rather than promising a mark it does not apply.
+             // D070 (v3.2): the v3.1 rewrite moved the promise from SAMPLE SIZE to metric
+             // count, where no area can qualify — a safeguard that cannot fire and a gate
+             // check that cannot fail. Taking the reviewer's own alternative: the claim
+             // about sample size is gone, and the disclosed per-area range (in every area
+             // header) does that work alone. The document now promises only what it does.
              ? "An area with too few benchmarked metrics for a firm verdict carries an "
                + "indicative read, marked in its own section; unanswered areas say so rather "
                + "than being estimated."
@@ -2519,8 +2583,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       + "near the band's edge the two can differ. Alignment is a count against your commitments — never a "
       + "score, index or grade."}</p><//>
       <${RrCard} tone="cream" label="What it will not do"><p class="rr-p rr-sm">${"Positions blend "
-      + "your whole workforce, so a blended percentile can mask offsetting gaps between populations "
-      + "(hourly store against salaried office); this document does not split them."}</p>
+      + "your whole workforce, so a blended percentile can mask offsetting gaps between "
+      + "populations; this document does not split them."}</p>
       <p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${hasPosition
         ? (unevid.length + " commitment" + (unevid.length === 1 ? " sits" : "s sit") + " unevidenced today.")
@@ -2542,10 +2606,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${/* the last beat belonged to a caveat about lumi's wording, under a leftover
            settings caption. A member's own strategy should end by returning to them
            — restraint, not a flourish (QA v2 delight 7, category (c)). */ ""}
-      <p class="rr-close">${"The strategy in this document is yours as you stated it; the position is "
-        + "your own data read against the comparison pool; the options are what the market commonly "
-        + "does, and every decision among them stays with you. Where lumi could not see something, "
-        + "it has said so rather than filled it in."}</p>`;
+      <p class="rr-close">${"The strategy here is yours as you stated it; the position is your own "
+        + "data read against the comparison pool; the options are what the market commonly does, and "
+        + "every decision among them stays with you. Where lumi could not see something, it has said so."}</p>`;
 
     return null;
   };
