@@ -19005,3 +19005,55 @@ Suite **15/15**, `qa_strategy_align` **60/60**, seventeen new HTTP checks. ?v=67
 **Open for David.** R7 (8 coherence rules) and R8 (24 of 36 levers) are still DRAFT — and the
 levers now carry recorded decisions, so their wording is quoted back in a board paper. Anonymous
 share links remain deliberately unbuilt pending the privacy ruling.
+
+## 2026-08-16 — The furniture a report needs
+
+*"Now do a QA and polish — it needs to have proper titles, subtitles, sections, as if they spent
+£10k with Mercer."*
+
+**Forty sheets without structure is a stack of pages.** The document had section titles and, on
+most sheets, a deck — but no parts, no running heads, no exhibit numbers, and a contents that was
+a flat run of twenty-five lines. Everything that lets a reader navigate a long document was
+missing, and none of it is decoration: a director holding sheet 31 of a printed pack had no way
+to know where they were in it.
+
+**Four parts**, each opening with a divider that says what the part is for and lists its sections
+with page numbers. **Front matter — cover, executive summary, the ask — sits outside them
+deliberately:** it is what a reader who reads three pages reads, and burying it inside Part A
+would bury the ask with it. A part that comes out one section long **loses its divider and keeps
+its sections** — a divider announcing a single page is padding, and it happens for real: a fresh
+org's Part B is the one honest "Where you'll stand" page.
+
+**Every table is now an exhibit**, numbered and captioned. The numbers are derived from a walk of
+the finished page list in render order, so inserting a section renumbers everything after it —
+and a gate refuses a literal exhibit number anywhere in the file, because the first hand-written
+one is wrong the first time someone inserts a section above it.
+
+**What the audit turned up.** Reading the rendered sheets rather than the code found eight
+defects, several of them long-standing:
+
+- The contents **skipped 04**. "The strategy" spans two sheets and the second had its own section
+  key, burning a number on a continuation page the contents deliberately hides.
+- A split-bar segment **clipped its own label to "2 above m"** — proportional widths with
+  `min-width: 0`. A legible bar beats an exactly proportional one at the small end.
+- **Eight "what follows" sheets carried no deck at all**, so they read as an overflow of the
+  previous page rather than as sections in their own right.
+- Two exhibit captions **restated the heading directly above them**.
+- The section number rendered **"01" as "0 1"** at .12em tracking.
+- The cover **named the client twice** — as the hero line and again as "Prepared for".
+- The running head said **"Front matter"**, which is publishing jargon on a board paper.
+- The schedule was **three stacked tables with three identical headers**; it is one table with
+  horizon row-groups, and one exhibit.
+
+**The running head cost 3mm and the exhibit captions ~20px a sheet**, which put one domain read
+past A4. Rather than spend a page, the running head gave the 3mm back by pulling up into the
+sheet's top padding. **40 sheets full, 13 fresh, none over A4 at either depth.**
+
+**The gate now checks the drafting discipline, not just the data.** "Every section heading carries
+a subtitle" is the property that was asked for and the first to lapse when a section is added in
+a hurry — nothing else in the suite would catch it, because the document is client-side and the
+failure is silent. Plus: the running head, the dividers and the exhibit captions must not be
+marked `no-print`, since marking any of them screen-only would strip the PDF of its navigation
+and nobody would find out until someone printed it.
+
+Suite **15/15**. ?v=673.
