@@ -19720,3 +19720,60 @@ diagnostic attached, waiting on David beside R-N.
 Gate A is now **47 checks, 0 failures, 4 advisory** (aim-bracket, forecast language,
 approver identity, D034 — each naming the ruling it waits on). Suite **16/16**. Both ask
 shapes verified; FULL 45pp, FRESH 12pp, both clean. ?v=686.
+
+## 2026-08-16 — Review v3.2: the fix that fixed nothing, and validators over instructions
+
+**D068 is the P0 and it was mine.** The v3.1 D032 fix was scoped as "killing the class
+rather than the instance" and did not: it ADDED composition from the live library and
+left the stored prose rendering beside it. Plan item 2 therefore printed both
+descriptions three lines apart — "where the tax rules still allow it … cycle-to-work,
+ultra-low-emission cars" and, below it, "pension, cars, technology … sharing the NI
+saving" — contradicting each other on the tax treatment and on who keeps the saving, on
+the page that tells the board what it is approving. The strip I wrote compared against
+the CURRENT description, which is precisely the string a stale plan does not contain.
+
+Composition is now the only path. For any action whose lever is in the library the
+paragraph is built at render time from the live register statement plus the live
+description, and the stored `why` is never rendered. **Third build in which a v-series
+fix introduced a defect of its own** (D024→D037, D031/D033, now D032→D068).
+
+**Gate A reported green over two live defects, and the reviewer's diagnosis of why is
+right and general.** His check 5 was specified as `plan.description == library.description`
+— a field-level equality that stays true while a second field renders alongside it. **Any
+check that can pass while the printed page is wrong is a vacuous proof.** The D068
+assertion now runs on the extracted PDF text against a corpus of superseded description
+strings; the D029 check's regex required the label repeat to be adjacent when the live
+form puts a percentile between them, so it matched nothing on a page where the defect was
+plainly visible. Both rewritten. The D070 completeness check was vacuous in the other
+direction — I had moved the promise from sample size to metric count, where no area can
+qualify, so neither the safeguard nor its check could fire. Taking the reviewer's own
+alternative: the sample-size claim is deleted and the per-area disclosed range does that
+work alone.
+
+**Where instructions failed, validators hold.** D071 ("4 areas fall short of the position
+you set" over five areas marked below strategy) and D055 ("the largest gap" where one gap
+is priced) are model prose. I added prompt rules; the model kept both. So
+`validate_diagnosis` now rejects a count whose wording describes a wider set than the
+count, and a superlative with nothing to compare — and the deterministic floor carried
+the same two defects, so both were fixed at source too. The model now passes on its own
+merits. **Instructions are guidance; validators are the contract.**
+
+**Also fixed:** D029 (a signal's name repeated inside its own detail), D069 (the D047 fix
+shipped "no separate set … has been written down" — lowercase opener, compound subject on
+a singular verb), D072 (plural note over a one-row exhibit; the singular branch existed
+for the ask and not for signals), D074 (§05 now stands down entirely when principles and
+constraints are both empty — the v3.1 fix merged its boxes and left the duplication with
+§03 standing), D075 (one noun for the pool, one for the per-metric base), D040 (two lever
+trade-offs recast from imperative to consequence, recorded in the library's `_readme`).
+
+**The layout lesson recurred twice more and was believed faster each time.** When trims
+stop moving a spill the constraint is structural: §06 took its own sheet because the
+contradictions block gave it real content, and the method page cleared only when the
+vacuous sentence came out rather than being shortened again.
+
+Gate A is now **52 checks, 0 failures, 4 advisory**. Suite **16/16**. FULL 44pp,
+FRESH 12pp, both clean. ?v=687. Still open and unclaimed: D065 (three of five
+denominators unreconciled), D067 (no preparer named), D073 (Findings order, blocked on
+Q4), Q1/Q3/Q4/Q6/Q7/Q8/Q11/Q12. Held on rulings: R-N (now the largest live
+contradiction — four surfaces assert an aim the register does not carry), R-O′ with the
+evidence-mix disclosure, R-P, and the rest of the sheet.
