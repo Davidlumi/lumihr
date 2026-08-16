@@ -136,6 +136,23 @@ function RrProse({ value, generated, sectionKey, canEdit, onSave, className }) {
     </div>`;
 }
 
+// The in-app "what it drives" copy talks about signals and lenses — product vocabulary
+// that has no place in a board document ("Sharpens which signal lenses surface first").
+// These say the same thing in the register of the paper it is printed in.
+const RR_DRIVES = {
+  market_position: "The position every area is read against.",
+  reward_mix: "How pay and wider benefits are weighed together.",
+  pay_for_performance: "The spread between individuals that is treated as intended.",
+  transparency: "Which openness practices count as commitments.",
+  location_approach: "Whether local pay markets are read separately.",
+  benefits_lead: "The benefit areas treated as deliberate leads.",
+  family_position: "The family-support bar the organisation is held to.",
+  primary_objective: "The lens the whole document is read through.",
+  budget_direction: "Whether saving or investment is weighed more heavily.",
+  acute_pressure: "The operating condition the year's choices are made in.",
+  risk_appetite: "How early the organisation expects to move on emerging practice.",
+};
+
 const RR_ALIGN_WORD = { on_target: "On strategy", ahead: "Above strategy", behind: "Below strategy" };
 const RR_POS_WORD = { below: "below market", at: "on market", above: "above market" };
 const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
@@ -422,7 +439,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-lead">${K.lead}</p>
         <div class="rr-cover-meta">
           <div><span>Prepared</span>${today}</div>
-          <div><span>Peer group</span>${cutLabel}</div>
+          <div><span>Benchmarked against</span>${cutLabel}</div>
+          ${doc.comparator_label && doc.comparator_label !== cutLabel
+            ? html`<div><span>Stated comparator</span>${doc.comparator_label}</div>` : null}
           ${al.objective ? html`<div><span>Objective</span>${al.objective}</div>` : null}
           <div><span>Status</span>${ver ? "Version " + ver.version + ", approved" + (ver.approval_date ? " " + ver.approval_date : "") : "Draft — not yet approved"}</div>
         </div>
@@ -451,8 +470,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <div class="rr-toc">
         <div class="rr-toc-h">Contents</div>
         <div class="rr-toc-cols">
+          ${/* the page number IS the sheet index (cover is sheet 1) — the extra +1 here
+               made every contents line point one page late, and the last entry point past
+               the end of the document. */ ""}
           ${pages.map((p, i) => ({ p, n: i + 1 })).filter(x => x.p.title && !/\(cont\.\)$/.test(x.p.title)).map(x => html`
-            <div key=${x.p.title} class="rr-toc-row"><span>${x.p.title}</span><i>${x.n + 1}</i></div>`)}
+            <div key=${x.p.title} class="rr-toc-row"><span>${x.p.title}</span><i>${x.n}</i></div>`)}
         </div>
       </div>`;
 
@@ -499,7 +521,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             return html`<tr key=${f} class=${v ? "" : "rr-unset"}>
               <td>${DIAL_LABEL[f]}</td>
               <td><b>${v || "Not stated"}</b>${f === "market_position" && n ? html`<br /><span class="rr-sm">${n} area${n === 1 ? "" : "s"} set differently</span>` : ""}</td>
-              <td class="rr-sm">${v ? (SD_DRIVES[f] || "") : "Read neutrally."}</td>
+              <td class="rr-sm">${v ? (RR_DRIVES[f] || SD_DRIVES[f] || "") : "Read neutrally."}</td>
             </tr>`; })}
         </tbody>
       </table>`;
@@ -534,11 +556,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <h3 class="rr-sh">What to watch</h3>
         <${Prose} k="watch" generated=${rrCase(cm.parts.watch)} />`
         : html`<p class="rr-p rr-muted">${aiWaiting ? "Writing the commentary…" : "Commentary is unavailable for this document."}</p>`}
-      <div class="rr-callout quiet">
-        <div class="rr-callout-h">Where you stand against this</div>
-        <p class="rr-p">Your live position against this strategy, the gaps it opens and the plan to close
-        them are set out in the companion <b>Reward Position ${"&"} Plan</b> document.</p>
-      </div>`;
+      ${/* pointed at a "companion document" that this document became (2026-08-16) */ ""}
+      ${wantsPlan ? null : html`
+        <div class="rr-callout quiet">
+          <div class="rr-callout-h">Where you stand against this</div>
+          <p class="rr-p">Your live position against this strategy, the gaps it opens and the plan to
+          close them are set out in the companion <b>Reward Position ${"&"} Plan</b> document.</p>
+        </div>`}`;
 
     if (kindOf === "gov") return html`
       <${RrH} n=${num}>Governance and approval<//>
@@ -546,7 +570,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <tbody>
           <tr><td>Status</td><td><b>${ver ? "Approved" : "Draft — not yet approved"}</b>${ver && ver.dirty ? html` <span class="rr-sm">(edits since approval)</span>` : ""}</td></tr>
           ${ver ? html`<tr><td>Version</td><td><b>${ver.version}</b></td></tr>` : null}
-          ${ver ? html`<tr><td>Approved by</td><td>${ver.approver_body || ver.approved_by || "—"}</td></tr>` : null}
+          ${/* a raw login email as "approved by" in a board paper reads as unfinished —
+               prefer the recorded body, and mark a bare account as what it is */ ""}
+          ${ver ? html`<tr><td>Approved by</td><td>${ver.approver_body
+            || (ver.approved_by ? html`<span class="rr-sm">Recorded against the account ${ver.approved_by} — no approving body was named</span>` : "—")}</td></tr>` : null}
           ${ver && ver.approval_date ? html`<tr><td>Date of approval</td><td>${ver.approval_date}</td></tr>` : null}
           ${ver && ver.effective_date ? html`<tr><td>Effective from</td><td>${ver.effective_date}</td></tr>` : null}
           ${ver && ver.next_review ? html`<tr><td>Next review</td><td>${ver.next_review}</td></tr>` : null}
