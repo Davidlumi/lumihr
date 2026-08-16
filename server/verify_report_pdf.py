@@ -99,16 +99,41 @@ def check(pdf):
     if mm != (210, 297):
         fails.append("page size is %dx%dmm, not A4" % mm)
 
-    # 4. contents entries must point at the page whose heading matches
+    # 4. contents entries must point at the page whose heading matches.
+    # PyMuPDF splits a contents row across text lines ("02 What we're asking the
+    # board to" / "approve" / "3"), so a numbered title accumulates until a bare
+    # page-number line closes it; the old single-line form still matches first.
+    # This parser once went silently vacuous on that layout change — "0 contents
+    # entries checked" read as a pass — so finding too few rows is now a FAILURE,
+    # not a note (the silent-skip lesson, 2026-08-16).
     toc = []
+    cur = None
     for line in pages[1].split("\n"):
-        m = re.match(r"^\s*(\d{2})\s+(.{3,60}?)\s+(\d{1,3})\s*$", line.strip())
+        s = line.strip()
+        m = re.match(r"^(\d{2})\s+(.{3,60}?)\s+(\d{1,3})$", s)
         if m:
             toc.append((m.group(2).strip(), int(m.group(3))))
+            cur = None
+            continue
+        m = re.match(r"^(\d{2})\s+(\D.{2,})$", s)
+        if m:
+            cur = m.group(2).strip()
+            continue
+        if cur and re.match(r"^\d{1,3}$", s):
+            toc.append((cur, int(s)))
+            cur = None
+            continue
+        if cur and s and not re.match(r"^\d", s):
+            cur += " " + s
+    if len(toc) < 3:
+        fails.append("contents parser matched only %d row(s) — the contents check is "
+                     "not actually running against this layout" % len(toc))
     bad = 0
     for title, page in toc:
         if 1 <= page <= d.page_count:
-            head = " ".join(pages[page - 1].split())[:400].lower()
+            # the WHOLE page, not its first 400 chars: two sections legitimately share
+            # a sheet (body2), so the second section's heading sits mid-page
+            head = " ".join(pages[page - 1].split()).lower()
             key = title.lower()[:18]
             if key and key not in head:
                 bad += 1
