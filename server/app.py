@@ -5491,7 +5491,11 @@ async def build_action_plan(request: Request):
 NARRATIVE_KEYS = ("exec_summary", "intent", "tensions", "watch", "findings_intro",
                   "gaps_intro", "plan_summary", "method",
                   # the six narrative sections of the strategy statement
-                  "context", "philosophy", "positioning", "mix", "performance", "governance")
+                  "context", "philosophy", "positioning", "mix", "performance", "governance",
+                  # 2026-08-16 board-paper pass: the ask (a board paper REQUESTS a
+                  # decision — this document only ever described one), the cost envelope,
+                  # the risk read, the schedule preamble and the not-taken record.
+                  "the_ask", "cost", "risks", "schedule", "decisions", "movement")
 # Per-domain commentary keys are "domain:<Category>" — the report's main sections, one
 # per category, each editable in place (2026-08-16). Validated against the live taxonomy
 # rather than a hardcoded list so a renamed category cannot orphan its wording.
@@ -5603,6 +5607,51 @@ async def put_strategy_narrative(request: Request):
                  (json.dumps(cur), datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), org["org_id"]))
     conn.commit()
     return {"ok": True, "key": key, "edited": bool(text), "narrative_overrides": cur}
+
+
+@app.put("/api/strategy/option-decision")
+async def put_option_decision(request: Request):
+    """Record a decision against one option (2026-08-16, David's #3): considered, not
+    this cycle, or rejected — with the reason.
+
+    This is the half of a consultancy document that makes it defensible a year later.
+    The options table listed every lever lumi could offer and captured nothing about
+    what was DONE with them, so a rejected option and one nobody ever read looked
+    identical. Clearing the state (empty string) removes the record entirely rather
+    than leaving a hollow 'undecided' row."""
+    user, org = require_editor(request)
+    body = await _json(request)
+    cat = (body.get("category") or "").strip()
+    lever = (body.get("lever_id") or "").strip()
+    if not cat or not lever:
+        raise HTTPException(400, "category and lever_id are both required.")
+    state = (body.get("state") or "").strip()
+    if state and state not in OPTION_DECISION_STATES:
+        raise HTTPException(400, "'%s' isn't a decision state — one of: %s."
+                            % (state, ", ".join(OPTION_DECISION_STATES)))
+    reason = (body.get("reason") or "").strip()
+    if len(reason) > OPTION_DECISION_MAX:
+        raise HTTPException(400, "That reason is longer than %d characters." % OPTION_DECISION_MAX)
+    conn = get_conn()
+    row = conn.execute("SELECT option_decisions_json FROM org_strategy WHERE org_id=?",
+                       (org["org_id"],)).fetchone()
+    if row is None:
+        raise HTTPException(404, "No strategy to decide against yet.")
+    cur = uj(row["option_decisions_json"], {}) or {}
+    key = option_decision_key(cat, lever)
+    if state:
+        # names live in identity.db (the privacy split) — resolve at write time so the
+        # reward side never has to join across the boundary to render a decision line
+        _who = identity.user_display(user["user_id"]) or {}
+        cur[key] = {"state": state, "reason": reason,
+                    "at": datetime.utcnow().strftime("%Y-%m-%d"),
+                    "by": _who.get("display_name") or _who.get("email")}
+    else:
+        cur.pop(key, None)
+    conn.execute("UPDATE org_strategy SET option_decisions_json=?, updated_at=? WHERE org_id=?",
+                 (json.dumps(cur), datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), org["org_id"]))
+    conn.commit()
+    return {"ok": True, "key": key, "option_decisions": cur}
 
 
 @app.put("/api/strategy/draft")
@@ -5751,6 +5800,27 @@ async def list_strategy_versions(request: Request):
         "SELECT version, approved_by, approved_at, status, approver_body, approval_date, "
         "effective_date, next_review, submitted_by, unstated_json FROM strategy_versions "
         "WHERE org_id=? ORDER BY version DESC", (org["org_id"],))]}
+
+
+# ------------------------------------------------------- board-paper reads (2026-08-16)
+# The mechanism lives in strategy_align (pure, no DB, no request) so the no-server gate
+# can assert every risk string is directive- and legal-clean — a risk section is the
+# easiest place in a non-directive document to start giving advice by accident.
+HORIZON_ORDER = strategy_align.HORIZON_ORDER
+OPTION_DECISION_STATES = strategy_align.OPTION_DECISION_STATES
+OPTION_DECISION_MAX = strategy_align.OPTION_DECISION_MAX
+horizon_bucket = strategy_align.horizon_bucket
+option_decision_key = strategy_align.option_decision_key
+
+
+def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single):
+    """App-side binding: the label vocabularies and the evidence floor live here, so
+    they are passed in rather than duplicated in the engine."""
+    return strategy_align.derive_risks(
+        al, money, blocks, strat, doc, data_state, snapshot_single,
+        budget_labels=STRATEGY_LABELS["budget_direction"],
+        constraint_labels=STRATEGY_CONSTRAINT_LABELS,
+        domain_min=DOMAIN_MIN_POLARISED)
 
 
 @app.get("/api/strategy/alignment")
@@ -5919,6 +5989,81 @@ async def get_strategy_alignment(request: Request):
                            "pct": round(_contrib["core_pct"])}
     out["objective"] = OBJECTIVE_LABELS.get(strat.get("primary_objective"))
     out["stance"] = strat.get("market_position")
+    # ---- BOARD-PAPER READS (2026-08-16) -------------------------------------------
+    # 1. THE COST ENVELOPE. The board pack has carried the aggregate £ since it was
+    # built; the strategy document — the one that actually goes to a board — carried
+    # no total anywhere, so the first question any finance director asks of it ("what
+    # does closing all of this cost?") had no answer on the page. lumi already knew.
+    _mi = _sig_money.get("items") or []
+    out["money"] = {
+        "investment_to_p50_gbp": _sig_money.get("total_investment_to_p50_gbp") or 0,
+        "savings_to_p50_gbp": _sig_money.get("total_savings_to_p50_gbp") or 0,
+        "fte_known": _sig_money.get("fte_known"),
+        "priced": len(_mi),
+        # every gap, priced or not — the ENVELOPE is only as wide as what lumi can
+        # price, and saying so is what keeps the total honest
+        "gaps_total": len([c for c in out["commitments"]
+                           if c["status"] in ("behind_intent", "contradicted")]),
+        "items": [{"label": i["label"], "direction": i["direction"],
+                   "to_p50_gbp": i["to_p50_gbp"], "to_p75_gbp": i["to_p75_gbp"],
+                   "category": getattr(org_visible_questions(org).get(i["question_id"]),
+                                       "sub_power", None),
+                   "formula": i["formula"]}
+                  for i in _mi],
+        "assumptions": {k: v for k, v in (_sig_money.get("assumptions") or {}).items()
+                        if k in ("median_salary_gbp", "cost_per_leaver_pct_salary",
+                                 "agency_premium_pct")},
+    }
+    # 2. THE SCHEDULE. The plan already carried a horizon per action and printed them as
+    # a flat numbered run, which reads as a to-do list rather than a programme. Same
+    # actions, grouped, in cycle order.
+    _plan = out.get("plan") or None
+    if _plan and _plan.get("actions"):
+        for _a in _plan["actions"]:
+            _a["horizon_bucket"] = horizon_bucket(_a.get("horizon"))
+        _sched = {}
+        for _a in _plan["actions"]:
+            _sched.setdefault(_a["horizon_bucket"], []).append(_a)
+        out["schedule"] = [{"horizon": h, "actions": _sched[h]}
+                           for h in HORIZON_ORDER if _sched.get(h)]
+    else:
+        out["schedule"] = []
+    # 3. DECISIONS NOT TAKEN. What was turned down, and why, keyed per (category, lever).
+    _od = conn.execute("SELECT option_decisions_json FROM org_strategy WHERE org_id=?",
+                       (org["org_id"],)).fetchone()
+    out["option_decisions"] = uj(_od["option_decisions_json"], {}) if _od else {}
+    out["option_decision_states"] = OPTION_DECISION_STATES
+    # 4. TREND. Not buildable until a second window closes — there is exactly one
+    # aggregated snapshot today. The section exists so the document is honest about the
+    # gap now and fills itself the moment the next collection lands, rather than the
+    # absence being discovered at the point someone asks.
+    _snaps = conn.execute("SELECT snapshot_id, snapshot_date, collection_window FROM snapshots "
+                          "WHERE status='aggregated' ORDER BY snapshot_date").fetchall()
+    _prior = [dict(r) for r in _snaps if r["snapshot_id"] != CURRENT_SNAPSHOT]
+    out["trend"] = {"available": bool(_prior),
+                    "windows": len(_snaps),
+                    "prior": _prior[-1] if _prior else None}
+    # 5. RISK. Exposures restated from what the engine found — never predictions.
+    out["risks"] = derive_risks(out, _sig_money, blocks, strat, st.get("document") or {},
+                                out["data_state"], snapshot_single=not _prior)
+    # 6. THE ASK. A board paper REQUESTS a decision; this one only ever described a
+    # position. Assembled from the plan's own first cycle and the envelope above — the
+    # figures are the engine's, the wording around them is the author's to replace.
+    _now = [a for a in ((_plan or {}).get("actions") or [])
+            if a.get("horizon_bucket") == "this cycle"]
+    out["the_ask"] = {
+        "actions_this_cycle": len(_now),
+        "areas": sorted({a.get("category") for a in _now if a.get("category")}),
+        "investment_to_p50_gbp": out["money"]["investment_to_p50_gbp"],
+        "gaps_total": out["money"]["gaps_total"],
+        "titles": [a.get("title") for a in _now][:6],
+        # what the board is being asked to settle, in the document's own vocabulary
+        "decision": (("approve the action scheduled for this cycle" if len(_now) == 1
+                      else "approve the %d actions scheduled for this cycle" % len(_now))
+                     if _now else
+                     ("approve the strategy as stated" if not out["money"]["gaps_total"]
+                      else "agree how the outstanding gaps are to be addressed")),
+    }
     out["ok"] = True
     return out
 
