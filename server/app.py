@@ -5833,6 +5833,17 @@ async def get_strategy_alignment(request: Request):
         _v = _dom_verdict.get(_dom)
         if _v:
             _lst.sort(key=lambda x: 0 if x.get("position") == _v else 1)
+    # the peer sample actually standing behind each domain's metrics — an analyst
+    # defending a figure needs the n, and it was computed but never surfaced
+    _peer_n_by_dom = {}
+    for _it in items:
+        _q = org_visible_questions(org).get(_it.get("question_id"))
+        _n = _it.get("n") or 0
+        if _q and _q.sub_power and _n:
+            _peer_n_by_dom.setdefault(_q.sub_power, []).append(_n)
+    _peer_n_by_dom = {k: {"min": min(v), "max": max(v),
+                          "median": sorted(v)[len(v) // 2]}
+                      for k, v in _peer_n_by_dom.items() if v}
     _cmt_by_cat = {}
     for _c in out["commitments"]:
         _cmt_by_cat.setdefault(_c["category"], []).append(_c)
@@ -5847,11 +5858,22 @@ async def get_strategy_alignment(request: Request):
         blocks.append({
             "name": d["name"],
             "competitive": d.get("competitiveness", True),
-            # COUNT — how much evidence stands behind this domain's read
+            # COUNT — how much evidence stands behind this domain's read.
+            # `pool` is the count of the ORG's own comparable metrics, NOT a peer count:
+            # printing it as "against N peer readings" stated the same number twice and
+            # called the second one a sample (2026-08-16 analyst review). The real peer
+            # sample is the n behind each metric, so the range is carried instead.
             "count": {"metrics": (_ev.get("polarised") or 0) + (_ev.get("practice") or 0),
                       "polarised": _ev.get("polarised") or 0,
                       "practice": _ev.get("practice") or 0,
-                      "pool": _p.get("pool")},
+                      "comparable": _p.get("pool"),
+                      "peer_n": _peer_n_by_dom.get(d["name"]),
+                      # methodology-grade or indicative? The engine already distinguishes
+                      # these (DOMAIN_MIN_POLARISED) but the document printed a one-metric
+                      # verdict with the same confidence as a thirty-metric one, which no
+                      # reward director would take to a board (2026-08-16 practitioner review)
+                      "strict": bool(d.get("market_eligible")),
+                      "domain_min": DOMAIN_MIN_POLARISED},
             # MARKET POSITION — the verdict and the split behind it
             "position": {"verdict": _p.get("verdict"), "below": _p.get("below"),
                          "at": _p.get("at"), "above": _p.get("above"),
@@ -5886,6 +5908,15 @@ async def get_strategy_alignment(request: Request):
         # positioned = areas the engine could actually place against the market
         "positioned": len([d for d in (hero.get("domains") or []) if (d.get("position") or {}).get("verdict")]),
     }
+    # Data vintage — "as at when?" is the first question an analyst asks of a benchmark
+    # and the document had no answer anywhere on it (2026-08-16 analyst review).
+    _snap = conn.execute("SELECT snapshot_date, collection_window FROM snapshots WHERE snapshot_id=?",
+                         (CURRENT_SNAPSHOT,)).fetchone()
+    if _snap:
+        out["snapshot"] = {"date": _snap["snapshot_date"], "window": _snap["collection_window"]}
+    # the reader deserves to know how much of the org's OWN data the read rests on
+    out["completeness"] = {"answered": _contrib["basis_answered"], "of": _contrib["basis_total"],
+                           "pct": round(_contrib["core_pct"])}
     out["objective"] = OBJECTIVE_LABELS.get(strat.get("primary_objective"))
     out["stance"] = strat.get("market_position")
     out["ok"] = True
