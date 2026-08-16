@@ -4867,6 +4867,11 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 /* Laid out on the board pack's .pack-page chrome so all three documents read as one
    family; only the interior typography is new. */
 .rr-wrap { padding-bottom: var(--s6); }
+/* …but NOT on paper. That trailing padding sits after the last sheet, pushing the
+   document past 297mm and giving the final page a footer of its own — which is why
+   the last section split no matter how little content it carried. Screen chrome that
+   printed (2026-08-16). */
+@media print { .rr-wrap { padding-bottom: 0; } }
 .rr-bar { max-width: 210mm; margin: 0 auto var(--s4); }
 .rr-sheet { font-size: var(--fs-body); line-height: 1.55; color: var(--ink); }
 .rr-body { flex: 1 1 auto; min-height: 0; }
@@ -5141,6 +5146,45 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-hz-row i { font-style: normal; font-size: var(--fs-micro); font-weight: 500;
   color: var(--ink-soft); margin-left: 10px; }
 
+
+/* ---- charts (2026-08-16) --------------------------------------------------------
+   Forty-one pages of benchmarking with no chart is why this did not read as
+   consultancy output. Every colour here is a token already in the palette, and the
+   shaded band is the engine's own market band passed through — a chart that used a
+   different number from the verdict beside it would be worse than no chart. */
+.rrc { display: block; width: 100%; height: auto; margin: var(--s3) 0 var(--s2);
+  print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.rrc-band { fill: var(--favourable-tint); }
+.rrc-tick { stroke: var(--border); stroke-width: 1; }
+.rrc-base { stroke: var(--ink-faint); stroke-width: 1; }
+.rrc-rowline { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+.rrc-fill { fill: var(--blue-tint); }
+.rrc-fill.v-below { fill: var(--neutral-perf-tint); }
+.rrc-fill.v-at    { fill: var(--favourable-tint); }
+.rrc-fill.v-above { fill: var(--blue-tint); }
+.rrc-you { stroke: var(--ink); stroke-width: 2; }
+.rrc-youlab { font-family: var(--font-head); font-size: 13px; font-weight: 700; fill: var(--ink); }
+.rrc-dot { fill: var(--blue); stroke: #fff; stroke-width: 1.5; }
+.rrc-dot.v-below { fill: var(--neutral-perf-ink); }
+.rrc-dot.v-at    { fill: var(--favourable-ink); }
+.rrc-dot.v-above { fill: var(--blue-deep); }
+.rrc-aim { fill: var(--ink-faint); }
+.rrc-lab text { font-family: var(--font-body); font-size: 11px; fill: var(--ink-faint); }
+.rrc-none { font-family: var(--font-body); font-size: 11px; fill: var(--ink-faint); }
+.rrc-key { display: flex; flex-wrap: wrap; gap: var(--s4); font-size: var(--fs-micro);
+  color: var(--ink-soft); margin: 0 0 var(--s4); }
+.rrc-key i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+.rrc-key .rrc-k-band { width: 16px; height: 9px; background: var(--favourable-tint); border-radius: 2px; }
+.rrc-key .rrc-k-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
+.rrc-key .rrc-k-dot.v-below { background: var(--neutral-perf-ink); }
+.rrc-key .rrc-k-dot.v-at { background: var(--favourable-ink); }
+.rrc-key .rrc-k-dot.v-above { background: var(--blue-deep); }
+.rrc-key .rrc-k-aim { width: 0; height: 0; border-left: 5px solid transparent;
+  border-right: 5px solid transparent; border-top: 6px solid var(--ink-faint); }
+/* the portfolio chart names its rows in the table beneath, so the SVG stays label-free
+   and the two are read together rather than repeating each other */
+.rrc-port { margin-bottom: var(--s2); }
+.rrc-rowlab { font-family: var(--font-body); font-size: 12.5px; fill: var(--ink); }
 
 /* ---- typographic craft (2026-08-16 polish pass) --------------------------------
    The details that separate a laid-out document from a typeset one. */

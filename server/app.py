@@ -6008,6 +6008,10 @@ async def get_strategy_alignment(request: Request):
     # the reader deserves to know how much of the org's OWN data the read rests on
     out["completeness"] = {"answered": _contrib["basis_answered"], "of": _contrib["basis_total"],
                            "pct": round(_contrib["core_pct"])}
+    # the band the engine calls "on market" — the document draws it, and drawing it
+    # from a different number than the engine judges by would be a chart that disagrees
+    # with the prose beside it (2026-08-16)
+    out["market_band"] = [MARKET_BAND_LOW, MARKET_BAND_HIGH]
     out["objective"] = OBJECTIVE_LABELS.get(strat.get("primary_objective"))
     out["stance"] = strat.get("market_position")
     # ---- BOARD-PAPER READS (2026-08-16) -------------------------------------------

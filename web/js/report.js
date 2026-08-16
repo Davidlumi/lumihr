@@ -109,6 +109,14 @@ function rrOrdinal(n) {
   if (t >= 11 && t <= 13) return v + "th";
   return v + ({ 1: "st", 2: "nd", 3: "rd" }[v % 10] || "th");
 }
+// The signal builder renders a percentile as "P14" — lumi's own shorthand, fine in the
+// app and not English anywhere near a board table. Everything else in that column is a
+// real value ("1×", "£2,400"), so only the shorthand is translated (2026-08-16).
+function rrSignalValue(v) {
+  const m = /^P(\d{1,3})$/.exec(String(v || "").trim());
+  return m ? rrOrdinal(Number(m[1])) + " percentile" : (v || "—");
+}
+
 
 // a, b and c — a board paper is prose, not a comma-separated list
 function rrList(items) {
@@ -196,6 +204,118 @@ function RrNav({ items, total, onGo }) {
             : (x.no ? x.no + "  " : "") + rrType(x.title)}</option>`)}
       </select>
     </div>`;
+}
+
+// ---- CHARTS ------------------------------------------------------------------
+// David, 2026-08-16: "I still do not think this is big 4 consultancy standard." He was
+// right, and the largest single reason was that forty-one pages of benchmarking carried
+// no chart at all — the document ASSERTED "around the 30th percentile" in prose and
+// never showed it. A reward report from WTW or Mercer is chart-led, because a position
+// against the market is a picture before it is a sentence.
+//
+// Pure SVG from data already on the payload; nothing here computes a new fact. The
+// shaded band is the engine's OWN market band, passed through, so the picture cannot
+// disagree with the verdict printed beside it.
+const RR_SCALE = { w: 640, pad: 26 };
+
+function rrX(pct) {
+  const inner = RR_SCALE.w - RR_SCALE.pad * 2;
+  return RR_SCALE.pad + (Math.max(0, Math.min(100, pct)) / 100) * inner;
+}
+
+// The axis furniture every percentile chart in the document shares — quartile ticks,
+// the "on market" band, and the baseline. Drawn once per chart, identical every time,
+// so two charts on different pages are read on the same ruler.
+function RrAxis({ band, y, h, ticks }) {
+  const lo = (band && band[0]) || 40, hi = (band && band[1]) || 60;
+  return html`
+    <g>
+      <rect x=${rrX(lo)} y=${y} width=${rrX(hi) - rrX(lo)} height=${h}
+        class="rrc-band" />
+      ${(ticks === false ? [] : [10, 25, 50, 75, 90]).map(t => html`
+        <line key=${t} x1=${rrX(t)} x2=${rrX(t)} y1=${y} y2=${y + h} class="rrc-tick" />`)}
+      <line x1=${rrX(0)} x2=${rrX(100)} y1=${y + h} y2=${y + h} class="rrc-base" />
+    </g>`;
+}
+
+function RrAxisLabels({ y }) {
+  return html`
+    <g class="rrc-lab">
+      ${[[10, "10th"], [25, "25th"], [50, "median"], [75, "75th"], [90, "90th"]].map(([t, l]) => html`
+        <text key=${t} x=${rrX(t)} y=${y} text-anchor="middle">${l}</text>`)}
+    </g>`;
+}
+
+// ONE DOMAIN: where this area sits on the percentile scale, with the split behind it.
+function RrDomainChart({ pctl, verdict, band, stance, label }) {
+  // top 26, not 16: the marker's own label sits ABOVE the bar and was being clipped
+  // by the viewBox at "30th" (2026-08-16)
+  const H = 100, top = 26, barH = 30;
+  const has = pctl != null;
+  return html`
+    <svg class="rrc" viewBox=${"0 0 " + RR_SCALE.w + " " + H} role="img"
+      aria-label=${has ? label + " sits around the " + Math.round(pctl) + "th percentile of the peer group"
+                       : label + " has no market position yet"}>
+      <${RrAxis} band=${band} y=${top} h=${barH} />
+      ${has ? html`
+        <g>
+          <rect x=${rrX(0)} y=${top} width=${rrX(pctl) - rrX(0)} height=${barH}
+            class=${"rrc-fill v-" + (verdict || "none")} />
+          <line x1=${rrX(pctl)} x2=${rrX(pctl)} y1=${top - 6} y2=${top + barH + 6}
+            class="rrc-you" />
+          <text x=${rrX(pctl)} y=${top - 10} text-anchor="middle" class="rrc-youlab"
+            >${rrOrdinal(pctl)}</text>
+        </g>`
+      : html`<text x=${RR_SCALE.w / 2} y=${top + barH / 2 + 4} text-anchor="middle"
+          class="rrc-none">not enough comparable data to place this area</text>`}
+      <${RrAxisLabels} y=${top + barH + 20} />
+    </svg>`;
+}
+
+// THE PORTFOLIO: every area on one ruler. This is the page a reward director turns to
+// first and the one the document did not have — eight verdicts in prose across fifteen
+// sheets, and no way to see them together.
+// A label gutter, so the chart names its own rows. The first version left them
+// unlabelled and relied on a table beneath being in the same order — which a reader
+// cannot verify and an edit could silently break. Naming them here let the table go
+// entirely, which is also what stopped this sheet overflowing in print.
+const RR_PORT = { w: 640, lab: 196, pad: 18 };
+function rrPX(pct) {
+  const inner = RR_PORT.w - RR_PORT.lab - RR_PORT.pad;
+  return RR_PORT.lab + (Math.max(0, Math.min(100, pct)) / 100) * inner;
+}
+
+function RrPortfolioChart({ rows, band }) {
+  const rowH = 38, top = 18;
+  const H = top + rows.length * rowH + 28;
+  const lo = (band && band[0]) || 40, hi = (band && band[1]) || 60;
+  const bodyH = rows.length * rowH;
+  return html`
+    <svg class="rrc rrc-port" viewBox=${"0 0 " + RR_PORT.w + " " + H} role="img"
+      aria-label="Market position of every area on one percentile scale">
+      <rect x=${rrPX(lo)} y=${top} width=${rrPX(hi) - rrPX(lo)} height=${bodyH} class="rrc-band" />
+      ${[10, 25, 50, 75, 90].map(t => html`
+        <line key=${t} x1=${rrPX(t)} x2=${rrPX(t)} y1=${top} y2=${top + bodyH} class="rrc-tick" />`)}
+      <line x1=${rrPX(0)} x2=${rrPX(100)} y1=${top + bodyH} y2=${top + bodyH} class="rrc-base" />
+      ${rows.map((r, i) => {
+        const cy = top + i * rowH + rowH / 2;
+        return html`
+          <g key=${r.name}>
+            <text x=${RR_PORT.lab - 12} y=${cy + 4} text-anchor="end" class="rrc-rowlab">${r.label}</text>
+            <line x1=${rrPX(0)} x2=${rrPX(100)} y1=${cy} y2=${cy} class="rrc-rowline" />
+            ${r.aim != null ? html`
+              <path d=${"M " + (rrPX(r.aim) - 4.5) + " " + (cy - 9) + " L " + (rrPX(r.aim) + 4.5) + " " + (cy - 9)
+                        + " L " + rrPX(r.aim) + " " + (cy - 2.5) + " Z"} class="rrc-aim" />` : null}
+            ${r.pctl != null ? html`
+              <circle cx=${rrPX(r.pctl)} cy=${cy} r="6" class=${"rrc-dot v-" + (r.verdict || "none")} />`
+            : html`<text x=${rrPX(50)} y=${cy + 3.5} text-anchor="middle" class="rrc-none">no read yet</text>`}
+          </g>`;
+      })}
+      <g class="rrc-lab">
+        ${[[10, "10th"], [25, "25th"], [50, "median"], [75, "75th"], [90, "90th"]].map(([t, l]) => html`
+          <text key=${t} x=${rrPX(t)} y=${top + bodyH + 18} text-anchor="middle">${l}</text>`)}
+      </g>
+    </svg>`;
 }
 
 // Exhibit caption. Every table in a consultancy document is numbered and named, so it
@@ -459,6 +579,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const nPriced = money.priced || 0;
   const nGaps = money.gaps_total || 0;
 
+  const mband = al.market_band || [40, 60];
+  // A stated aim is a WORD ("lead"); the chart needs a point on the ruler. These are
+  // the midpoints of what each word means against the engine's own market band — a
+  // marker, not a target lumi is asserting.
+  const RR_AIM_PCT = { lag: (mband[0] / 2), match: (mband[0] + mband[1]) / 2,
+                       lead: mband[1] + (100 - mband[1]) / 2 };
+
   // gaps grouped by area
   const domAlign = {};
   domains.forEach(x => { domAlign[x.name] = (x.target || {}).alignment; });
@@ -633,7 +760,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   }
   PART("D");
   if (wantsIntent) P("Governance and approval", "gov");
-  P("Method and basis", "method");
+  // The last sheet also carries the provenance line, which is why it — and only it —
+  // spilled in David's export. Two sheets: how the figures were produced, then the
+  // limits and the provenance. Measured in PRINT, not on screen (2026-08-16).
+  P("Method and basis", "method", { part: 0, parts: 2 });
+  P("Method and basis (cont.)", "method", { part: 1, parts: 2 });
 
   // A divider announcing a single section is padding, not structure — so a part that
   // came out one section long loses its divider and keeps its sections. This happens
@@ -675,7 +806,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     switch (p.body) {
       case "dials": exReg("dials", "Stated reward positions, and what each one changes in how the benchmark is read"); break;
       case "pops": exReg("pops", "Stated positions by employee population"); break;
-      case "position": exReg("position", "Market position by area, against the position the strategy sets"); break;
+      case "position":
+        exReg("portfolio", "Market position of every area on one percentile scale, with the position the strategy sets for each");
+        break;
       case "trend": if (trend.available) exReg("trend", "Movement by area since the previous collection window"); break;
       case "sched": exReg("sched:" + p.part, "Planned actions by horizon" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
       case "cost": if ((money.items || []).length) exReg("cost", "Metrics lumi can price, and the cost of moving each to the peer median"); break;
@@ -683,7 +816,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       case "decided": exReg("decided:" + p.part, "Each option, the area it belongs to, the decision recorded and the reason given" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
       case "gov": exReg("gov", "Approval record for this strategy"); break;
       case "domain":
-        if (p.half === "read" && (b.signals || []).length)
+        // The condition must MATCH the render, or a number is allocated to a table that
+        // never prints and the sequence gains a hole — it skipped 5 and 10. (Plain JS
+        // here: this is a switch body, not a template literal.)
+        if (p.half === "read" && (b.signals || []).length
+            && !((b.gaps || []).length && (p.parts || 1) === 1))
           exReg("dom-sig:" + b.name, "Signals in " + domainLabel(b.name) + ", with your value and how each one reads against " + cutLabel);
         if (p.half === "follow")
           exReg("dom-opt:" + b.name + ":" + p.levPart,
@@ -1122,8 +1259,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // cannot be trimmed — the signals table is what yields on a crowded sheet
       // three, not four: a signal row with wrapped detail runs ~80px, and a read sheet
       // also carries the stats, the split, the commentary and sometimes a caveat
-      const _room = (inlineFollow ? 1 : 3) - (cntStrictFalse ? 1 : 0);
-      const sigShown = (b.signals || []).slice(0, Math.max(1, _room));
+      // Measured in PRINT (10.5pt type), not on screen — the screen render paginates
+      // differently and reporting it was how the last section came to split.
+      // 2, not 3: the percentile chart sits above this table now and is worth more than
+      // a third row. ZERO where the sheet also carries the section's follow-up inline
+      // (a domain with gaps but no levers) — that sheet holds a read, a chart, the
+      // commentary AND the gap statements, and Time off & family ran past A4 trying to
+      // fit a signal table as well. The count is still named in the heading, so the
+      // reader is told what is not shown rather than it quietly vanishing.
+      const _room = inlineFollow ? 0 : 2 - (cntStrictFalse ? 1 : 0);
+      const sigShown = (b.signals || []).slice(0, Math.max(0, _room));
       const pos = b.position || {};
       const aim = b.aim || {};
       const cnt = b.count || {};
@@ -1169,13 +1314,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           </div>
         </div>
 
-        ${total ? html`
-          <div class="rr-split" role="img"
-            aria-label=${pos.below + " below, " + pos.at + " on, " + pos.above + " above market"}>
-            ${[["below", pos.below], ["at", pos.at], ["above", pos.above]].map(([k, v]) => v ? html`
-              <span key=${k} class=${"rr-split-seg s-" + k} style=${{ flex: v }}>
-                <i>${v}</i>${RR_POS_WORD[k]}</span>` : null)}
-          </div>` : null}`}
+        ${/* the position as a picture, before the counts that produce it */ ""}
+        <${RrDomainChart} band=${mband} label=${domainLabel(b.name)}
+          pctl=${pos.pctl} verdict=${pos.verdict} stance=${aim.stance} />
+
+        ${/* the split bar is GONE (2026-08-16): it and the chart above both draw "where
+             you sit", and two bars saying the same thing pushed Pay and Time off past
+             the sheet in print. The counts it carried are stated in the prose below —
+             "18 sit below market, 17 on it and 2 above" — where they read as a
+             sentence rather than needing a legend. */ ""}`}
 
         ${!isRead ? null : html`
         ${/* commentary on alignment to market — the analytic heart of the section */ ""}
@@ -1184,6 +1331,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
         ${/* a sheet that ALSO carries the follow content has room for fewer signals —
              sized so the combined sheet still lands inside A4 */ ""}
+        ${(!sigShown.length && b.signal_count) ? html`
+          <p class="rr-p rr-sm">${domainLabel(b.name) + " is flagging " + b.signal_count + " signal"
+            + (b.signal_count === 1 ? "" : "s") + "; they are set out in full under "
+            + domainLabel(b.name) + " in the app, and the options against them follow below."}</p>` : null}
         ${(sigShown || []).length ? html`
           <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > sigShown.length
             ? html` <span class="rr-sm">(${sigShown.length} of ${b.signal_count})</span>` : ""}</h3>
@@ -1193,7 +1344,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <tbody>${sigShown.map(sg => html`
               <tr key=${sg.question_id || sg.title}>
                 <td><b>${sg.title}</b>${sg.detail ? html`<br /><span class="rr-sm">${sg.detail}</span>` : ""}</td>
-                <td class="rr-sm">${sg.value || "—"}</td>
+                <td class="rr-sm">${rrSignalValue(sg.value)}</td>
                 <td class="rr-sm">${RR_POS_WORD[sg.position] || sg.position || "—"}</td>
               </tr>`)}</tbody>
           </table>
@@ -1263,31 +1414,31 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "position") return html`
       <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position at a glance<//>
-      <${RrEx} ex=${EXH["position"]} />
-      <table class="rr-table">
-        <thead><tr><th>Area</th><th>Stated aim</th><th>Live position</th><th>Read</th></tr></thead>
-        <tbody>${domains.map(d => {
-          const t = d.target || {};
-          const p = d.position || {};
-          return html`<tr key=${d.name}>
-            <td>${domainLabel(d.name)}</td>
-            <td>${RR_STANCE_WORD[t.stance] || "—"}</td>
-            <td>${RR_POS_WORD[p.verdict] || "no read yet"}</td>
-            <td><b class=${"rr-align a-" + (t.alignment || "none")}>${RR_ALIGN_WORD[t.alignment] || "—"}</b></td>
-          </tr>`; })}</tbody>
-      </table>
-      ${/* the table above counts AREAS; this counts COMMITMENTS, and one area can carry
-           several (its position plus any coherence rule that applies to it). Unlabelled,
-           the two looked like the same arithmetic disagreeing with itself. */ ""}
-      <div class="rr-stats">
-        <div><b>${gaps.length}</b><span>commitments off strategy</span></div>
-        <div><b>${holding.length}</b><span>commitments holding</span></div>
-        <div><b>${unevid.length}</b><span>not yet evidenced</span></div>
+      ${/* the picture first, the table under it — eight verdicts across fifteen sheets
+           had no view that showed them together (2026-08-16) */ ""}
+      <${RrEx} ex=${EXH["portfolio"]} />
+      <${RrPortfolioChart} band=${mband} rows=${domains.map(d => ({
+        name: d.name,
+        label: domainLabel(d.name),
+        pctl: (d.position || {}).depth_pctl,
+        verdict: (d.position || {}).verdict,
+        aim: RR_AIM_PCT[(d.target || {}).stance],
+      }))} />
+      ${/* the key must show the colours the chart actually uses — a single blue dot
+           labelled "where you sit" appeared nowhere on the chart, whose dots are
+           coloured by verdict (2026-08-16) */ ""}
+      <div class="rrc-key">
+        <span><i class="rrc-k-band"></i>the range lumi reads as on market</span>
+        <span><i class="rrc-k-dot v-below"></i>you, below market</span>
+        <span><i class="rrc-k-dot v-at"></i>on market</span>
+        <span><i class="rrc-k-dot v-above"></i>above market</span>
+        <span><i class="rrc-k-aim"></i>where your strategy aims</span>
       </div>
-      <p class="rr-p rr-sm">The table counts the ${domains.length} areas lumi benchmarks. The figures
-      beneath count commitments: an area carries one for the position your strategy sets, plus one for
-      each coherence check that applies to it, so the two totals are different measures of the same
-      picture.</p>`;
+      <p class="rr-p rr-sm">${"The chart above covers the " + domains.length + " areas lumi "
+        + "benchmarks. Elsewhere this document counts COMMITMENTS — an area carries one for the "
+        + "position your strategy sets, plus one for each coherence check that applies to it — so "
+        + gaps.length + " off strategy, " + holding.length + " holding and " + unevid.length
+        + " not yet evidenced are a different measure of the same picture, not a disagreement."}</p>`;
 
     if (kindOf === "findings") return html`
       <${RrH} n=${num} sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
@@ -1528,7 +1679,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </table>`;
 
     if (kindOf === "method") return html`
-      <${RrH} n=${num} sub="How every figure in this document was produced, what it rests on, and what it deliberately does not claim.">Method and basis<//>
+      <${RrH} n=${num} sub=${first ? "How every figure in this document was produced, what it rests on, and what it deliberately does not claim." : "Continued: what the engine will not do, and where the words in this document came from."}>Method and basis${contd}<//>
+      ${!first ? null : html`
       ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
            before an expression and printed "rests on55 of the 77 questions" */ ""}
       ${al.completeness ? html`<p class="rr-p"><b>How complete this is.</b>
@@ -1543,6 +1695,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
       same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
       counts against the commitments your strategy makes — never as a score, index or grade.</p>
+      `}
+      ${first ? null : html`
       <p class="rr-p">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
       Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
@@ -1551,7 +1705,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       it is shown: it cannot introduce a number that is not here, direct you to act, or make a legal
       determination. Where validation fails, a plainer standard wording is used instead.</p>
       <p class="rr-p rr-sm">Company facts and choices, not employee data — organisation-level, set by an
-      Admin, shaping how your results are read, never what your people see.</p>`;
+      Admin, shaping how your results are read, never what your people see.</p>`}`;
 
     return null;
   };
