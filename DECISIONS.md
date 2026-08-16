@@ -19160,3 +19160,61 @@ is. Section G also pins the R7/R8 references, so a dangling one cannot ship agai
 Suite **15/15** (qa_strategy_align now 64 checks). ?v=675.
 
 **Still open, and still yours:** the sign-off itself; the share-link privacy ruling.
+
+## 2026-08-16 — "I still do not think this is big 4 consultancy standard"
+
+David was right, and the diagnosis matters more than the fix.
+
+### I had been verifying the wrong artefact
+
+Page fitting had been reported green for weeks — *"45 sheets, none over A4"* — by measuring the
+**screen** render. The deliverable is the **print** render, and `@media print` changes both
+variables that decide pagination:
+
+```
+.pack-page               { min-height: 296mm }   /* screen: 285mm */
+.pack-page p, li, td, th { font-size: 10.5pt }   /* different type size */
+```
+
+So every green pagination report was a true statement about a rendering nobody receives. David's
+export ran to **41 physical pages while its own footers said "of 40"** — the last section split,
+and every page reference after it was wrong. A contents that points at the wrong page is the one
+defect a consultancy document cannot survive.
+
+`server/verify_report_pdf.py` now renders the real thing through headless Chrome (the same
+Skia/PDF pipeline Save-as-PDF uses) and asserts the page count matches the footers, footer indices
+run 1..N, no page is a widow, and every contents entry lands on the right heading. It reproduces
+the defect exactly on David's own file, which is how I know it works.
+
+**The root cause was one line:** `.rr-wrap { padding-bottom: var(--s6) }` — screen chrome that
+printed, sitting after the last sheet and pushing the document past 297mm. That is why the last
+section split regardless of how little content it carried, and why trimming its text never helped.
+
+### The real reason it did not read as Big 4
+
+**Forty-one pages of benchmarking with no chart.** The document *asserted* "around the 30th
+percentile" in prose and never showed it. A WTW or Mercer reward report is chart-led because a
+position against the market is a picture before it is a sentence.
+
+Two charts now, pure SVG from data already on the payload: a percentile band on every domain page,
+and a **portfolio view** opening Part B — all eight areas on one ruler, with where the strategy
+aims marked against where you sit. The shaded band is the engine's **own** market band passed
+through, so the picture cannot disagree with the verdict beside it.
+
+**What the charts displaced, and why each was the right trade** — all measured in print at 10.5pt:
+the split bar (it and the chart both drew "where you sit"); the position table (the chart names its
+own rows now — the first version left them unlabelled and relied on a table beneath being in the
+same order, which a reader cannot verify); signal tables down to two rows, and none where the sheet
+also carries its follow-up inline, with the count kept in the heading so nothing vanishes quietly.
+
+Also caught: **"P14"** — lumi's internal shorthand for a percentile — was printing in a
+client-facing table; an exhibit number was allocated to a table that no longer renders, so the
+sequence skipped 5 and 10; the chart's marker label was clipped by its own viewBox; and the legend
+showed a blue dot appearing nowhere on a chart whose dots are verdict-coloured.
+
+**41 pages, 41 claimed, exhibits 1..19 with no holes, 23 of 23 contents entries correct.** Suite
+15/15. ?v=676.
+
+**Not done, and honestly still short of the bar:** 13 of 41 pages remain under 55% full — most are
+continuation tails, but not all. The cover is still a logo on white with no colour field or device.
+Those were the "full visual identity" half of the choice, deliberately not taken this pass.
