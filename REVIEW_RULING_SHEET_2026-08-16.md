@@ -332,3 +332,94 @@ key through `PLAN_SCHEMA` into the stored plan and count per-area gaps from the 
 rather than from lever names — a schema + builder change touching the ask's decision
 units too, so it wants your word before it moves counts on four surfaces (**R-N** is its
 neighbour).
+
+---
+
+# v3.3 — rulings owed, and the red-first evidence that is already built
+
+**Nothing in v3.3 has been implemented.** Its §0.1 reserves the work to you, and D077
+has two branches that produce different code. What IS built is the thing §0.5 requires
+*before* any fix: the eleven checks, run against the shipped artefact and **shown red**.
+Gate A reported 52/0 over three blockers; that is now corrected in the only way that
+counts — the checks exist and fail on today's page.
+
+## Q16 — gate trust: answered, and one thing does not reconcile
+
+- The delivered file is **44 physical pages**, its own footers read "Page 44 of 44",
+  and it is byte-identical (sha `e25c5cf7…`) to the file Gate A's 52 checks ran against.
+  So the checks did run against this artefact, not a prior build.
+- **The review reads it as 40pp.** That does not match any artefact produced here —
+  v3.1 was reviewed as "40pp" when it was 45, v3.2 as "41pp" when it was 44. There is a
+  consistent ~4-page gap across three reviews. Either the reviewer's copy is being
+  transformed in transit, or a different file is reaching them. **Worth settling before
+  the next cycle**, because a review of a different build explains some findings.
+
+## Q17 — approver identity
+
+`director@thornbridge.example` prints because the approval record stores the account
+that approved, and no display name reaches the payload. It is the demo org's real login.
+For a member organisation it will print their Admin's email on a circulated page. Already
+held as R-U/D036 and advisory in Gate A; v3.3 asks you to confirm it is intended.
+
+## Q13/Q14/Q18 and the D077 branch — not inferred
+
+The review is explicit that Claude Code does not pick the branch, and I have not.
+What the red evidence adds to your decision:
+
+- **G54 fails in both directions**, as predicted: Wellbeing and Governance render an
+  against-aim read with no register row; Health & protection holds a register row with
+  no against-aim read. So the two code paths disagree *both* ways, not just one.
+- **G55**: the Exhibit 2 note counts 8 areas against 6 position rows.
+- Branch B is the smaller diff; Branch A makes the counts move on eight surfaces
+  (cover, §01, §02, §06, §07, §08, §19, §20). Both remain defensible; the ruling is yours.
+
+## The eleven checks — status on today's artefact
+
+| Check | Owns | Result today |
+|---|---|---|
+| G53 | D076 | **RED** — 10 distinct respondent-verb hits bound to the pool |
+| G54 | D077 | **RED** — asymmetric both ways (read-only: Wellbeing, Governance; row-only: Health) |
+| G55 | D077 | **RED** — note says 8 areas, register holds 6 position rows |
+| G56 | D078 | **RED** — approval page names no alternatives it was chosen over |
+| G57 | D079 | **RED** — no Findings bucket carries Governance & transparency |
+| G58 | D080 | **GREEN, and the check is coarser than the finding** — see below |
+| G59 | D081 | **RED** — 6 unsplit gap counts |
+| G60 | D082 | **RED** — Part C claims 3 options with no Part B mapping to check against |
+| G61 | D083 | **RED** — but on a *different* pair than the one named; see below |
+| G62 | D084 | **RED** — Pay is past-aim and still renders an options exhibit |
+| G63 | D085 | **RED** — one row claims answer-provenance without citing a response |
+
+**Two of my own first drafts were vacuous and I caught them only by demanding red.**
+G57 originally asked whether an area's *name* appeared anywhere in §08 — which an
+above-market card satisfies — and went green over the defect; it now reads the three
+bucket sentences. G58 originally accepted the priced area appearing under *any* horizon,
+which "next cycle" satisfies. That is the same failure class the review exists to correct,
+found in the corrective itself, which is the argument for red-first in one line.
+
+**G58 — green, but do not read it as D080 cleared.** This build's plan puts a Pensions &
+savings action in this cycle, so an area-level check passes. The reviewer's point is
+sharper: the *priced* gap is the employer contribution rate, and the scheduled Pensions
+action (financial wellbeing support) does not move that metric. A sound check needs the
+gap key that **D034/R-N** is waiting on — the plan carries no gap attribution today. So
+G58 stays advisory and coarse until R-N lands, and D080 should be treated as open.
+
+**G61 — found a collision, missed yours.** It flags `WEL-FRAMEWORK` ↔
+`BEN-BENEFITS-FRAMEWORK` ("Setting out what … so provision reads as a choice"), a real
+duplicate you may want to rule on. It does **not** flag `PAY-BANDS` ↔
+`GOV-RANGES-INTERNAL`, because those two share little vocabulary while arguably naming
+one action. Lexical overlap is not semantic identity, and closing that gap is a judgement
+about what counts as the same lever — which is your call anyway (the review blocks the
+merge on your line).
+
+## What the red-first block does NOT do
+
+It is **advisory**: it reports and never fails the suite, because failing a build over
+unauthorised work would force the fix. **Each check flips to blocking in the same commit
+as its fix** — that flip is the deliverable, not the check's existence. No document
+behaviour changed in this pass; the only edit is the gate.
+
+## Approval still owed
+
+Q13, Q14, Q15 (R12), Q16 (see above — one item unreconciled), Q17, Q18, the D077 branch,
+and the D083 library merge. Plus the standing set: R-N (still the largest live
+contradiction), R-O′, R-P, R-Q, R-R, R-S, R-T, R-U, R-V, R-W, R-X, R-Y, R-Z.

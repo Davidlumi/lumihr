@@ -295,6 +295,33 @@ dupes = {n: v for n, v in by_name.items() if len(v) > 1}
 check("A4.6 one lever name renders one description",
       not dupes, list(dupes)[:3], owner="D015")
 
+# --- G61 (v3.3) no two library entries share an action signature (D083) -----
+# D068's class at LIBRARY scope: two entries describing one action will contradict
+# the moment either is edited. Signature = the content words of what_it_is, so a
+# paraphrase collides with its twin. ADVISORY: merging is a library-content change
+# and David owns that file — the check exists to hold the finding, not to force it.
+_STOP = set("a an the and or of to in on for with by is are be that where it its your you"
+            " from as at not no this those these their them they we our".split())
+
+
+def _sig(s):
+    return frozenset(w for w in re.findall(r"[a-z]+", (s or "").lower()) if w not in _STOP)
+
+
+_sigs = {}
+_collide = []
+for l in levers:
+    s = _sig(l.get("what_it_is"))
+    if not s:
+        continue
+    for other, osig in _sigs.items():
+        inter = len(s & osig)
+        if inter and inter / float(min(len(s), len(osig))) >= 0.6:
+            _collide.append((other, l["lever_id"]))
+    _sigs[l["lever_id"]] = s
+check("G61 no two library entries share an action signature",
+      not _collide, "overlapping pairs: %s" % _collide[:3], owner="D083", advisory=True)
+
 # --- A4.4 no vendor, product or provider names ------------------------------
 VENDORS = ("aviva", "legal & general", "bupa", "vitality", "unum", "peppy", "headspace",
            "calm", "smart pension", "nest", "cushon", "workday", "sap", "oracle")
@@ -461,6 +488,142 @@ if "--pdf" in sys.argv:
     check("D042 area order is the stored taxonomy order",
           "_q_all.values() if q.sub_power" in open(os.path.join(HERE, "app.py")).read(),
           "the alignment endpoint still orders areas by first appearance", owner="D042")
+
+    # ================================================== v3.3 · RED-FIRST BLOCK ==
+    # G53-G63. These own defects whose FIXES ARE NOT AUTHORISED — the v3.3 review's
+    # §0.1 reserves them to David, and D077 has two branches only he can pick. They
+    # are added NOW, before any fix, because that review's §0.5 is right: "a check
+    # first seen green is not a proof", and Gate A reported 52/0 over three blockers.
+    #
+    # So each one is expected RED today. They run advisory (they must not fail a
+    # suite over unauthorised work) and each names the defect it owns and the ruling
+    # it waits on. AS EACH FIX LANDS ITS CHECK FLIPS TO BLOCKING — that flip is the
+    # deliverable, not the check's existence.
+    print("\n  -- v3.3 red-first block: expected RED until the fixes are ruled --")
+
+    # G53 — no respondent verb bound to the comparison pool (D076)
+    RESPONDENT = [r"\banswered it\b", r"\bthat answered\b", r"\bcollection window\b",
+                  r"\blast saved\b", r"\bsubmitted\b", r"\bresponded\b",
+                  r"organisations that answered"]
+    g53 = [m.group(0) for pat in RESPONDENT for m in re.finditer(pat, text, re.I)]
+    check("G53 no respondent verb is bound to the comparison pool",
+          not g53, "%d hit(s): %s" % (len(g53), sorted(set(g53))[:6]),
+          owner="D076", advisory=True)
+
+    # G54 — an against-aim sentence implies a position commitment row, and back (D077)
+    AREAS = ["Pay", "Pensions & savings", "Health & protection", "Benefits & lifestyle",
+             "Time off & family", "Incentives & recognition", "Wellbeing",
+             "Governance & transparency"]
+    aim_read, reg_row = set(), set()
+    for a in AREAS:
+        # the read renderer's sentence sits inside that area's own section
+        sec = next((p for p in pages if re.search(r"\d+ " + re.escape(a) + r"\b", p)
+                    and "How this reads" in p), "")
+        if re.search(r"the live read sits (short of|past) that aim", sec):
+            aim_read.add(a)
+        if re.search(r"You aim [a-z ]+ on " + re.escape(a) + r";", text):
+            reg_row.add(a)
+    g54 = sorted((aim_read | reg_row) - (aim_read & reg_row))
+    check("G54 against-aim read <-> register position row, per area",
+          not g54, "asymmetric: %s (read-only: %s | row-only: %s)"
+          % (g54, sorted(aim_read - reg_row), sorted(reg_row - aim_read)),
+          owner="D077", advisory=True)
+
+    # G55 — the Exhibit 2 note's stated basis reproduces the register total (D077)
+    m_note = re.search(r"chart above covers the (\d+) areas", text)
+    m_reg = re.search(r"(\d+) in all, listed[^.]*The commitments in full", text)
+    m_pos = re.search(r"position for (\d+) of the (\d+) benchmarked areas", text)
+    g55_ok = bool(m_note and m_pos) and (m_pos.group(1) == m_note.group(1))
+    check("G55 the Exhibit 2 note's basis reproduces the register's position count",
+          g55_ok,
+          "note counts %s areas; the register holds %s position rows"
+          % (m_note.group(1) if m_note else "?", m_pos.group(1) if m_pos else "?"),
+          owner="D077", advisory=True)
+
+    # G56 — a single-option approval surface discloses the alternatives (D078)
+    ask_pg = next((p for p in pages if "What approval covers" in p), "")
+    singles = [ln for ln in re.findall(r"[A-Z][a-z][^·\n]{8,60}", ask_pg)] if ask_pg else []
+    g56_ok = ("One of:" in ask_pg) or ("alternatives" in ask_pg.lower())
+    check("G56 a single-option approval surface names its alternatives",
+          g56_ok and "chosen over" in ask_pg.lower(),
+          "the approval page presents options without naming what they were selected "
+          "over — the either/or convention exists and is applied only to options that "
+          "reached the schedule", owner="D078", advisory=True)
+
+    # G57 — the Findings BUCKET union equals the benchmarked area set (D079).
+    # First form of this check asked only whether an area's NAME occurred anywhere in
+    # the section, which an above-market card or a passing mention satisfies — it went
+    # green over the defect. Bucket membership is what the check is about, so it now
+    # reads the three bucket sentences the section actually emits.
+    fnd = " ".join(p for p in pages if re.search(r"\d+ Findings", p))
+    bucketed = set()
+    for a in AREAS:
+        if not fnd:
+            continue
+        in_card = re.search(re.escape(a) + r"[^.]{0,120}(below market|short of|against an?)", fnd, re.I)
+        in_track = re.search(r"([^.]*?)\bis tracking with the stated intent|are tracking with the stated intent", fnd)
+        in_past = re.search(r"([^.]*?)sits? above a deliberately lower aim", fnd)
+        if in_card or (in_track and a.lower() in (in_track.group(0) or "").lower()) \
+                or (in_past and a.lower() in (in_past.group(0) or "").lower()):
+            bucketed.add(a)
+    g57 = [a for a in AREAS if a not in bucketed]
+    check("G57 every benchmarked area falls in a Findings bucket",
+          not g57, "no bucket carries: %s" % g57, owner="D079", advisory=True)
+
+    # G58 — a priced gap is acted on THIS CYCLE, or its absence is stated (D080).
+    # First form accepted the area appearing under any horizon, which "next cycle"
+    # satisfies — green over the defect. The finding is that the one number a board
+    # can act on has nothing attached to it in the cycle being approved.
+    priced_area = "Pensions & savings" if re.search(
+        r"Employer pension contribution", text) else None
+    now_block = ""
+    for p in pages:
+        if "Planned actions by horizon" in p:
+            m = re.search(r"This cycle(.*?)(Next cycle|Multi-cycle|Generated )", p, re.S)
+            if m:
+                now_block += " " + m.group(1)
+    g58_ok = (not priced_area) or (priced_area.lower() in now_block.lower()) \
+        or bool(re.search(r"priced gap[^.]{0,90}(no scheduled action|not scheduled|no action)", text, re.I))
+    check("G58 a priced gap is acted on this cycle or its absence is stated",
+          g58_ok, "the only priced gap (%s) carries no THIS-CYCLE action and the "
+          "document does not say so" % priced_area, owner="D080", advisory=True)
+
+    # G59 — every gap count is split, or accompanied by the split (D081)
+    bare = re.findall(r"\b(?:the )?(\d+) gaps?\b(?![^.]{0,60}(?:short or contradicted|past a deliberately))", text)
+    check("G59 every gap count carries or accompanies the shortfall/overshoot split",
+          not bare, "%d unsplit gap count(s): %s" % (len(bare), bare[:5]),
+          owner="D081", advisory=True)
+
+    # G60 — Part C's per-gap option count equals Part B's mapped options (D082)
+    m_c = re.search(r"one of (\d+) options against this gap", text)
+    partb_opts = len(re.findall(r"\b(?:Flexible benefits allowance|Salary-sacrifice arrangements"
+                                r"|Group risk bundle|Voluntary benefits platform"
+                                r"|A stated benefits position|Benefits communication and take-up)\b",
+                                text))
+    check("G60 Part C's per-gap option count matches Part B's mapped options",
+          not m_c, "Part C claims %s options against one gap while Part B's exhibit for "
+          "that area carries no gap mapping to check it against"
+          % (m_c.group(1) if m_c else "?"), owner="D082", advisory=True)
+
+    # G62 — a past-aim area renders no options exhibit (D084)
+    past_areas = [a for a in AREAS
+                  if re.search(r"You aim [a-z ]+ on " + re.escape(a)
+                               + r"; the live read sits past it", text)]
+    g62 = []
+    for a in past_areas:
+        sec = " ".join(p for p in pages if re.search(r"\d+ " + re.escape(a) + r" — what follows", p))
+        if sec and re.search(r"Options against the " + re.escape(a) + " gaps", sec, re.I):
+            g62.append(a)
+    check("G62 a past-aim area renders no options exhibit",
+          not g62, "past-aim areas still offering levers: %s (past-aim set: %s)"
+          % (g62, past_areas), owner="D084", advisory=True)
+
+    # G63 — every "Your stated answers" row cites a response token (D085)
+    rows = re.findall(r"([^|]{0,140}?)Your stated answers", text)
+    g63 = [r.strip()[-90:] for r in rows if "your response" not in r.lower()]
+    check("G63 every 'Your stated answers' row cites a response",
+          not g63, "%d row(s) claim answer-provenance without citing one: %s"
+          % (len(g63), g63[:2]), owner="D085", advisory=True)
 
     # A6.5 — people, not logins. ADVISORY: the record IS an account today, and
     # rendering a name needs a captured field. Held for David (R-U).
