@@ -597,6 +597,23 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const DEC_STATES = al.option_decision_states || {};
   const gbp = (n) => "£" + Math.round(n || 0).toLocaleString("en-GB");
   const decKey = (cat, lever) => (cat || "") + "|" + (lever || "");
+  // one commitment's levers are ALTERNATIVES — the panel caught both pension options
+  // scheduled and counted as two actions. Map lever name -> commitment so the render
+  // can say so wherever the plan lists them.
+  const altOf = {}, costOf = {};
+  (al.options || []).forEach(o => (o.levers || []).forEach(l => {
+    if (l.name && !(l.name in altOf)) altOf[l.name] = o.commitment_id;
+    if (l.name && !(l.name in costOf)) costOf[l.name] = l.cost_character;
+  }));
+  const altMark = (list) => {
+    const seen = {};
+    return (list || []).map(a => {
+      const g = altOf[a.title];
+      const first = g && seen[g];
+      if (g) seen[g] = seen[g] || a.title;
+      return { ...a, altFirst: (first && first !== a.title) ? first : null };
+    });
+  };
   const saveDecision = async (cat, lever, state, reason) => {
     try {
       const r = await api("/api/strategy/option-decision",
@@ -781,11 +798,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // the document uses, rather than letting one area silently spill.
       // 4, not 5 (2026-08-16): each lever row now carries its decision badge and the
       // author's reason, which added ~200px to a five-row sheet and pushed it past A4
-      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 5)) : 0;
+      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 4)) : 0;
       P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
       for (let k = 0; k < followSheets; k++) {
         P(domainLabel(b.name) + (k ? " (cont.)" : " (cont.)"), "domain",
-          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 5, k * 5 + 5],
+          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 4, k * 4 + 4],
             levPart: k, levParts: followSheets });
       }
     });
@@ -963,12 +980,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
     // the approval's own cost, from its actions' cost characters — never the envelope
     const nowActs = ((plan || {}).actions || []).filter(x => x.horizon_bucket === "this cycle");
-    const recurring = nowActs.filter(x => x.cost_character === "recurring").length;
+    const recurring = nowActs.filter(x => (x.cost_character || costOf[x.title]) === "recurring").length;
     const ownCost = !nowActs.length ? ""
       : recurring === 0
         ? (n === 1 ? "The action itself is cost-neutral or self-funding — no new recurring spend is being approved. "
                    : "The actions themselves are cost-neutral or self-funding — no new recurring spend is being approved. ")
-        : recurring + " of the " + nowActs.length + " carries recurring spend, priced in What it costs. ";
+        : recurring + " of the " + nowActs.length + (recurring === 1 ? " carries" : " carry")
+          + " recurring spend; where lumi can price it the figure is in What it costs, and where it "
+          + "cannot, the budget is yours to set before approval. ";
     const cost = money.investment_to_p50_gbp
       ? ("Separately, the indicative cost of closing every gap lumi can price is "
          + gbp(money.investment_to_p50_gbp) + " a year"
@@ -1036,7 +1055,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (!schedule.length) return "No actions are scheduled yet.";
     const n = schedule.reduce((a, s) => a + s.actions.length, 0);
     const now = (schedule.find(s => s.horizon === "this cycle") || {}).actions || [];
-    return n + " action" + (n === 1 ? "" : "s") + " across " + schedule.length + " horizon"
+    // alternatives are one decision, not two — the count says so (2026-08-16 panel)
+    const allA = schedule.reduce((a, s2) => a.concat(s2.actions), []);
+    const altPairs = allA.filter(a2 => altMark(allA).find(x => x.title === a2.title && x.altFirst)).length;
+    return n + " action" + (n === 1 ? "" : "s")
+      + (altPairs ? " (" + altPairs + " " + (altPairs === 1 ? "is an alternative" : "are alternatives")
+         + " to another — one of each pair, not both)" : "")
+      + " across " + schedule.length + " horizon"
       + (schedule.length === 1 ? "" : "s") + ", sequenced by how quickly each one can realistically land. "
       + (now.length ? now.length + " " + (now.length === 1 ? "sits" : "sit") + " in the current cycle; "
          + "the rest are held deliberately, not deferred by omission."
@@ -1139,7 +1164,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div><span>Prepared by</span>lumi${" "}·${" "}reward benchmarking</div>
           <div><span>Date of issue</span>${today}</div>
           <div><span>Document status</span>${ver
-            ? "Version " + ver.version + ", approved" + (ver.approval_date ? " " + ver.approval_date : "")
+            ? (ver.dirty ? "Version " + ver.version + " — amended; re-approval pending"
+                         : "Version " + ver.version + ", approved" + (ver.approval_date ? " " + ver.approval_date : ""))
             : "Draft — not yet approved"}</div>
           <div><span>Benchmark basis</span>${cutLabel}</div>
           <div><span>Data collection</span>${(al.snapshot || {}).window || "Current window"}${
@@ -1199,9 +1225,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            are dropped — a reader wants the section, not every sheet it spans. */ ""}
       ${hasPosition && wantsPlan ? html`
         <${RrCard} tone="navy" label="What this paper concludes">
-          <p class="rr-p">${rrType(
-            "Read against the stated strategy, " + gaps.length + " of " + commitments.length
-            + " commitments sit off strategy across " + domains.length + " benchmarked areas. "
+          <p class="rr-p">${rrType((() => {
+            const belowN = domains.filter(d => (d.target || {}).alignment === "behind").length;
+            const aboveN = domains.filter(d => (d.target || {}).alignment === "ahead").length;
+            const onN = domains.filter(d => (d.target || {}).alignment === "on_target").length;
+            return "Of " + domains.length + " benchmarked areas, " + belowN + " sit below the position "
+              + "the strategy sets, " + aboveN + " above it and " + onN + " on it — "
+              + gaps.length + " of " + commitments.length + " commitments off strategy in all. ";
+          })()
             + "The board is asked to " + rrCase(theAsk.decision || "note this review") + ". "
             + (money.investment_to_p50_gbp
                ? "The one envelope lumi can price — closing every priced gap to the peer median — is "
@@ -1521,7 +1552,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                        menu with no record of what was chosen or turned down (2026-08-16) */ ""}
                   <${RrDecCell} cur=${decisions[decKey(b.name, l.lever_id)]} states=${DEC_STATES}
                     canEdit=${!!canEditDoc} onSave=${(s, w) => saveDecision(b.name, l.lever_id, s, w)} /></td>
-                  <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
+                  <td class="rr-sm">${l.cost_character}</td>
+                  <td class="rr-sm">${l.speed}${l.reversibility === "hard" ? html`<br /><span class="rr-muted">hard to reverse</span>` : ""}</td>
                   <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
             </table><//>`
           : html`<p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>`}`}
@@ -1674,9 +1706,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
              carded (2026-08-16 panel pass) */ ""}
         <${RrCard}>
         <ol class="rr-plan" start=${start || 1}>
-          ${(items || []).map((a, i) => html`
+          ${altMark(items).map((a, i) => html`
             <li key=${i}>
-              <div class="rr-plan-t">${a.title}
+              <div class="rr-plan-t">${a.title}${a.altFirst ? html` <span class="rr-sm rr-muted">· alternative to ${a.altFirst}</span>` : ""}
                 <span class="rr-sm"> · from ${domainLabel(a.category || "")}${
                   SEC_NO["domain:" + a.category] ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""} · ${a.horizon}</span></div>
               <p class="rr-p">${rrCase(rrProse(a.why))}</p>
@@ -1727,8 +1759,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             + " in this review " + (rest === 1 ? "is" : "are") + " set out under "
             + (rest === 1 ? "its own area" : "their own areas") + " with the options against "
             + (rest === 1 ? "it" : "them") + ", and " + (rest === 1 ? "is" : "are")
-            + " not part of this approval. They are held deliberately, not overlooked — the "
-            + "schedule says when each one is expected to come back."}</p>
+            + " not part of this approval. Each is set out in its own section with the options "
+            + "against it; where an option is already planned it appears in The schedule, and the "
+            + "rest fall to the next review."}</p>
           <//>` : null}
         </div>
         ${hasPosition ? html`
@@ -1792,8 +1825,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <tr class="rr-hz-row"><th colSpan="3">
               <span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}</span>
               <i>${s.actions.length} ${s.actions.length === 1 ? "action" : "actions"}</i></th></tr>
-            ${s.actions.map((a, i) => html`
-              <tr key=${i}><td><b>${a.title}</b></td>
+            ${altMark(s.actions).map((a, i) => html`
+              <tr key=${i}><td><b>${a.title}</b>${a.altFirst ? html`<br /><span class="rr-sm rr-muted">${"alternative to " + a.altFirst + " — one of the two, not both"}</span>` : ""}</td>
                 <td class="rr-sm">${domainLabel(a.category || "")}${SEC_NO["domain:" + a.category]
                   ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""}</td>
                 <td class="rr-sm">${a.roi}</td></tr>`)}
@@ -1825,7 +1858,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <table class="rr-table tight">
           <thead><tr><th>Metric</th><th>Area</th><th class="num">To median</th><th class="num">To upper quartile</th></tr></thead>
           <tbody>${(money.items || []).map(it => html`
-            <tr key=${it.label}><td><b>${it.label}</b><br /><span class="rr-sm">${it.formula}</span></td>
+            <tr key=${it.label}><td><b>${it.label}</b><br /><span class="rr-sm">${it.formula}${
+              it.levels_covered != null && it.levels_total != null && it.levels_covered < it.levels_total
+                ? " — on the " + it.levels_covered + " of " + it.levels_total + " levels you have entered"
+                : ""}</span></td>
               <td class="rr-sm">${domainLabel(it.category || "")}</td>
               <td class="num">${gbp(it.to_p50_gbp)}${it.direction === "saving" ? html` <span class="rr-sm">saving</span>` : ""}</td>
               <td class="num rr-sm">${gbp(it.to_p75_gbp)}</td></tr>`)}</tbody>
@@ -1837,7 +1873,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           + " drive every figure above. Cost per leaver ("
           + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0) + "% of salary) and the agency premium ("
           + ((money.assumptions || {}).agency_premium_pct || 0) + "%) apply only where attrition or agency metrics "
-          + "are priced. Change any input in your company details and the figures move with it."}</p>` : null}`;
+          + "are priced. Contribution gaps are priced on full salary; where contributions are set on "
+          + "qualifying earnings the true cost is lower, so treat the envelope as an upper indication. "
+          + "Change any input in your company details and the figures move with it."}</p>` : null}`;
 
     // ---- WHAT A POINT IS WORTH -------------------------------------------------
     // Its own section, not a block under "What it costs": it is a different idea
@@ -1919,11 +1957,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${"Peer figures are the " + (al.snapshot.window || "current") + " collection"
         + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
         + ". Your own answers are as you last saved them; where any are due a refresh, Your data says so."}</p><//>` : null}
-      <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">Positions come from your own
-      submitted data against <b>${cutLabel}</b>, on the same engine and suppression rules that govern every
-      figure in lumi. Alignment is reported as counts against the commitments your strategy makes — never as
-      a score, index or grade.</p><//>
-      <${RrCard} tone="cream" label="What it will not do"><p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
+      <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">${"Positions come from your own "
+      + "submitted data against " + cutLabel + ", on the engine and suppression rules that govern every "
+      + "figure in lumi. An area's verdict weighs every metric's position; its percentile is depth alone — "
+      + "near the band's edge the two can differ. Alignment is counts against your commitments — never a "
+      + "score, index or grade."}</p><//>
+      <${RrCard} tone="cream" label="What it will not do"><p class="rr-p rr-sm">${"Positions blend "
+      + "your whole workforce: where populations differ (hourly store against salaried head office), "
+      + "a blended percentile can mask offsetting gaps, and this document does not split them."}</p>
+      <p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
       Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
       model has a figure for the area in question. Written commentary is generated from the figures here and
