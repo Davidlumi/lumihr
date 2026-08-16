@@ -19102,3 +19102,61 @@ were all real improvements found along the way, but the last "failure" was the h
 would have been easy to keep changing working code chasing it.
 
 Suite **15/15**, with seven new source checks pinning what this pass learned. ?v=674.
+
+## 2026-08-16 — Sign-off pack, and ROI without prediction
+
+Two items chosen off the open register: prepare R7/R8 for sign-off, and extend ROI beyond £.
+
+**First, a correction.** I had told David "24 of 36 levers are Claude-drafted". The file's own
+STATUS line is broader — *"drafted 2026-08-14 — pending David's content sign-off"* covers the
+whole inventory, with 20 flagged as the newest batch. The review workload is larger than I said.
+
+### The sign-off pack
+
+`server/gen_r7_r8_ruling_sheet.py` → `R7_R8_RULING_SHEET_2026-08-16.md`. Generated, never
+hand-maintained: live content plus the checks a reviewer cannot do by eye, and a KEEP/EDIT/CUT
+column per row. It marks the **19 levers asserted on domain knowledge alone** — nothing in the
+product checks those, so they deserve the most attention.
+
+**It found a defect on first run.** `PEN-CONTRIBUTION` carried `prevalence_metric_id`
+`REW26_BEN_PENS_EMPLOYER`, which does not exist. The link had resolved to nothing since it was
+written, and the lever rendered with no peer take-up — silently.
+
+The key was **removed rather than repointed**, and the reasoning is the interesting part: every
+other prevalence link reads a `yes_no` or `single_select`, because prevalence means *"what share
+of peers do this"*. An employer contribution **rate** is a matrix benchmark, not a prevalence — so
+there may be no correct target at all. The rules came back clean: no dangling evidence, every
+expected answer present as an option on its question.
+
+### ROI beyond £
+
+The design decision: **refuse the prediction, supply the multiplier.** lumi cannot know how many
+points of attrition a lever buys — asserting it would be a forecast about someone else's
+organisation and, in a board paper, advice. But the arithmetic of *one point* is fully determined
+by their headcount and the assumptions already published. One point of regretted attrition is
+worth £18,900 a year at 150 FTE; one point of agency usage £16,200. Multiplier from lumi,
+judgement from the board.
+
+**Two deliberate omissions.** No unit rate for employer pension contribution, though it computes
+cleanly: it is the one metric priced exactly, so a rate beside it invites dividing the gap by it
+to infer a gap *size* — which only holds if the gap is uniform across levels, and the model
+weights by level. And the basis is printed rather than inferred: unit rates are on total
+headcount, gap figures are level-weighted.
+
+**Caught while wiring it:** *"Indicative £27,000 to reach the peer median"* printed against every
+recurring lever in a category, so two pension options each showed £27,000 and a reader could add
+them to £54,000 — while the envelope correctly counts the gap **once**. The line now says the
+figure is the gap's, not the action's.
+
+### A gate of mine that was silently skipping
+
+Worth recording because it nearly shipped. I gated the unit rates on the HTTP side, ran the suite
+green, then checked whether the checks had actually executed: the probe org has no FTE band, so
+**every one of them had skipped and covered nothing.** A gate that passes by not running is worse
+than no gate. The arithmetic moved into a pure `compute_unit_rates()` tested on a synthetic input
+where it cannot skip, and the HTTP-side skip now prints a line saying so and where the real cover
+is. Section G also pins the R7/R8 references, so a dangling one cannot ship again.
+
+Suite **15/15** (qa_strategy_align now 64 checks). ?v=675.
+
+**Still open, and still yours:** the sign-off itself; the share-link privacy ruling.
