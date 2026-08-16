@@ -19242,3 +19242,34 @@ continuation tails, which are normal in any document, but not all of them are. F
 means letting short sections share a sheet — a change to the one-section-per-sheet model that
 touches running heads, section numbering and the contents map, and is a bigger piece than it
 looks.
+
+## 2026-08-16 — Density: 41 pages to 36
+
+Three moves, in ascending order of judgement needed.
+
+**Retuned the chunk budgets.** Every one was set when a sheet carried more — a split bar, three
+signal rows, a position table — and none had been revisited after the charts displaced them.
+Findings, levers per follow sheet, the plan, risks, decisions and the schedule all hold more now.
+No structural change, and the verifier catches any spill, so these are *measured* rather than
+guessed.
+
+**Un-split "Method and basis."** I had split it in two while chasing the last-page spill, on the
+theory that the provenance line made it too tall. The real cause was `.rr-wrap`'s padding printing
+after the final sheet. Once that was fixed the split was a workaround for a bug that no longer
+existed — and it was costing two half-empty pages at the back.
+
+**Paired two short sections onto one sheet.** The one place the one-section-per-sheet model bends,
+and it bends **by hand**: `P2()` is only ever called for a named, adjacent pair in the same part,
+never a continuation. An automatic packer would have to guess print heights, which is precisely how
+the page count came to lie in the first place. Both sections keep their number, deck and contents
+line; a rule with air marks the join.
+
+Principles (40%) + Tensions (34%) pair cleanly. **Governance + Method look equally obvious and do
+not fit** — Method is the last sheet so it carries the provenance line too, and the three run past
+A4. The verifier caught that on the first render, which is the whole argument for measuring the PDF
+rather than reasoning about it.
+
+**36 pages, 36 claimed, exhibits 1..18 with no holes, 23 of 23 contents entries correct.** Six
+pages remain under 55% and each is now structural rather than sloppy: continuation tails, the
+Movement page that is honestly empty until a second collection window exists, and a domain with
+few signals. Suite 15/15. ?v=677.
