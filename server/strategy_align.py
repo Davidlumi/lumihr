@@ -179,24 +179,39 @@ def _intent_holds(rule, strategy, document):
     return v is not None and v in (it.get("in") or [])
 
 
-def _cond_eval(cond, answers):
-    """One evidence condition against the org's own answers.
+def _cond_eval(cond, answers, strategy=None):
+    """One evidence condition against the org's own answers — or, for ONE condition
+    shape, against the strategy itself.
     Returns (state, matched_answer): state True (condition met = the problem shows),
     False (answered, condition not met), or None (needed answer missing)."""
     if "all" in cond:
-        parts = [_cond_eval(c, answers) for c in cond["all"]]
+        parts = [_cond_eval(c, answers, strategy) for c in cond["all"]]
         if any(p[0] is None for p in parts):
             return None, None
         met = all(p[0] for p in parts)
         return met, next((p[1] for p in parts if p[0]), None)
     if "any" in cond:
-        parts = [_cond_eval(c, answers) for c in cond["any"]]
+        parts = [_cond_eval(c, answers, strategy) for c in cond["any"]]
         if any(p[0] for p in parts):
             hit = next(p for p in parts if p[0])
             return True, hit[1]
         if any(p[0] is None for p in parts):
             return None, None
         return False, None
+    # INTENT-VS-INTENT (2026-08-16, practitioner panel): a strategy can pull against
+    # itself — an attract-led objective with pay aimed below market — and no metric
+    # answer can evidence that; the evidence IS another stated dial. "strategy_stance"
+    # reads the EFFECTIVE stance for a domain (its domain_targets override, else the
+    # global dial), with the same trust rule as intent: an unstated dial is None,
+    # never a fabricated answer. The matched value returns as the reader's word
+    # ("below market"), because it prints inside a statement.
+    if "strategy_stance" in cond:
+        st = strategy or {}
+        dom = cond["strategy_stance"]
+        v = (st.get("domain_targets") or {}).get(dom) or _dial(st, "market_position")
+        if v is None:
+            return None, None
+        return v in (cond.get("in") or []), _STANCE_WORD.get(v, v)
     qid = cond.get("metric")
     a = (answers.get(qid) or "").strip()
     if not a:
@@ -264,7 +279,7 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
     for rule in rules or []:
         if not _intent_holds(rule, strategy, document):
             continue
-        state, matched = _cond_eval(rule.get("evidence") or {}, answers)
+        state, matched = _cond_eval(rule.get("evidence") or {}, answers, strategy)
         if state is None:
             status = "not_evidenced"
             statement = "Stated: %s — the evidence for this is unanswered, so it can't yet be assessed." % rule.get("commitment")

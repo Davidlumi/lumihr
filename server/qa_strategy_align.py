@@ -264,10 +264,42 @@ if _Q:
                 if not any(l["category"] == c and l["register_effect"] == "Substance" for l in LEV)
                 or not any(l["category"] == c and l["register_effect"] == "Approach" for l in LEV)]
     check("G", "every covered category carries BOTH registers", not _missing, _missing)
-    # a rule that can never fire is worse than no rule: it reads as a clean bill of health
-    _reachable = all(c.get("metric") in _Q
+    # a rule that can never fire is worse than no rule: it reads as a clean bill of health.
+    # strategy_stance clauses read the strategy itself, not a metric — always reachable.
+    _reachable = all(c.get("strategy_stance") or (c.get("metric") in _Q)
                      for r in _RULES_RAW for c in _gen.rule_clauses(r["evidence"]))
     check("G", "every coherence rule can actually fire", _reachable)
+
+
+
+# ---- intent-vs-intent (P6, 2026-08-16): the four paths ----------------------
+# A strategy can pull against itself; the evidence is another stated dial. The
+# contract: fires on the contradiction, consistent when the dials agree, silent
+# when the intent is not held, not_evidenced when the stance is simply unstated —
+# NEVER fabricated from an absent dial.
+_p6 = [r for r in RULES if r.get("rule_id") == "P6"]
+check("G", "P6 (attract vs below-market pay) is loaded", bool(_p6))
+if _p6:
+    _s = lambda **kw: dict(kw, provenance={f: "set" for f in kw},
+                           domain_targets=kw.get("domain_targets") or {})
+    _o1 = sa.evaluate(RULES, _s(primary_objective="attract", market_position="lead",
+                                domain_targets={"Pay": "lag"}), {}, {}, [], ())
+    _c1 = [x for x in _o1["commitments"] if x["id"] == "rule:P6"]
+    check("G", "P6 fires on attract + a Pay lag override -> contradicted",
+          bool(_c1) and _c1[0]["status"] == "contradicted")
+    check("G", "P6 statement carries the stance as the reader's word",
+          bool(_c1) and "below market" in _c1[0]["statement"], _c1 and _c1[0]["statement"][:90])
+    _o2 = sa.evaluate(RULES, _s(primary_objective="attract", market_position="match"), {}, {}, [], ())
+    _c2 = [x for x in _o2["commitments"] if x["id"] == "rule:P6"]
+    check("G", "P6 consistent when the dials agree -> evidenced",
+          bool(_c2) and _c2[0]["status"] == "evidenced")
+    _o3 = sa.evaluate(RULES, _s(primary_objective="retain", market_position="lag"), {}, {}, [], ())
+    check("G", "P6 silent when the objective is not attract",
+          not [x for x in _o3["commitments"] if x["id"] == "rule:P6"])
+    _o4 = sa.evaluate(RULES, _s(primary_objective="attract"), {}, {}, [], ())
+    _c4 = [x for x in _o4["commitments"] if x["id"] == "rule:P6"]
+    check("G", "P6 with no stated stance -> not_evidenced, never fabricated",
+          bool(_c4) and _c4[0]["status"] == "not_evidenced")
 
 # ---- unit rates: what a point is worth (2026-08-16) -------------------------
 # Checked here, on a synthetic input, because the HTTP gate's probe org has no FTE

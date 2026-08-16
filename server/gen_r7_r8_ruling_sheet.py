@@ -48,8 +48,9 @@ def load_questions():
 
 
 def rule_clauses(ev):
-    """Rules use three evidence shapes: one metric, or any/all lists of clauses."""
-    if "metric" in ev:
+    """Rules use four evidence shapes: one metric, a strategy_stance read, or any/all
+    lists of clauses."""
+    if "metric" in ev or "strategy_stance" in ev:
         return [ev]
     out = []
     for k in ("any", "all"):
@@ -79,6 +80,8 @@ def validate(levers, rules, Q):
                        % l["lever_id"])
     for r in rules:
         for c in rule_clauses(r["evidence"]):
+            if c.get("strategy_stance"):
+                continue                      # intent-vs-intent: no metric to resolve
             m = c.get("metric")
             if m not in Q:
                 bad.append("RULE %s: evidence metric '%s' does not exist — the rule can never fire"
@@ -208,6 +211,11 @@ def main():
                 ("includes %s" % _it.get("contains"))
         w("| Fires when intent | `%s` %s |" % (_it["field"], _when))
         for c in rule_clauses(r["evidence"]):
+            if c.get("strategy_stance"):
+                w("| …and evidence | the STRATEGY itself — the effective stance for %s is in %s "
+                  "(intent-vs-intent; no metric answer involved) |"
+                  % (c["strategy_stance"], ", ".join(c.get("in") or [])))
+                continue
             cond = ("answer in %s" % c["answer_in"]) if c.get("answer_in") else \
                    ("answer NOT in %s" % c.get("answer_not_in"))
             w("| …and evidence | %s<br>%s |" % (qref(Q, c.get("metric")), cond))
