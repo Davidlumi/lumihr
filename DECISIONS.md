@@ -19655,3 +19655,68 @@ Suite **16/16**. ?v=685. Rulings for David in REVIEW_RULING_SHEET_2026-08-16.md 
 R-A..R-M): Gate A's blocking/advisory split, Gate B's fixture harness, Gate C's persona
 protocol, A2.2's controlled vocabulary, and the four delight items that need payload,
 capture or a ruling.
+
+## 2026-08-16 — Review v3.1: diagnose before you write, and all three frozen checks clear
+
+The v3.1 spec opened with three STOP checks and its own sequence put diagnostics before
+writes. Run read-only against the live store and the ruling history — and the discipline
+paid, because **all three frozen checks clear**, two of them in ways that matter more than
+the questions asked.
+
+**F1 — the pool.** 270 is live and authoritative (271 orgs, one staff org with no
+answers). MAX(n) across all 344 metrics is 270 and it is reached; nothing anywhere exceeds
+the pool, so the invariant holds. Cover and footer render ONE server field built once from
+`meta.peer_pool`, and the same `responding` set becomes the all-cut that every metric's n
+aggregates over — one source, as asserted. And the log is not defective: DECISIONS.md:18280,
+2026-08-14, "+50 new seed orgs (benchmark pool 220 → 270), David-approved", with the
+migration script, the re-ratified frozen targets at n=270 and the donor-clone fix. The six
+lines the reviewer cites are pre-growth June entries, correct as of their own dates under
+append-only semantics. What survived was the reviewer's half-sight: 270 (pool) and 258
+(per-metric base after non-response) were printed without labels distinguishing them.
+
+**F2 — the verdict grade.** The floor is 3, not 5 (ratified 2026-07-11; the old 5 was never
+a considered decision). All eight areas come back basis="market" — none is indicative — and
+Wellbeing has 18 polarised questions, not zero; the reviewer is quoting a DECISIONS state
+the engine left behind. But he is right that report.js never reads `basis`, which the SPA
+does, so the PDF is the one surface that drops the grade. **And underneath it, a real
+finding:** `count.practice` is hardcoded 0, so `polarised == metrics` for every area and
+the split the payload advertises is fiction — Wellbeing's 18 are 3 benchmark readings plus
+15 presence flags where Pay's 46 are 33 plus 13, and the document distinguishes them
+nowhere. Engine change with gate impact; on the sheet as R-O′.
+
+**F3 — the taxonomy.** David-authored and RATIFIED (2026-07-14, Option B′) with a
+row-level mapping CSV from the 2026.1 seven. Not drift, and no area falls below the floor.
+The diagnostic found the actual defect instead: `/api/strategy/alignment` was the only one
+of five hero_signals call sites not sorting by `sub_power_order` — the root cause of the
+reviewer's "four orderings in one document". Fixed.
+
+**Fixed in fix classes, never bundled** (four commits): data/attribution — D028 (score-kind
+items hard-nulled the median so "25/100 vs the peer median" printed with no number, while
+the median sat in the block), D032 (the plan now renders lever descriptions from the LIVE
+library, so a plan built before a repair cannot carry superseded reward content into a
+board paper), D038, D039, D064. Count/logic — D031, D035, D037, D058, D059, D066.
+Copy — D026, D027, D033. P2 — D041, D042, D047, D048, D052, D057, D061. Q5, Q10.
+
+**Three of the defects were mine again**, from the v2/v3 fixes: the cover addressee that
+contradicts the approval record 36 sheets later (D037), the "one of 1 gap" grammar leak
+(D033), and a "what we tested and it held" card that counted a market read as an answer
+test (D031). The gate now owns all three.
+
+**Two the measurement caught before any reviewer could:** the htm newline-collapse printing
+"the area.Written commentary", and a grammar break I introduced in the wage-floor title
+("both … sits"). Both are now assertions.
+
+**Where the reviewer was wrong, on the record:** the pool (F1), the ≥5 floor and Wellbeing's
+zero polarised metrics (F2), the taxonomy (F3), D030 (the "1×" is the Yours column; position
+can only ever be below/at/above), and D063 (midrank explains the 21st percentile exactly —
+103 of 246 peers score zero, r = 20.9 → P21, correct convention correctly printed).
+
+**D034 is right and is held.** Benefits & lifestyle genuinely carries two off-strategy
+commitments and the schedule reports one, because candidates dedupe globally by
+(category, lever_id), `alt_group` is dropped by both plan builders, and altInfo discards
+single-row groups. Fixing it moves counts on four surfaces — advisory in Gate A with the
+diagnostic attached, waiting on David beside R-N.
+
+Gate A is now **47 checks, 0 failures, 4 advisory** (aim-bracket, forecast language,
+approver identity, D034 — each naming the ruling it waits on). Suite **16/16**. Both ask
+shapes verified; FULL 45pp, FRESH 12pp, both clean. ?v=686.

@@ -243,3 +243,92 @@ until it is rebuilt, **R-F**), 15 (Part A "in lumi"), 17 (**can Part A export
 alone?** — the original standalone-strategy requirement. Worth answering directly:
 the strategy variant already renders alone at `/strategy`, but it is not offered as
 its own export from the plan document).
+
+---
+
+# v3.1 — the three frozen checks, answered
+
+The spec's own sequence put diagnostics before writes. All three were run read-only
+against the live store and the ruling history. **All three clear**, and two of them
+clear in a way that matters more than the question asked.
+
+## F1 — pool reconciliation: CLEARED, and the log is not defective
+
+| Question | Answer |
+|---|---|
+| Live pool | **270** — `orgs` 271, minus one staff org with zero answers. `meta.peer_pool.responding_orgs` = 270. |
+| `MAX(n)` any metric | **270**, and it is reached (81 of 344 metrics). No block anywhere exceeds the pool. **The invariant `max(n) ≤ pool` holds.** |
+| One source? | **Yes.** Cover and footer both render the single server field `al.pool_footer`, built once from `meta.peer_pool`; that meta key is written in exactly one place (`aggregate.run_snapshot`, `len(responding)`), and the same `responding` set becomes the all-cut every metric's `n` aggregates over. |
+| The 258 | A **per-metric base**, not a pool count: exactly five questions have n=258 because 12 pool members did not answer them. |
+| DECISIONS entry | **It exists** — `DECISIONS.md:18280`, "## 2026-08-14 — +50 new seed orgs (benchmark pool 220 → 270), David-approved", naming the migration script, the re-ratified frozen targets at n=270 and the donor-clone fix. The six lines the reviewer cites are pre-growth June entries, correct as of their own dates under append-only semantics. |
+
+**The reviewer's C1 hedge resolves the other way**: the pool is 270, the log recorded it,
+and this exact claim was already adjudicated on this sheet. **The defect that survives** is
+the one the reviewer half-saw: pool (270) and per-metric base (258) are different
+quantities printed without labels that distinguish them. Fixed — signals now read "on the
+N organisations that answered it".
+
+## F2 — verdict grade: the premise is stale, the instinct lands one layer down
+
+- **The floor is 3, not 5** (`DOMAIN_MIN_POLARISED`, ratified 2026-07-11; the old 5 was
+  never a considered decision and was silently overridden by mp_config).
+- **All eight areas come back `basis="market"`** for this org. Not one is indicative. So
+  "indicative rendered as methodology-grade" does not describe this render.
+- **Wellbeing has 18 polarised questions, not zero.** The reviewer is quoting a
+  `DECISIONS.md` state the engine left behind (pre-5→3, pre-classified-pool).
+- **The reviewer is right that `report.js` never reads `basis`** — the payload carries
+  `position.basis` (app.py:6002-6005) and the PDF is the only surface that drops it. The
+  SPA reads it (`pages.js:1224`, `commercial.js:411`). Today it would render nothing
+  because every area is "market"; it is a latent gap, not a live defect.
+- **The finding underneath, which is real and is yours:** `count.practice` is hardcoded
+  `0` (`positions.py:1500`), so `count.polarised == count.metrics` for every area and the
+  split the payload advertises is fiction. Wellbeing's 18 "metrics benchmarked" are 3
+  benchmark-stream readings + 15 practice presence flags; Pay's 46 are 33 + 13. The
+  document distinguishes them nowhere. **R-O′ (new):** should an area whose evidence is
+  mostly presence flags say so on its own page? Fixing the count split is an engine change
+  with gate impact (`count.metrics` currently equals `polarised`, so naively populating
+  `practice` would double-count).
+
+## F3 — taxonomy: CLEARED, David-authored and ratified
+
+`DECISIONS.md:6832`, 2026-07-14, "Domain taxonomy: Option B′, 8 domains (RATIFIED)" —
+with a row-level mapping (`domain_remap_mapping.csv`, 243 rows) from the 2026.1 seven.
+Not drift. The floor is applied per `sub_power`, i.e. over the 8-way split, and **no area
+falls below it** (smallest is Wellbeing at 18).
+
+**Side-finding, fixed:** `/api/strategy/alignment` was the only one of five `hero_signals`
+call sites not sorting by `sub_power_order` — it ordered areas by first appearance in
+`question_order`. That is the root cause of the reviewer's D042 "four orderings". Now
+sorted; contents, chart and sections share the taxonomy order.
+
+## The renderer traces
+
+- **D028 — reviewer right, fixed.** `p50_display` was hard-nulled for score-kind items
+  (`positions.py:320`), so the template `"%s vs %s peer median"` degraded to the article:
+  "25/100 vs the peer median". The median was in the block all along (p50=33.33). Both
+  sides now print.
+- **D030 — reviewer misread.** "1×" is the *Yours* column, not READS; `position` can only
+  ever be below/at/above/differs. **But a real defect sits beside it:** `value_display` is
+  overloaded — for rank-derived signal classes it holds `"P%d"`, elsewhere a formatted
+  value. Worth a ruling on whether one field may carry two types (**R-AA**).
+- **D063 — reviewer wrong, no change.** Midrank explains the 21st percentile exactly:
+  103 of 246 peers score zero, r = 100 × (103 × 0.5) / 246 = 20.9 → P21. Correct
+  survey-house convention, printed correctly.
+
+## D034 — reviewer right on all four parts, and it is an engine change
+
+Benefits & lifestyle really has **two** off-strategy commitments (the position gap and
+coherence rule B2). The schedule reports one. Three mechanisms combine:
+1. Candidates dedupe by `(category, lever_id)` across all option blocks, so position
+   commitments (iterated first) claim all four Substance levers; B2 keeps only its two
+   Approach-only levers.
+2. `alt_group` is set on the candidate and then **dropped by both plan builders** —
+   the persisted plan carries no gap attribution at all (`alt_group` is `None` on every
+   stored action).
+3. `altInfo` discards any group with fewer than two scheduled rows.
+
+**Held as advisory in Gate A with the diagnostic attached.** The fix is to carry the gap
+key through `PLAN_SCHEMA` into the stored plan and count per-area gaps from the register
+rather than from lever names — a schema + builder change touching the ask's decision
+units too, so it wants your word before it moves counts on four surfaces (**R-N** is its
+neighbour).
