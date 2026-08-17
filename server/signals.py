@@ -687,8 +687,10 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 "name": _label(qid, q), "tag": "COMMON — YOU DON'T", "worth": True,
                 "stand": "%d%% of the market does this, you don't" % round(adoption),
                 "value_display": "%d%%" % round(adoption),
-                "label_short": "of the comparison pool %s" % _short(_phrase(q.display_title)),
-                "detail": "of the comparison pool %s — you don't yet" % _phrase(q.display_title),
+                # the title sits beside this line in every surface that renders it, so
+                # naming the thing again here only re-broke its capitalisation
+                "label_short": "of the comparison pool offer this",
+                "detail": "of the comparison pool offer this — you don't yet",
                 "impact": 10000 + adoption * 10,
             })
             seen_q.add(qid)

@@ -1855,7 +1855,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           ${ver ? html`<tr><td>Approved by</td><td><b>${ver.approver_body
             || (ver.approved_by ? ver.approved_by : "—")}</b>${!ver.approver_body && ver.approved_by
             ? html`<br /><span class="rr-sm">the approving account; no board or committee was named at approval</span>` : ""}</td></tr>` : null}
-          ${ver && ver.approval_date ? html`<tr><td>Date of approval</td><td><b>${ver.approval_date}</b></td></tr>` : null}
+          ${/* the row used to render only WHEN a date existed, so an approval record
+               with no date simply had no such line — and a reader cannot tell a missing
+               row from a fact that was never recorded. An approval record states when,
+               or states that it does not know. */ ""}
+          ${ver ? html`<tr><td>Date of approval</td><td><b>${ver.approval_date
+            || "Not recorded"}</b>${ver.approval_date ? "" : html`<br /><span class="rr-sm"
+            >the approval was captured without a date</span>`}</td></tr>` : null}
           ${ver && ver.effective_date ? html`<tr><td>Effective from</td><td><b>${ver.effective_date}</b></td></tr>` : null}
           ${ver && ver.next_review ? html`<tr><td>Next review</td><td><b>${ver.next_review}</b></td></tr>` : null}
           ${st.completed_at ? html`<tr><td>Strategy captured</td><td><b>${fmtDate(st.completed_at)}</b></td></tr>` : null}

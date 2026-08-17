@@ -20460,3 +20460,48 @@ been as misleading as reporting none — and fixing them as one class would have
 reversed a ruling and rewritten an organisation's stated strategy.
 
 38 pages, 0 verification failures, suite 16/16, cache `?v=694`, outline re-stamped.
+
+## 2026-08-17 — Two more blockers closed; the remainder needs its own session
+
+"Fix everything, use your rec." Two more taken; the rest is named below rather than
+attempted badly at the end of a long session.
+
+**The prevalence sentence.** `_phrase()` on a title like *"Employee Assistance Programme
+offered"* returns *"employee Assistance Programme offered"*, so the composed line read
+*"of the comparison pool employee Assistance Programme offered — you don't yet"* — broken
+capitalisation inside a sentence with no subject. The signal's own title sits beside that
+line in every surface that renders it, so the detail was restating the thing and
+re-breaking it each time. It now reads **"72% of the comparison pool offer this — you
+don't yet"**.
+
+**The approval date.** The row rendered only *when a date existed*, so an approval record
+without one simply had no such line — and a reader cannot tell a missing row from a fact
+that was never captured. It now prints **"Not recorded — the approval was captured without
+a date"**. Same principle as the §19 saving tile: an absence states itself.
+
+### What is left, and what each actually needs
+
+**Content the organisation must supply (4).** What the 15 Aug amendments changed; the
+approved action's cost, owner and date; the approver's name and role; the body that
+approved. The document can be made to say *"not recorded"* for each — which is the honest
+half — but the fields do not exist in capture. **The right fix is a capture change, not a
+renderer change**, and inventing a rendering for data nobody has entered would be worse
+than the silence.
+
+**A ruling (1).** `STRATEGY_POSITION_EXCLUDE` keeps Wellbeing and Governance out of the
+register. The reader wants them in and the counts restated. That reverses R3b.
+
+**Engine scope (10).** Findings covers four areas of eight; a gap whose problem is the aim
+itself carries no option; £27,000 prices one gap of ten with its population unstated; 43 of
+55 signals defer to an app the reader does not have; worded aims plot as points on a
+percentile axis when they are bands; the verdict rule (35th–65th) is never stated where the
+puzzle appears — an area at the 32nd reading *on market* beside another at the 32nd reading
+*below market*. Every one is real. Every one changes what the engine computes or what the
+document may withhold, and each deserves the treatment P0-7f got: measured, red-first,
+verified, its own diff.
+
+**The pattern across all three groups is the same.** The document is honest about what it
+measures and silent about what it was never given. The remaining work is mostly deciding
+what it should be given — which is why it is a scoping session, not a fix pass.
+
+38 pages, 0 verification failures, suite 16/16, cache `?v=695`.
