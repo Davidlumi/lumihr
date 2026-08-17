@@ -702,6 +702,26 @@ check("G64 the alignment endpoint resolves twin blocks through pos.block_for",
       % " ".join(_resolver.split())[:120],
       owner="P0-7f")
 
+# ====================================== G65 · the swallowed exception (P1-B) ==
+# The same try/except absorbed a raised builder failure into `_all_sigs = []` and let
+# the document render — eight areas silently flagging nothing, over one warning line.
+# The catch may still exist (it names the org and the cut, which the last-resort
+# handler cannot), but it must end in a raise, not an empty list. Asserted on the
+# except BODY, not on the presence of a try, so widening the catch cannot satisfy it.
+_bs_try = re.search(r"_all_sigs = signals_mod\.build_signals\(.{0,600}?\n(\s*)except\b(.{0,2400}?)"
+                    r"\n\s*_sig_by_dom", _APP, re.S)
+_exc_body = _bs_try.group(2) if _bs_try else ""
+check("G65 a signal-builder failure fails the request, it does not blank every area",
+      bool(_bs_try) and "raise" in _exc_body and not re.search(r"_all_sigs\s*=\s*\[\]", _exc_body),
+      "the except branch %s" % ("still sets _all_sigs = [] and returns a document"
+                                if re.search(r"_all_sigs\s*=\s*\[\]", _exc_body)
+                                else "does not raise" if _bs_try else "could not be read"),
+      owner="P1-B")
+check("G65b the failure log names the org and the cut",
+      all(s in _exc_body for s in ("org=%s", "cut=%s", 'cut.get("dim")')),
+      "a cut-shaped failure logged without its cut is not reproducible",
+      owner="P1-B")
+
 
 # ================================================================== verdict ==
 print("\n--- judgment, not assertion ---")

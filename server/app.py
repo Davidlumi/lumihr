@@ -5949,13 +5949,29 @@ async def get_strategy_alignment(request: Request):
                                             (tb or {}).get(qid))[0]
                               if payloads().get(qid) else None)
     try:
+        # QA seam (default OFF, LUMI_QA_SEAMS=on only): P1-B needs proof that a raised
+        # builder failure reaches the caller instead of being absorbed. Never live.
+        if (request.query_params.get("_qa_fail_signals")
+                and os.environ.get("LUMI_QA_SEAMS") == "on"):
+            raise RuntimeError("qa seam: forced signal-builder failure")
         _all_sigs = signals_mod.build_signals(
             items, _sig_money, org_visible_questions(org), _sig_block,
             org_answers_for(org), conn=conn, org_id=org["org_id"], cap=False,
             strategy=strat, domain_alignment=_sig_align)
-    except Exception as e:                       # a signal-builder failure must not cost the document
-        log.warning("[lumi] alignment: per-domain signals unavailable: %s", e)
-        _all_sigs = []
+    except Exception as e:
+        # P1-B (2026-08-17). This branch used to log a warning and carry on with an
+        # empty list. That is not a degraded document — it blanks the signals surface
+        # in EVERY area at once, and the paper still prints: forty pages telling a
+        # board that eight areas flag nothing, over one warning line no reader sees.
+        # There is no honest partial render here, so the request fails instead. The
+        # catch stays only to name the org and the cut, which the last-resort handler
+        # cannot: without the cut the failure is unreproducible, because it is
+        # cut-shaped (the twin/group path is what raised here before P0-7f).
+        log.exception("[lumi] alignment: signal builder failed for org=%s cut=%s/%s — "
+                      "refusing to render a document with no signals in any area",
+                      org["org_id"], cut.get("dim"), cut.get("value"))
+        raise HTTPException(500, "This document could not be built — its market signals "
+                                 "are unavailable. Nothing has been lost; please try again.") from e
     _sig_by_dom = {}
     for _s in _all_sigs:
         _sig_by_dom.setdefault(_s.get("domain"), []).append(_s)

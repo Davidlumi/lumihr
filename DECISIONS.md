@@ -19841,3 +19841,44 @@ a latent bad feature.** D072 was green for the wrong reason. The class to watch 
 only "check passes over a defect" but "check passes because of an unrelated accident" —
 those go red on the day something else is repaired, which is the worst possible moment
 to be debugging a gate.
+
+## 2026-08-17 — P1-B: the swallowed exception, in its own diff
+
+Authorised at Phase 1 §2, taken at Phase 1-B §3. Isolated: no other change rides with it.
+
+`get_strategy_alignment` caught every exception from `build_signals`, logged one
+warning, and set `_all_sigs = []`. That is not a degraded document. It blanks the
+signals surface in **all eight areas at once** and the paper still prints — forty pages
+telling a board that nothing is flagged anywhere, behind a log line no reader sees.
+P0-7f made the branch dormant rather than fixed: pre-fix, any caller passing
+`?cut=twin|group` reached it, and the measured result was 0 signals in 0 of 8 areas.
+
+Now: the catch stays, but only to name what the last-resort handler cannot — the org
+and the **cut** — and then re-raises as a 500. The cut matters because the failure is
+cut-shaped; without it the report is unreproducible. The document's own fetch already
+routes a non-2xx to the "Couldn't build the document" state, so the member sees an
+honest failure and a Try again, never a blank board paper.
+
+A QA seam (`?_qa_fail_signals=1`, gated on `LUMI_QA_SEAMS=on`, inert unset) makes the
+branch reachable on demand — the house pattern from PH-PROV-1. **Proven inert**: the
+same request against a server without the env var returns 200 and all 55 signals.
+
+Red-first, both halves, same seam and same server:
+
+| | pre-P1-B swallow | P1-B |
+| --- | --- | --- |
+| `?_qa_fail_signals=1` | **HTTP 200**, 8 areas, 0 signals, plan and ask present — a full board paper | **HTTP 500**, no document |
+| operator's log | `WARNING … per-domain signals unavailable: …` | `ERROR … org=5e67fa8c… cut=all/None — refusing to render a document with no signals in any area` + traceback |
+
+**G65** asserts on the except BODY, not on the presence of a try, so widening the catch
+cannot satisfy it; **G65b** asserts the log carries org and cut. Both observed RED
+against the restored swallow with the seam already in place — the only variable between
+red and green is the except branch itself.
+
+Suite 16/16. Zero DB copies after teardown.
+
+Convention adopted with this commit and with G64 before it (**R-f**, drafted at Phase
+1-B §7, not yet ruled): **a check that names an expression asserts on its binding, not
+on a string.** G64 follows the resolver argument to wherever it is bound; G65 reads the
+handler body rather than matching `except`. A check satisfiable by a rename is a check
+that will be satisfied by a rename.
