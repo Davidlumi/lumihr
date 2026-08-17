@@ -20800,3 +20800,48 @@ submission client.** I am not guessing which.
 Either way the class is the one this whole engagement has been about — P0-7f, P1-B, the
 `[:4]` truncation, the swallowed exception. **The system carries on and the surface looks
 fine.** An endpoint that cannot store a value must say so; a 200 is a promise.
+
+## 2026-08-17 — CORRECTION: the draft endpoint does not fail silently. My test did.
+
+The previous entry is wrong and is retracted.
+
+`PUT /api/submission/draft` returns **HTTP 200 with an explicit envelope**:
+
+```python
+if errors:
+    return {"ok": False, "errors": errors, "warnings": warnings}   # app.py:6891
+...
+return {"ok": True, "errors": [], "warnings": warnings}            # app.py:6902
+```
+
+and the client reads exactly that — `submission.js:193-196` puts `r.errors` on the field
+as issues and only marks the answer saved `if (r.ok)`, with a "your answer is still here,
+just not saved yet" message on failure. **The rejection is reported, named per field, and
+surfaced to the user. There is no silent data loss and there never was.**
+
+**My test asserted on the HTTP status code alone.** It read `200` and recorded "accepted",
+never opening the body. The endpoint was telling me `ok:false` with a reason on every one
+of those calls and I did not look.
+
+So the earlier "72 accepted, 3 stored" was **72 well-formed rejections and 3 saves** —
+the system working precisely as designed, because my harness sent option codes where the
+contract wants labels.
+
+**This is the fourth claim overturned by measurement in this engagement, and the third
+that came from my own tooling** — after the format audit's PDF-title finding and two of
+the ten scoping premises. The pattern is now unmistakable and worth stating as a rule:
+**a test that asserts on a transport-level signal is testing the transport.** HTTP 200 is
+not "it worked"; it is "the request arrived". The application's own success field is the
+only thing that answers the question, and I have spent this session finding that exact
+class in other people's checks while writing it into my own.
+
+**What actually remains from the new-user walk**, with the false finding removed:
+
+- `ALLOW_01` (multi_select, is_required) returns **404** on this payload — genuinely
+  unexplained, and it is in the unlock denominator.
+- The answering pass must send option **labels**. Re-run with labels and the org should
+  reach the gate, at which point a real new organisation's populated document can finally
+  be rendered — the one thing this whole line of work has been trying to reach.
+
+**The production answer is therefore better than I said an hour ago**, and I should not
+have said it: nothing here is evidence of customer data loss.
