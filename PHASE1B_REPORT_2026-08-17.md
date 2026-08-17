@@ -417,3 +417,85 @@ Both remain **drafted, not adopted** — yours to rule.
 
 V1 (`3035ef7` and its DECISIONS entry) and V2 (entry 8078, ASHE scope) from Phase 1 §4.
 Neither was in this phase's authorised scope and neither has moved.
+
+---
+
+## §4 addendum — the adversarial pass
+
+The four highest-risk gate files got a second, independent read whose only brief was to
+find what the first pass missed. It missed a great deal: **51 further candidates across
+four files, and none of the four first passes was complete.** Everything below I verified
+myself before recording it; the ones I could not verify cheaply are marked as reported.
+
+### The one that matters most: G65 was mine, and it was vacuous
+
+`G65`, committed at `e2beec6` four hours earlier, asked `"raise" in <except body text>`.
+The body's own comment says "…the twin/group path is what **raised** here before P0-7f".
+The substring was satisfied by prose. **Proven by mutation** — with the `raise` deleted
+and replaced by an assignment that returns a blank document to the board:
+
+```
+PASS G65 a signal-builder failure fails the request, it does not blank every area  [P1-B]
+```
+
+Red-first did not catch it because G65 is a conjunction and the red I demonstrated came
+from the *other* clause (`_all_sigs = []` restored). **Red-first is per-clause, not
+per-check.** That is the discipline failure, and it is mine.
+
+Fixed at `8f13415`: both checks now read app.py's syntax tree — G65 requires a `Raise`
+node in the handler wrapping the `build_signals` call and no `Assign` to `_all_sigs`;
+G65b walks the handler's `log.*` call and asserts the org and both cut components are
+passed **as arguments**, not merely named in a format string. Comments do not exist in a
+tree. Admitted by a mutation battery in which each mutant is caught by its owning check
+and by no other. **G64 was put through the same battery and holds**, including a mutant
+that restores the broken resolver with `# resolves via pos.block_for` planted beside it.
+
+### Confirmed, verified by me
+
+**`qa_hero.py:284` — a guard that has never been able to fail.** It asserts
+`"your maturity" not in commercial.js`. `grep -rni "your maturity" web/` returns **0**
+hits across the entire web tree. The string it forbids has never existed anywhere, in any
+file, so the check has been green since the day it was written for a reason unrelated to
+what it claims to protect.
+
+**`qa_strategy_align.py:186` — a tautology.** `all(o["framing"] == sa.OPTIONS_FRAMING
+for o in OB)` compares each block's framing against the module constant that
+`options_for` itself writes into every block (`strategy_align.py:115` and `:137`). The
+check asserts that an assignment assigned.
+
+**`qa_strategy_align.py:360` — "every derivable risk" cannot reach the eighth.**
+`wage_floor` (`strategy_align.py:485`) is gated on `derive_risks(..., sector=…)`.
+`grep 'sector=' server/qa_strategy_align.py` → **0**: no gate ever passes a sector.
+Adding `sector="Retail"` to the same fixture yields `wage_floor` and nothing else
+changes. The live endpoint **does** pass it (`app.py:6141`,
+`sector=org.get("industry")`), so this is a production risk class with zero gate
+coverage, behind a check whose name claims to cover all of them.
+
+**The amplifier, in two places.** `run_gates.sh:74-82`: `run_gate` captures the whole
+gate output to a file, echoes only `tail -4`, and decides PASS/FAIL **purely on exit
+code**. A gate that skips half of itself exits 0 and prints PASS.
+`qa_strategy_align.py:403-408`: `passed = sum(1 for _, ok in R if ok)` and
+`if passed == len(R): print("GATE CLEAN")` — `R` only grows when `check()` runs, so
+every skipped check is invisible to both the tally and the verdict. Together these are
+why finding 3 in §5 could sit undetected: nothing in the chain can tell "everything
+passed" from "less ran than you think".
+
+### Reported, not independently verified
+
+The adversarial pass raised a further set I have not confirmed and am not asserting:
+`qa_hero.py` aborts (unguarded `api()` with no status check, an unguarded division at
+`:127` that raises on a day-one org, `dm["Wellbeing"]` as a hardcoded key, five bare
+`open()` calls, a per-signal API call inside a loop) — any of which ends the run partway
+with the earlier PASS lines already printed; `qa_signals_system.py`'s snooze block being
+four tautologies over the test's own SQL rather than any app path; and its
+`try/finally` with no `except` around the firing half. These are in
+`VACUITY_SWEEP_2026-08-17.md` with the auditor's reasoning and line numbers, flagged as
+unverified.
+
+### What this changes about the sweep's numbers
+
+The classification counted 48 Arm A and 200 Arm B. The adversarial pass found 51 more in
+four files alone and judged **every one of those four first passes incomplete**. So the
+honest statement is not "248 candidates" but: **the true count is higher than 248 and
+this sweep has not established it.** One pass over a suite this size finds a floor, not a
+total. That is worth knowing before anyone scopes the fix.
