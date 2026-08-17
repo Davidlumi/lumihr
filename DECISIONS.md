@@ -19882,3 +19882,41 @@ Convention adopted with this commit and with G64 before it (**R-f**, drafted at 
 on a string.** G64 follows the resolver argument to wherever it is bound; G65 reads the
 handler body rather than matching `except`. A check satisfiable by a rename is a check
 that will be satisfied by a rename.
+
+## 2026-08-17 — Phase 1-B report: three findings that change what a green suite means
+
+Read-only. Report: `PHASE1B_REPORT_2026-08-17.md`; supporting tables
+`GATE_A_INVENTORY_2026-08-17.md` (66 rows) and `VACUITY_SWEEP_2026-08-17.md` (735 rows).
+
+**1 — the signal figure I reported for P0-7f understated the change.** There are three
+populations and I counted the wrong one. `signal_count` (app.py:6020) is every signal an
+area flags and is what the exhibit header prints as *M*; `signals` (app.py:6025) is that
+list capped at four; `sigShown` (report.js:1804) is the array capped again by print room.
+My 20→28 was the capped array, so it could not move in any area already at four. On the
+authoritative figure the fix took the document from **25 to 55**. David's 25 was right.
+Any count reported from here names its population.
+
+**2 — the group cut's printed document does not verify, and never did.** Post-fix it is
+41 physical pages against a footer claim of 40: §16 Governance & transparency runs past
+A4, its footer lands on a sheet of its own, and three contents entries mis-target — 6
+failures. Pre-fix the same cut verified **clean at 40 pages, 0 failures, because it was
+empty** (0 signals in all eight areas — the P0-7f defect). The fix did not introduce this;
+it made the cut render enough content to expose it. Layout fix class, not authorised,
+reported not touched. The All-peers document still verifies at 40pp, 0 failures.
+
+**3 — every "16/16 ALL GATES GREEN" ran 34 of Gate A's 66 checks.** `run_gates.sh:209`
+invokes `qa_strategy_doc` without `--pdf`, so the thirty-one checks that read the printed
+artefact — including the entire v3.3 red-first block — do not run in a suite pass, and the
+suite prints `PASS qa_strategy_doc`. The split is deliberate (run_gates.sh:207 says so);
+what is wrong is that the result does not say so. Measured three ways:
+`34` (suite invocation) / `63` (--pdf, no LUMI_DB) / `65` (both). The 52→61 discrepancy
+David raised was this same condition mismatch, not missing checks; the advisory 4→14 is
+fully explained by v3.3's eleven minus G61's downgrade.
+
+**G62 confirmed as the Arm B reference by fixture**: it fires on the real artefact
+(population = Pay, Time off & family) and reports PASS on an artefact where the past-aim
+population is empty, having examined nothing.
+
+Held for ruling: **R-e** (not exercised is not pass) — finding 3 is its evidence, and the
+suite summary should carry the exercised count. **R-f** (checks assert on bindings, not
+strings) — already applied at 4db83ce and e2beec6.
