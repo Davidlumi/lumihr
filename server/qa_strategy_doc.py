@@ -41,10 +41,36 @@ RULES = os.path.join(ROOT, "data", "strategy_coherence_rules.json")
 VERIFIER = os.path.join(HERE, "verify_report_pdf.py")
 
 FAILS, WARNS, NCHECK = [], [], [0]
+# P2-A (R-e′): a check that did not run is not a check that passed. Every call site in
+# this file is counted by parsing the file itself, and every site that actually executes
+# stamps its own line number — so the trailer can state exercised-of-defined as a fact
+# rather than as a count of whatever happened to run. A suite that cannot tell
+# "everything passed" from "less ran than you think" reports the first and means the
+# second; that is how 34-of-66 read as ALL GATES GREEN for the whole engagement.
+EXERCISED = set()
+
+
+def _defined_sites(path):
+    """Every check() call site in this file, by line — read from the syntax tree, so a
+    site inside a skipped `if pdf:` block still counts as defined."""
+    return sorted(n.lineno for n in ast.walk(ast.parse(open(path).read()))
+                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                  and n.func.id == "check")
+
+
+DEFINED = _defined_sites(os.path.abspath(__file__))
+
+
+def _site_of(lineno):
+    """A multi-line call reports whichever line is executing, so map back to the site
+    that owns it: the last defined site at or before this line."""
+    prev = [d for d in DEFINED if d <= lineno]
+    return prev[-1] if prev else lineno
 
 
 def check(name, ok, detail="", owner="", advisory=False):
     NCHECK[0] += 1
+    EXERCISED.add(_site_of(sys._getframe(1).f_lineno))
     tag = "PASS" if ok else ("WARN" if advisory else "FAIL")
     print("  %s %s%s%s" % (tag, name, ("  [%s]" % owner) if owner else "",
                            ("  — " + str(detail)[:220]) if (detail and not ok) else ""))
@@ -409,6 +435,14 @@ if "--pdf" in sys.argv:
     # sentence is editable prose and a brittle anchor turns an edit into a red gate
     m_tot = re.search(r"(\d+) in all, listed[^.]*The commitments in full", text)
     m_off = re.search(r"The commitments in full\. (\d+) (?:is|are) off strategy", text)
+    # A1.1 is the ANCHOR check and always runs — it used to be the else-branch of the
+    # pair below, which made it a call site that could never execute while the document
+    # was correct, and so a permanent 1-of-66 shortfall in the exercised count (P2-A).
+    # An if/else where exactly one arm can run is not two checks; it is one check whose
+    # result decides whether the other two have anything to read.
+    check("A1.1 the exec summary states the commitment frame",
+          bool(m_tot and m_off), "could not locate the reconciling sentence — the two "
+          "checks below read their counts from it and did not run", owner="D001")
     if m_tot and m_off:
         total, off = int(m_tot.group(1)), int(m_off.group(1))
         hold = re.search(r"; (\d+) hold", text)
@@ -419,9 +453,6 @@ if "--pdf" in sys.argv:
                               r"|Holding|Awaiting evidence)", text))
         check("A1.2 the register enumerates every commitment it claims",
               rows == total, "%d status rows for %d commitments" % (rows, total), owner="D001")
-    else:
-        check("A1.1 the exec summary states the commitment frame", False,
-              "could not locate the reconciling sentence", owner="D001")
 
     # A1.5 — the ask says the same thing in all three places
     ask_pg = next((p for p in pages if "DECISION SOUGHT" in p), "")
@@ -764,4 +795,20 @@ for d, why in (("D011", "a cover metric that needs two disclaimers — editorial
 print("\n%d checks, %d failure(s), %d advisory" % (NCHECK[0], len(FAILS), len(WARNS)))
 for n, d in FAILS:
     print("  FAIL %s — %s" % (n, str(d)[:200]))
+
+# R-e′ — the exercised count, and what did NOT run, named. Machine-readable trailer:
+# run_gates.sh reads GATE-COUNTS and refuses to call the suite green while any gate ran
+# less than it defines.
+_missed = [d for d in DEFINED if d not in EXERCISED]
+print("\nGATE-COUNTS: sites=%d exercised=%d run=%d failed=%d advisory=%d"
+      % (len(DEFINED), len(EXERCISED), NCHECK[0], len(FAILS), len(WARNS)))
+if _missed:
+    _src = open(os.path.abspath(__file__)).read().split("\n")
+    print("NOT EXERCISED — %d of %d call sites never ran:" % (len(_missed), len(DEFINED)))
+    for _d in _missed:
+        _nm = re.search(r'check\(\s*"([^"]{0,90})', "\n".join(_src[_d - 1:_d + 2]))
+        print("  line %-5d %s" % (_d, _nm.group(1) if _nm else "<name not on the call line>"))
+    print("A check that did not run is not a check that passed. If the artefact half is "
+          "missing, pass --pdf <delivered artefact>; if the live-figure half is missing, "
+          "set LUMI_DB=<throwaway.db>.")
 sys.exit(1 if FAILS else 0)

@@ -33,7 +33,29 @@ mkdir -p "$WORK"
 DB="$WORK/lumi_qa.db"
 IDB="$WORK/identity_qa.db"
 PORT=8060
-PASS=(); FAIL=()
+PASS=(); FAIL=(); UNDEREXERCISED=()
+# P2-A / R-a + R-e′ (2026-08-17). Two things this suite could not previously say.
+#   (a) THE ARTEFACT. Gate A's document half needs the delivered bytes. It is passed by
+#       RESOLVED PATH and its sha256 is printed with the command that produced it, so
+#       the run states which artefact it judged. LUMI_DOC_PDF overrides; otherwise the
+#       conventional location below. No artefact => the 32 artefact checks report NOT
+#       EXERCISED and the suite says so instead of printing green over them.
+#   (b) THE EXERCISED COUNT. Gates that emit a GATE-COUNTS trailer are held to it:
+#       exercised < sites is not a failure, but it is not GREEN either, and the two are
+#       now different words. Every "16/16 ALL GATES GREEN" before today covered 34 of
+#       Gate A's 66 checks.
+DOC_PDF="${LUMI_DOC_PDF:-$ROOT/artefacts/total_reward_strategy_and_plan.pdf}"
+if [[ -f "$DOC_PDF" ]]; then
+  DOC_PDF="${DOC_PDF:A}"
+  print "artefact under judgment: $DOC_PDF"
+  print "  sha256: $(shasum -a 256 "$DOC_PDF" | cut -d' ' -f1)   [shasum -a 256 "$DOC_PDF"]"
+  print "  pages:  $(python3 -c "import pymupdf,sys;print(pymupdf.open(sys.argv[1]).page_count)" "$DOC_PDF" 2>/dev/null || print '?')"
+else
+  print "NO ARTEFACT at $DOC_PDF — Gate A's document half will report NOT EXERCISED."
+  print "  Render one and set LUMI_DOC_PDF, or place it at that path. (R-a: the gate"
+  print "  judges delivered bytes, so the suite never renders its own.)"
+  DOC_PDF=""
+fi
 
 say() { print -- "\n=== $1 ==="; }
 
@@ -71,13 +93,26 @@ start_server() {  # $1 = db path ("" = real DB), $2 = log name, $3 = extra env (
   print "server up on :$PORT pid=$SERVER_PID db=${1:-REAL} log=$log"
 }
 
-run_gate() {  # $1 = script name (in server/), rest = extra env assignments
-  local g="$1"
+run_gate() {  # $1 = script name (in server/), rest = extra args to the gate
+  local g="$1"; shift
   say "$g"
   ( cd "$SRV" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' LUMI_SEED_DEMO=on \
-      python3 "$g.py" ) >"$WORK/$g.out" 2>&1
+      python3 "$g.py" "$@" ) >"$WORK/$g.out" 2>&1
   local rc=$?
   tail -4 "$WORK/$g.out"
+  # P2-A: rc alone cannot tell "everything passed" from "less ran than you think".
+  # A gate that emits GATE-COUNTS is held to its own definition count; one that does
+  # not is recorded as unreported rather than silently assumed complete.
+  local counts=$(grep -m1 '^GATE-COUNTS:' "$WORK/$g.out")
+  if [[ -n "$counts" ]]; then
+    local sites=$(print -- "$counts" | sed -n 's/.*sites=\([0-9][0-9]*\).*/\1/p')
+    local exed=$(print -- "$counts" | sed -n 's/.*exercised=\([0-9][0-9]*\).*/\1/p')
+    print "  $counts"
+    if [[ -n "$sites" && -n "$exed" && "$exed" -lt "$sites" ]]; then
+      UNDEREXERCISED+=("$g ($exed of $sites call sites ran — see $WORK/$g.out)")
+      grep -A 100 '^NOT EXERCISED' "$WORK/$g.out" | head -6
+    fi
+  fi
   if [[ $rc -eq 0 ]]; then PASS+=("$g"); else FAIL+=("$g (rc=$rc, see $WORK/$g.out)"); fi
 }
 
@@ -206,7 +241,7 @@ run_gate qa_strategy_align
 # the DOCUMENT's own gate (2026-08-16, external QA spec v2): source + content
 # libraries + live pool figure. No server, no browser — the rendered-artefact half
 # runs with --pdf beside verify_report_pdf.py before a release.
-run_gate qa_strategy_doc
+if [[ -n "$DOC_PDF" ]]; then run_gate qa_strategy_doc --pdf "$DOC_PDF"; else run_gate qa_strategy_doc; fi
 
 # --- freeze gate (Diff 12): qa_plausibility Check C, ENFORCING. Root-dir script
 #     (not server/); honours LUMI_DB so it validates the suite's throwaway, not live.
@@ -254,4 +289,15 @@ if (( ${#FAIL[@]} )); then
   print "FAIL (${#FAIL[@]}):"; for f in "${FAIL[@]}"; do print "  - $f"; done
   exit 1
 fi
-print "ALL GATES GREEN — throwaway + logs in $WORK"
+# R-e′: green and complete are different claims and now get different words. A gate
+# that ran less than it defines has not failed — but the suite must not report it as
+# though everything it owns was tested.
+if (( ${#UNDEREXERCISED[@]} )); then
+  print "\nUNDER-EXERCISED (${#UNDEREXERCISED[@]}) — these gates did not run every check they define:"
+  for u in "${UNDEREXERCISED[@]}"; do print "  - $u"; done
+  print "\nALL GATES PASSED, COVERAGE INCOMPLETE — nothing failed, but the run above did"
+  print "not exercise every defined check. This is not ALL GATES GREEN."
+  print "throwaway + logs in $WORK"
+  exit 0
+fi
+print "ALL GATES GREEN — every gate ran every check it defines. Logs in $WORK"

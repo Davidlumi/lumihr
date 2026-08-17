@@ -19974,3 +19974,54 @@ alone would not.
 Suite 16/16. `server/app.py` unchanged and byte-identical to `e2beec6` throughout —
 every mutation was applied to a copy in memory and reverted, verified with `git diff
 --quiet`.
+
+## 2026-08-17 — P2-A: the suite now runs Gate A's document half, and says when it has not
+
+Authorised at Phase 2 §2. Harness wiring only; no check's predicate changed.
+
+**The artefact.** `run_gates.sh` resolves the delivered document — `LUMI_DOC_PDF`, else
+`artefacts/total_reward_strategy_and_plan.pdf` — passes it to Gate A as `--pdf <resolved
+path>`, and prints the path, its **sha256 with the command that produced it**, and its
+page count before any gate runs (R-a, R-c). The suite never renders its own artefact: it
+judges the bytes that were delivered. With no artefact present it says so and Gate A's
+document half reports NOT EXERCISED rather than passing over an absence.
+
+**The exercised count (R-e′).** Both Gate A and `qa_strategy_align` now count their
+`check()` call sites **from their own syntax tree** and stamp each site that executes, so
+the trailer states exercised-of-defined as a fact:
+
+```
+GATE-COUNTS: sites=66 exercised=66 run=66 failed=0 advisory=14
+```
+
+When a site did not run, the gate names it, by line and by check name, and says what to
+pass to reach it. `run_gate` reads that trailer instead of judging a gate by its exit
+code alone, and the suite's closing line is now two different sentences:
+
+* `ALL GATES GREEN — every gate ran every check it defines.`
+* `ALL GATES PASSED, COVERAGE INCOMPLETE — nothing failed, but the run above did not
+  exercise every defined check. This is not ALL GATES GREEN.`
+
+Both paths demonstrated: with the artefact in place, 66 of 66; with it moved aside,
+34 of 66, the 32 named, and the second wording emitted. `qa_strategy_align`'s
+`GATE CLEAN` is gated the same way and now reports 77 of 77.
+
+**A1.1 restructured, and it was the reason for a permanent 1-of-66 shortfall.** It was
+the `else` arm of the pair that reads the register's reconciling sentence — a call site
+that could only execute while the document was wrong. An if/else where exactly one arm
+can run is not two checks; it is one check whose result decides whether the other two
+have anything to read. A1.1 now always runs and carries that meaning.
+
+**The honest result of the first full run, per §2's last requirement: nothing that was
+green at 34-of-66 went red at 66-of-66.** 0 blocking failures. What the run does surface
+is **14 advisory checks firing that no suite run in this engagement had ever executed** —
+A5.3 (D005), A4.3 (D017), G53–G60, G62, G63, A6.5 (D036) and D034. Every one is an
+already-known frozen item: the v3.3 red-first block was admitted advisory *and* was never
+run, which is what "inert twice over" meant. They are now visible on every suite run, and
+they are the standing queue.
+
+Recipe:
+
+```bash
+LUMI_DOC_PDF=/path/to/delivered.pdf ./run_gates.sh <workdir>
+```

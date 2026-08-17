@@ -19,8 +19,27 @@ import strategy_align as sa
 import claude_api as ca
 
 R = []
+EXERCISED = set()
+# P2-A / R-e′ (2026-08-17): R only grows when check() runs, so `passed == len(R)` could
+# never distinguish "everything passed" from "less ran than you think" — and Section G
+# (four checks) sits behind `if _Q:`, which is silently false whenever load_questions()
+# raises. Every call site is counted from the syntax tree; every one that executes
+# stamps itself; the trailer states both.
+def _defined_sites(path):
+    import ast as _a
+    return sorted(n.lineno for n in _a.walk(_a.parse(open(path).read()))
+                  if isinstance(n, _a.Call) and isinstance(n.func, _a.Name)
+                  and n.func.id == "check")
+
+
+DEFINED = _defined_sites(os.path.abspath(__file__))
+
+
 def check(sec, name, ok, detail=""):
     R.append((name, bool(ok)))
+    _ln = sys._getframe(1).f_lineno
+    _prev = [d for d in DEFINED if d <= _ln]
+    EXERCISED.add(_prev[-1] if _prev else _ln)
     print("  [%s] %s %-64s %s" % (sec, "PASS" if ok else "FAIL", name[:64], ("| " + str(detail)[:90]) if detail and not ok else ""))
 
 RULES = sa.load_rules()
@@ -402,7 +421,20 @@ print()
 print("=" * 92)
 passed = sum(1 for _, ok in R if ok)
 print("RESULTS: %d checks, %d passed, %d failed" % (len(R), passed, len(R) - passed))
-if passed == len(R):
+_missed = [d for d in DEFINED if d not in EXERCISED]
+print("GATE-COUNTS: sites=%d exercised=%d run=%d failed=%d advisory=0"
+      % (len(DEFINED), len(EXERCISED), len(R), len(R) - passed))
+if _missed:
+    _src = open(os.path.abspath(__file__)).read().split("\n")
+    print("NOT EXERCISED — %d of %d call sites never ran:" % (len(_missed), len(DEFINED)))
+    for _d in _missed:
+        _nm = re.search(r'check\(\s*"[^"]*",\s*"([^"]{0,80})', "\n".join(_src[_d - 1:_d + 2]))
+        print("  line %-5d %s" % (_d, _nm.group(1) if _nm else "<name not on the call line>"))
+if passed == len(R) and not _missed:
     print("GATE CLEAN: alignment is four-status, count-true, starved-honest, "
           "entitlement-safe, score-free and directive-free.")
+elif passed == len(R):
+    print("GATE PASSED, COVERAGE INCOMPLETE: nothing failed, but %d of %d call sites "
+          "never ran. A check that did not run is not a check that passed."
+          % (len(_missed), len(DEFINED)))
 sys.exit(0 if passed == len(R) else 1)
