@@ -19920,3 +19920,57 @@ population is empty, having examined nothing.
 Held for ruling: **R-e** (not exercised is not pass) — finding 3 is its evidence, and the
 suite summary should carry the exercised count. **R-f** (checks assert on bindings, not
 strings) — already applied at 4db83ce and e2beec6.
+
+## 2026-08-17 — G65 corrected: the check I shipped this morning was itself vacuous
+
+The Phase 1-B §4 sweep's adversarial pass turned on the checks written **during** Phase
+1-B and found one. Reported, verified by mutation, and fixed the same day.
+
+`G65`, committed at `e2beec6` four hours earlier, asked `"raise" in <except body text>`.
+The body's own comment reads "…the twin/group path is what **raised** here before
+P0-7f". So the substring was satisfied by prose. Proven, not argued — with the `raise
+HTTPException` deleted and replaced by `_all_sigs = list(_sig_align) and []`, an endpoint
+that returns a blank document to the board:
+
+```
+PASS G65 a signal-builder failure fails the request, it does not blank every area  [P1-B]
+```
+
+A false green in the check that owns P1-B, in exactly the class this phase was auditing.
+
+**Why red-first did not catch it.** G65 is a conjunction: `raise present AND no
+_all_sigs = []`. The red I demonstrated at `e2beec6` was produced by restoring
+`_all_sigs = []`, which trips the *second* conjunct. The first was never independently
+red-tested, so a check with two clauses was admitted on evidence for one.
+**Red-first is per-clause, not per-check** — that is the lesson, and it generalises past
+this file.
+
+Both checks now read app.py's **syntax tree**: G65 requires a `Raise` node inside the
+handler that wraps the `build_signals` call and no `Assign` to `_all_sigs`; G65b walks
+the handler's `log.*` call and asserts the org and both cut components are passed **as
+arguments**, not merely named in a format string. Comments do not exist in a tree.
+This is R-f (assert on bindings, not strings) applied where I had only half-applied it.
+
+Admitted by mutation battery, each mutant caught by the check that owns it and by no
+other — `<scratch>/mutate.py`:
+
+| mutant | G65 | G65b |
+|---|---|---|
+| unmutated | PASS | PASS |
+| raise deleted, the word "raised" left in the comment | **FAIL** | PASS |
+| raise swapped for a bare `pass` | **FAIL** | PASS |
+| log keeps its `%s` format string, is passed no arguments | PASS | **FAIL** |
+| log passes the org, drops the cut | PASS | **FAIL** |
+
+The rewrite also failed its own first run (`ast.unparse` normalises `"` to `'`, so the
+argument comparison missed), which the battery caught before the commit rather than a
+reviewer catching it after.
+
+**G64 was put through the same battery and holds** — including a mutant that restores the
+broken resolver while planting `# resolves via pos.block_for` on the same line. Its
+`not re.search(r"\btb\s*\(", _resolver)` conjunct catches what the positive substring
+alone would not.
+
+Suite 16/16. `server/app.py` unchanged and byte-identical to `e2beec6` throughout —
+every mutation was applied to a copy in memory and reverted, verified with `git diff
+--quiet`.
