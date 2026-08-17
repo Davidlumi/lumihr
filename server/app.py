@@ -5940,9 +5940,17 @@ async def get_strategy_alignment(request: Request):
                                          org_answers_for(org), cut, tb)
     _sig_align = {d["name"]: (d.get("target") or {}).get("alignment")
                   for d in (hero.get("domains") or []) if d.get("target")}
+    # tb is a dict of twin blocks, not a callable — the resolver has to go through
+    # pos.block_for, exactly as the other three build_signals call sites do (:2384,
+    # :2405, :4409). Getting this wrong is silent: falsy on all/industry/fte_band
+    # cuts, TypeError on twin/group cuts, and either way the document just has
+    # nothing to say. See G64.
+    _sig_block = lambda qid: (pos.block_for(payloads().get(qid) or {}, cut,
+                                            (tb or {}).get(qid))[0]
+                              if payloads().get(qid) else None)
     try:
         _all_sigs = signals_mod.build_signals(
-            items, _sig_money, org_visible_questions(org), lambda qid: tb and tb(qid),
+            items, _sig_money, org_visible_questions(org), _sig_block,
             org_answers_for(org), conn=conn, org_id=org["org_id"], cap=False,
             strategy=strat, domain_alignment=_sig_align)
     except Exception as e:                       # a signal-builder failure must not cost the document

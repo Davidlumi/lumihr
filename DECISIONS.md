@@ -19777,3 +19777,67 @@ denominators unreconciled), D067 (no preparer named), D073 (Findings order, bloc
 Q4), Q1/Q3/Q4/Q6/Q7/Q8/Q11/Q12. Held on rulings: R-N (now the largest live
 contradiction — four surfaces assert an aim the register does not carry), R-O′ with the
 evidence-mix disclosure, R-P, and the rest of the sheet.
+
+## 2026-08-17 — P0-7f: the alignment endpoint's signal resolver (isolated hotfix)
+
+**Authorised by David as a hotfix outside the board-quality phase sequence.** Nothing
+else from that queue is touched: Phases 2–6 and BQ1–BQ9 remain unstarted.
+
+The per-domain signal call in `get_strategy_alignment` passed
+`lambda qid: tb and tb(qid)`. `tb` is a **dict** of twin blocks (app.py:2294), never a
+callable. Every other `build_signals` call site (`:2384`, `:2405`, `:4409`) resolves
+through `pos.block_for`. Two consequences, both silent:
+
+* on `all` / `industry` / `fte_band` cuts the expression is falsy for every qid, so the
+  builder receives no block and five of eight signal mechanisms never fire;
+* on `twin` / `group` cuts it raises `TypeError: 'dict' object is not callable` into the
+  bare `except` two lines below, and the document renders with **zero** signals in every
+  area.
+
+The document requests the endpoint with no cut parameters, and `parse_cut` does **not**
+consult `orgs.default_cut`, so the live document took the first branch, not the second.
+The second branch is reachable by any caller passing `?cut=twin|group` — measured below.
+
+**Measured on a throwaway pair (SQLite backup API), same server, only `server/app.py`
+differing between runs** — `git show HEAD:server/app.py` for BEFORE, the fix for AFTER:
+
+| request | BEFORE | AFTER |
+| --- | --- | --- |
+| document's own (no cut params) | 7/8 areas, 20 signals | 7/8 areas, 28 signals |
+| `?cut=group&cut_value=76188216…` | **0/8 areas, 0 signals** | 8/8 areas, 28 signals |
+
+Wellbeing 1→4, Incentives & Recognition 2→4, Governance & Transparency 2→4, Time Off &
+Family 3→4. Health & Protection is 0 in both — that area genuinely surfaces none at
+All peers, and it gains one on the group cut.
+
+**G64** (blocking, Gate A) asserts the endpoint's resolver reaches `pos.block_for`. It
+follows the argument to its binding rather than reading one line, so renaming the lambda
+cannot satisfy it. Observed **RED** against `HEAD:server/app.py`, **GREEN** on the fix,
+then **RED again** with HEAD restored — both directions, same check.
+
+**D072 restated in the same commit, because this fix exposed it.** Its old form was
+`plural note present ⟹ singular note present somewhere in the document`. That is
+satisfied by any one area happening to show a single row, and it fails on a document
+where every area correctly shows several. It had been passing on that accident, and it
+fired the moment the resolver was repaired — a check that fails on correct behaviour.
+Restated as per-area number agreement, read off the exhibit header's own shown count
+("What Pay is flagging (2 of 9)"). Admitted red-first against a fixture carrying the
+defect — a one-row Pay exhibit under the pre-D072 plural-only renderer: **RED** ("Pay
+shows 1 row(s) under the plural wording"), then **GREEN** on the same fixture with only
+the renderer's singular branch restored.
+
+Artefact re-verified from the **live stored plan** — `built_at 2026-08-15 14:35:32`, four
+actions, all Benefits & Lifestyle (Flexible benefits allowance / Salary-sacrifice
+arrangements / Group risk bundle / Voluntary benefits platform), read read-only from
+`lumi.db` and captured with `REBUILD_PLAN` unset. **40 pages**, footers 1..40 contiguous,
+23 contents entries landing, 0 failures. Gate A **61 checks, 0 failures, 14 advisory**
+with `--pdf`. Suite **16/16**. Throwaway torn down; zero DB copies remain.
+
+Recipes: `python3 server/verify_report_pdf.py --url http://localhost:8073/harness_full.html`;
+`python3 server/qa_strategy_doc.py --pdf <render>`; `./run_gates.sh <workdir>`.
+
+Standing lesson, fourth instance: **a v-series fix exposed a latent bad check rather than
+a latent bad feature.** D072 was green for the wrong reason. The class to watch is not
+only "check passes over a defect" but "check passes because of an unrelated accident" —
+those go red on the day something else is repaired, which is the worst possible moment
+to be debugging a gate.

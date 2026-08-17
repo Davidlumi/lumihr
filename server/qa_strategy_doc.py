@@ -474,11 +474,24 @@ if "--pdf" in sys.argv:
               and len(s) > 45]
     check("D069 no rendered sentence opens lowercase", not lowers, lowers[:2], owner="D069")
 
-    # D072 — plural set-cardinality copy against a single-row exhibit
-    check("D072 no plural signal note over a single signal",
-          not re.search(r"The signals above are the most material[^.]*none of them", text)
-          or "The signal above is the most material" in text,
-          owner="D072", advisory=False)
+    # D072 — plural set-cardinality copy against a single-row exhibit.
+    # RESTATED (P0-7f): the old form was `plural present ⟹ singular present somewhere`,
+    # which is satisfied by ANY area happening to show one row and fails on a document
+    # where every area correctly shows several. It passed for months on that accident
+    # and fired the moment the signal resolver was repaired. The invariant is per-area
+    # number agreement, and the exhibit header states the shown count — "(2 of 9)".
+    d72 = []
+    for m in re.finditer(r"What ([A-Z][\w&' ]+?) is flagging \((\d+)(?: of \d+)?\)", text):
+        seg = text[m.end():m.end() + 700]
+        sing = "The signal above is the most material" in seg
+        plur = "The signals above are the most material" in seg
+        if not (sing or plur):
+            continue                       # this area prints no cardinality note at all
+        if (int(m.group(2)) == 1) != sing:
+            d72.append("%s shows %s row(s) under the %s wording"
+                       % (m.group(1), m.group(2), "singular" if sing else "plural"))
+    check("D072 the signal note's number agrees with the rows the exhibit shows",
+          not d72, "; ".join(d72), owner="D072", advisory=False)
 
     # D075 — one noun for the per-metric base wherever a base is counted
     base_nouns = set()
@@ -660,6 +673,34 @@ if "--pdf" in sys.argv:
           "so per-area gap counts are re-derived from lever names and collapse to one. "
           "Engine change — held with the diagnostic on the ruling sheet.",
           owner="D034", advisory=True)
+
+
+# ============================================ G64 · the signal resolver (P0-7f) ==
+# Every other build_signals call site resolves a twin block through pos.block_for.
+# The alignment endpoint — the one the strategy document renders from — passed
+# `lambda qid: tb and tb(qid)`, and tb is a dict. On all/industry/fte_band cuts the
+# expression is falsy for every qid, so five of eight signal mechanisms go dark; on
+# twin/group cuts it raises TypeError into a bare except, so the document renders
+# with ZERO signals in every area. The demo org's own default_cut is a group.
+# This is a source check on purpose: the failure is silent in the artefact — a
+# document with no signals looks like an org with nothing to say.
+_APP = open(os.path.join(HERE, "app.py")).read()
+_align_bs = re.search(r"_all_sigs = signals_mod\.build_signals\((.{0,400}?)\)\n", _APP, re.S)
+_args = [a.strip() for a in re.split(r",(?![^()\[\]{}]*[)\]}])",
+                                     (_align_bs.group(1) if _align_bs else ""))]
+_arg4 = _args[3] if len(_args) > 3 else ""
+# the resolver may be inline or bound to a name — follow it either way, so the
+# check asserts what the builder RECEIVES, not what this one line happens to read.
+_resolver = _arg4
+if re.fullmatch(r"[A-Za-z_]\w*", _arg4):
+    _bind = re.search(r"\n\s*%s\s*=\s*(.{0,400}?)\n\s*(?:try:|\w+\s*=)" % re.escape(_arg4), _APP, re.S)
+    _resolver = _bind.group(1) if _bind else "<%s: gate cannot find its binding>" % _arg4
+check("G64 the alignment endpoint resolves twin blocks through pos.block_for",
+      bool(_align_bs) and "pos.block_for" in _resolver and not re.search(r"\btb\s*\(", _resolver),
+      "the per-domain signal call's resolver is %s — a dict is not callable, and a "
+      "falsy resolver silently drops the prevalence/rare mechanisms"
+      % " ".join(_resolver.split())[:120],
+      owner="P0-7f")
 
 
 # ================================================================== verdict ==
