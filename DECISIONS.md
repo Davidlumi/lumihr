@@ -20590,3 +20590,52 @@ at the throwaway, as the rig does.
 **Remaining work is unchanged in shape and now better evidenced:** waves 2 to 4 of
 `SCOPING_2026-08-17.md`, roughly eight to ten days. Nothing else was started; the tree is
 clean and the delivered artefact is untouched by this commit.
+
+## 2026-08-17 — The new-user journey, walked for real: it works, and the test found five contract traps
+
+Every verification in this engagement ran on one mature org with complete data. This
+provisioned a genuinely new organisation on a throwaway and walked it. Script kept as
+`server/qa_newuser_journey.py`.
+
+**The journey works end to end.** Staff provisions the org (200) → the founding admin
+accepts the invite and the platform terms in one call (200) → data-contribution terms
+(200) → strategy stated and completed (200) → **the document renders**: 8 domain blocks,
+7 commitments, `unlocked=false`, `answered 0/77`, `plan=false`. Before the strategy exists
+the endpoint returns `ok=false, reason=no_strategy` rather than a broken page. **The gating
+is honest at every stage** — the document exists from the first day and says plainly what
+it does not yet have.
+
+**Five contract traps, none of them defects, all of them documentation risks.** My script
+was written from reasonable assumption and was wrong five times; each was rejected with a
+clear 400, never silently coerced:
+
+| assumed | actual |
+|---|---|
+| `name` | **`org_name`**, plus all four `PROFILE_CORE` fields required |
+| `invite_token` in the response | the token is the last path segment of **`invite_link`** (PH-PROV-1f keeps the bearer out of logs) |
+| accept invite, then accept terms | **`accept_platform_terms: true` is required in the accept-invite call itself** |
+| `POST /api/terms/accept {kind}` | **`POST /api/terms/accept-data {accept: true}`** |
+| `PUT /api/strategy {…fields}` then `/complete` | **`PUT /api/strategy {strategy: {...}, complete: true}`** |
+
+Plus three enum vocabularies that read naturally but are wrong: `transparency` is
+closed/ranges/**open** (not "partial"), `risk_appetite` is early/**follow**/wait (not
+"medium"), `benefits_lead` is physical/mental/financial/worklife (not "health").
+
+The validation is exactly right — explicit 400s naming the field. The finding is that
+**anyone writing an onboarding script, an integration or a migration from assumption will
+hit all eight**, and there is no worked example in the repo. This script is now that
+example.
+
+**One genuine question, unresolved.** The new org reports **3 signals with 0 answers** —
+one each in Pay, Health & Protection and Benefits & Lifestyle, all `kind: rare`, e.g.
+*"Affordability / budget constraints — differs"*. An org that has answered nothing should
+arguably flag nothing. Either the `rare` mechanism reads something other than the org's own
+answers, or a default is being treated as a response. **Not chased; recorded.** It is the
+first thing to look at on the fresh-org path.
+
+**What this did NOT establish.** The answering pass did not run: the API's question payload
+does not expose the basis flag under `is_required`, so the script could not select the 77
+basis questions and never drove the org to the unlock gate. **A new org's document has
+therefore still never been rendered as a PDF.** That is the remaining half of this test and
+it is the last thing standing between here and an answer to "can a new user get a bespoke
+report".
