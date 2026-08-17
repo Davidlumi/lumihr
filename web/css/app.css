@@ -4949,6 +4949,42 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-gap:first-of-type { border-top: 0; padding-top: 0; }
 .rr-gap-h { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; color: var(--blue-deep);
   margin-bottom: var(--s2); }
+/* ONE AREA'S SHAPE. Same three fills as the app's stacked bar, so a member who has
+   seen the gauge on screen recognises the bar on paper. No numerals inside the
+   segments — at this width they would set below 6pt; the key underneath carries them
+   in words instead, which is also what makes the bar readable in greyscale. */
+.rr-mix { margin: var(--s3) 0 0; }
+.rr-mix-bar { display: flex; width: 100%; height: 9px; border-radius: 2px; overflow: hidden;
+  background: var(--border); }
+.rr-mix-bar span { display: block; height: 100%; }
+.rr-mix-below { background: var(--gauge-below); }
+.rr-mix-on { background: var(--gauge-on); }
+.rr-mix-above { background: var(--gauge-above); }
+.rr-mix-key { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: 5px; }
+
+/* THE PLAN ON ONE TIMELINE. Columns are the engine's horizon buckets, left to right
+   in time. No vertical rules and no box around each cell: the rail under the heads
+   carries the axis, and everything else is whitespace doing the work — the document's
+   existing table convention (horizontal rules only) applied to a strip. */
+.rr-tl { display: grid; gap: 0; margin: var(--s5) 0 0; }
+.rr-tl-col { padding: 0 var(--s4) 0 0; }
+.rr-tl-col + .rr-tl-col { padding-left: var(--s4); }
+.rr-tl-head { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
+  color: var(--blue-deep); }
+.rr-tl-n { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: 2px; }
+/* The rail IS the time axis, so it has to be ONE line. Rendered per column it inherits
+   each column's padding and lands as three separate underlines — which reads as three
+   lists side by side, the exact thing the strip exists to stop. The negative margins
+   cancel the padding so the segments abut into a continuous rule. */
+.rr-tl-rail { height: 2px; background: var(--blue); opacity: .22; margin: var(--s3) 0 var(--s4); }
+.rr-tl-col .rr-tl-rail { margin-right: calc(-1 * var(--s4)); }
+.rr-tl-col + .rr-tl-col .rr-tl-rail { margin-left: calc(-1 * var(--s4)); }
+.rr-tl-col:first-child .rr-tl-rail { border-radius: 2px 0 0 2px; }
+.rr-tl-col:last-child .rr-tl-rail { margin-right: 0; border-radius: 0 2px 2px 0; }
+.rr-tl-item { margin-bottom: var(--s4); break-inside: avoid; }
+.rr-tl-t { font-size: var(--fs-caption); font-weight: 600; color: var(--ink); line-height: 1.35; }
+.rr-tl-a { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: 1px; }
+
 .rr-plan { margin: 0; padding-left: 1.3em; }
 .rr-plan li { margin-bottom: var(--s4); }
 .rr-plan-t { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; margin-bottom: 4px; }

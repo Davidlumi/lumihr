@@ -20183,3 +20183,46 @@ Still held for David's ruling, all convention-dependent and untouched: F-001/F-0
 (continuation), F-003 (section-number ambiguity), F-004 (basis-of-preparation placement),
 F-005/F-006 (table typography), F-012 (bookmarks), F-014/F-015/F-016 (chart and colour
 semantics), F-017 remainder. F-009 (`/100`) stays with A2/BQ3 as substantive.
+
+## 2026-08-17 — Visuals class 1: the plan gets a picture, findings get their shape
+
+David: "we need more visuals in the document — needs to be plain english and needs to be
+top 4 quality." Two exhibits, both built from data the document already prints, both
+landing on pages the verifier measured as under 55% full. No new palette, no new type,
+no new layout concept — §6.1's convergence rule.
+
+**The schedule timeline (§17).** The board approves a *sequence*, and the only picture of
+one was a word at the end of each table row. `RrPlanTimeline` places every action in the
+engine's own horizon buckets (`HORIZON_ORDER`, strategy_align.py:337), left to right in
+time, with the count and the area under each. Deliberately **not a Gantt**: there are no
+dates in this data, and bars against a time axis would assert durations the engine does
+not have. The table stays underneath — summary above, evidence below, the order Part C
+already uses. `unscheduled` earns a column only when something is in it.
+
+**The market-mix bar (§08).** A finding said *"7 of 18 Wellbeing metrics sit below
+market"* and left the reader to picture the other eleven. Each finding card now carries
+the area's full split — below / on / above — off the block's own position counts, with a
+plain-English key: *"Of 18 metrics benchmarked here: 7 below market, 9 on market, 2 above
+market."* Fills are `--gauge-below/on/above`, the tokens the app's own stacked bar uses,
+so a member who has seen the gauge on screen recognises the bar on paper. No numerals
+inside the segments — at this width they set below 6pt, and the key carries them in words,
+which is also what makes the bar readable in greyscale.
+
+**Result:** 40 pages, unchanged; pages under 55% full **8 → 6**; 0 verification failures;
+suite **16/16, every gate ran every check it defines**. Cache `?v=689`.
+
+**A CSS class collision, and it is the exact twin of a lesson already recorded.**
+`.rr-split` is defined twice in `app.css` — mine at 4956 and a pre-existing one at 5080
+as `display: flex`. Source order gave the later one the cascade, so my bar became a
+zero-width flex item: the segments carried the right colours at the right height and
+**0px of width**, and the caption printed while the bar did not. It looked like a print
+problem — backgrounds dropped by Chrome — and it was a naming problem. Renamed `.rr-mix*`.
+The banked lesson was *"web/js classic scripts share one lexical scope; a duplicate
+top-level const kills the later file"*; the stylesheet has the same property in the
+opposite direction — **the later duplicate wins, silently, and the symptom appears
+somewhere it did not originate.** Grep the selector before you name it, exactly as with a
+top-level const.
+
+Diagnosed by reading computed style off the live DOM rather than inferring from the PDF —
+the bar's own `width: 0px` named the cause in one call. `--rule-faint` was also undefined
+and is now `--border`.

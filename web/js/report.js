@@ -328,6 +328,74 @@ function rrPX(pct) {
   return RR_PORT.lab + (Math.max(0, Math.min(100, pct)) / 100) * inner;
 }
 
+// ---- ONE AREA'S SHAPE, AS A BAR --------------------------------------------
+// A finding states "7 of 18 Wellbeing metrics sit below market" and leaves the reader
+// to picture the other eleven. This is that same sentence's arithmetic: every metric
+// benchmarked in the area, split three ways. It asserts nothing the payload does not
+// already carry — below/at/above come straight off the block's position counts.
+//
+// Fills are --gauge-below/on/above, the tokens the app's own stacked bar uses. The
+// document converges on the house vocabulary rather than growing a second one.
+function RrSplitBar({ below, at, above, area }) {
+  const t = (below || 0) + (at || 0) + (above || 0);
+  if (!t) return null;
+  const pc = (n) => (100 * (n || 0)) / t;
+  const seg = [["below", below], ["on", at], ["above", above]];
+  return html`
+    <div class="rr-mix" role="img"
+         aria-label=${"Of " + t + " " + area + " metrics benchmarked: " + (below || 0)
+           + " below market, " + (at || 0) + " on market, " + (above || 0) + " above market."}>
+      <div class="rr-mix-bar">
+        ${seg.map(([k, n]) => (n ? html`
+          <span key=${k} class=${"rr-mix-" + k} style=${{ width: pc(n) + "%" }}></span>` : null))}
+      </div>
+      <div class="rr-mix-key">${"Of " + t + " metrics benchmarked here: "
+        + seg.filter(([, n]) => n).map(([k, n]) => n + " " + k + " market").join(", ") + "."}</div>
+    </div>`;
+}
+
+// ---- THE PLAN, ON ONE TIMELINE ---------------------------------------------
+// The board is asked to approve a SEQUENCE, and the document had no picture of one:
+// the horizon sat in grey type at the end of each action's meta line, so the reader
+// had to hold four of them in their head to see the shape. This is the same four
+// actions and the same horizon field, arranged left to right in time.
+//
+// Deliberately not a Gantt: there are no dates in this data and drawing bars against
+// a time axis would assert durations the engine does not have. Columns are the
+// engine's own buckets, in HORIZON_ORDER (strategy_align.py:337), and the labels are
+// the words the rest of the document already uses.
+const RR_HORIZONS = ["this cycle", "next cycle", "multi-cycle", "unscheduled"];
+function RrPlanTimeline({ actions }) {
+  const by = {};
+  RR_HORIZONS.forEach(h => { by[h] = []; });
+  (actions || []).forEach(a => {
+    const h = String(a.horizon || "unscheduled").toLowerCase().trim();
+    (by[h] || by.unscheduled).push(a);
+  });
+  // "unscheduled" is real (an action the engine could not place) but it is not a
+  // horizon a reader plans against — it only earns a column when something is in it.
+  const cols = RR_HORIZONS.filter(h => h !== "unscheduled" || by[h].length);
+  const total = (actions || []).length;
+  return html`
+    <div class="rr-tl" style=${{ gridTemplateColumns: "repeat(" + cols.length + ", 1fr)" }}>
+      ${cols.map(h => html`
+        <div class="rr-tl-col" key=${h}>
+          <div class="rr-tl-head">${h.charAt(0).toUpperCase() + h.slice(1)}</div>
+          <div class="rr-tl-n">${by[h].length === 0 ? "nothing placed here"
+            : by[h].length + (by[h].length === 1 ? " action" : " actions")}</div>
+          <div class="rr-tl-rail"></div>
+          ${by[h].map((a, i) => html`
+            <div class="rr-tl-item" key=${i}>
+              <div class="rr-tl-t">${a.title}</div>
+              <div class="rr-tl-a">${domainLabel(a.category || "")}</div>
+            </div>`)}
+        </div>`)}
+    </div>
+    <p class="rr-src">${"All " + total + (total === 1 ? " action" : " actions")
+      + " in the plan, placed by the horizon recorded against each one. "
+      + "The order within a column is the order they are set out below."}</p>`;
+}
+
 function RrPortfolioChart({ rows, band }) {
   const rowH = 38, top = 18;
   const H = top + rows.length * rowH + 28;
@@ -2120,9 +2188,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         // the generic sizing-up caveat printed VERBATIM under every finding — template
         // output, not judgement (5 of 7 reviewers). Said once, at the foot of the run.
         const opt = rrProse(f.option || "").replace(RR_FRAMING_RE, "").trim();
+        // the area this finding is about, matched off its own headline — the block
+        // carries the split the finding's sentence quotes one number out of
+        const fb = (al.domain_blocks || []).find(b => (f.headline || "").indexOf(b.name) === 0)
+                || (al.domain_blocks || []).find(b => (f.headline || "").indexOf(b.name) !== -1);
+        const fp = (fb || {}).position || {};
         return html`
         <${RrCard} key=${i} head=${rrCase(f.headline)}>
           <p class="rr-p rr-sm">${rrCase(rrProse(f.detail))}</p>
+          ${fb ? html`<${RrSplitBar} below=${fp.below} at=${fp.at} above=${fp.above}
+                                     area=${domainLabel(fb.name)} />` : null}
           ${opt ? html`<p class="rr-p rr-sm rr-opt"><span>Options</span>${rrCase(opt)}</p>` : null}
         <//>`; })}
       ${part === parts - 1 ? html`
@@ -2377,6 +2452,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "sched") return html`
       <${RrH} n=${num} sub=${first ? "The same actions as the section that follows, grouped by when each one can realistically land." : null}>The schedule${contd}<//>
       ${first ? html`<${Prose} k="schedule" className="rr-lede" generated=${schedProse()} />` : null}
+      ${/* The board approves a SEQUENCE, and until now the only picture of one was a
+           word at the end of each row. The strip carries the shape — how much lands
+           this cycle, how much is deferred, whether anything is stranded — and the
+           table below it carries the detail. Summary above, evidence below: the same
+           order the rest of Part C already uses. First part only; it describes the
+           whole plan, so repeating it on a continuation would assert it twice. */ ""}
+      ${first && plan && (plan.actions || []).length
+        ? html`<${RrPlanTimeline} actions=${plan.actions} />` : null}
       ${/* ONE table with horizon row-groups, not one table per horizon: three stacked
            tables with three headers repeated the column names three times and read as
            three exhibits rather than one schedule (2026-08-16 polish pass). */ ""}
