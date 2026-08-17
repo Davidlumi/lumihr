@@ -20761,3 +20761,42 @@ vendor's name does not run in the member's own board paper. Reworded to the pass
 check was right and it fired on the first render, which is what it is for.
 
 38 pages, 0 verification failures, suite 16/16, cache `?v=696`, outline re-stamped.
+
+## 2026-08-17 — A 200 from the draft endpoint does not mean the answer was saved
+
+The deciding test, run three times per question against a real new org, reading the
+`drafts` table rather than trusting the response. Script: `server/qa_draft_silent_reject.py`.
+
+Each question received three `PUT /api/submission/draft` calls in order — its own option
+**label**, its own option **code**, then `ZZ_NOT_AN_OPTION`. **All three returned HTTP
+200.** The stored value, read back from the table, is the **label every time**:
+
+```
+ALLOW_02      value='Yes'
+ALLOW_03      value='Yes – all allowances'
+ALLOW_04      value='Yes'
+RED_PROC_01   value='Yes'
+RED_PROC_02   value='Yes'
+```
+
+**The code and the garbage were both accepted with 200 and neither was stored.** The
+endpoint answers success to a value it silently discards.
+
+**That fully explains the 72-accepted / 3-answered gap.** My harness sent option *codes*
+(`first.get("code") or …`), so 72 PUTs returned 200 and only the handful whose code happens
+to equal a valid label were written. Completion stayed at 3 of 77. Nothing was lost between
+draft and submit — the drafts were never created, and every call said they were.
+
+**Second finding: `ALLOW_01` returns 404 on all three.** It is `multi_select` and
+`is_required`, so it is in the unlock denominator, and this payload shape cannot write it
+at all. That is the likely source of the earlier five HTTP 500s.
+
+**How much this matters depends on one thing I did not test: what the real browser client
+sends.** If `web/` posts labels, the UI path is unaffected and this is a latent trap for
+integrations, imports and any future client. If it posts codes, it is live customer data
+loss with a success message on top. **That is the next test and it is a single grep of the
+submission client.** I am not guessing which.
+
+Either way the class is the one this whole engagement has been about — P0-7f, P1-B, the
+`[:4]` truncation, the swallowed exception. **The system carries on and the surface looks
+fine.** An endpoint that cannot store a value must say so; a 200 is a promise.
