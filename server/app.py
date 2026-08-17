@@ -6034,8 +6034,18 @@ async def get_strategy_alignment(request: Request):
             "aim": {"stance": _t.get("stance"), "alignment": _t.get("alignment")},
             # SIGNALS — what this domain is actually flagging, most material first
             "signal_count": len(_sigs),
+            # `kind` travels with the signal because the document renders it as a
+            # TABLE and the engine composed it as a SENTENCE. A prevalence signal's
+            # value_display is the PEER adoption ("72%") and its detail is written to
+            # continue it ("of the comparison pool … — you don't yet"). Split into
+            # SIGNAL / YOURS / READS columns, that peer number lands under a heading
+            # that says it is the organisation's own — the opposite of the truth. The
+            # document needs to know which kind it is holding; sniffing the prose for
+            # "of the comparison pool" would make a string the contract between two
+            # composition sites.
             "signals": [{"title": x.get("name"), "detail": x.get("detail"),
                          "position": x.get("position"), "lens": x.get("lens"),
+                         "kind": x.get("kind"),
                          "value": x.get("value_display"), "n": x.get("n"),
                          "question_id": x.get("question_id")}
                         for x in _sigs[:4]],

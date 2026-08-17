@@ -2002,9 +2002,20 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <table class="rr-table tight">
             <thead><tr><th>Signal</th><th>Yours</th><th>Reads</th></tr></thead>
             <tbody>${sigShown.map(sg => html`
+              ${/* A PREVALENCE signal's value is the PEER adoption, and its detail was
+                   composed to continue it: "72%" + "of the comparison pool … — you don't
+                   yet". In a SIGNAL / YOURS / READS table that put the peer's number
+                   under a heading claiming it as the organisation's — so the Wellbeing
+                   row read "Employee assistance programme · YOURS 72%" for a programme
+                   the organisation does not run at all. The number is restored to the
+                   sentence it belongs to, and YOURS carries the organisation's own
+                   state, which is what the column says it does. */ ""}
               <tr key=${sg.question_id || sg.title}>
-                <td><b>${sg.title}</b>${sg.detail ? html`<br /><span class="rr-sm">${sg.detail}</span>` : ""}</td>
-                <td class="rr-sm">${rrSignalValue(sg.value)}</td>
+                <td><b>${sg.title}</b>${sg.detail ? html`<br /><span class="rr-sm">${
+                  sg.kind === "prevalence" && sg.value
+                    ? rrCase(sg.value + " " + sg.detail) : sg.detail}</span>` : ""}</td>
+                <td class="rr-sm">${sg.kind === "prevalence"
+                  ? "Not offered" : rrSignalValue(sg.value)}</td>
                 <td class="rr-sm">${RR_POS_WORD[sg.position] || sg.position || "—"}</td>
               </tr>`)}</tbody>
           </table>
@@ -2756,9 +2767,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       + "populations; this document does not split them."}</p>
       <p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${hasPosition
-        ? (unevid.length + " commitment" + (unevid.length === 1 ? " sits" : "s sit") + " unevidenced today.")
+        ? (unevid.length + " commitment" + (unevid.length === 1 ? " sits" : "s sit")
+           + " unevidenced today. ")
         : (commitments.length + " commitment" + (commitments.length === 1 ? " awaits" : "s await")
-           + " evidence until your data is in.")}
+           + " evidence until your data is in. ")}
       ${/* D039 (v3.1): this described generation-then-validation while the provenance
            foot on the SAME PAGE said all commentary uses standard wording — read
            together, either every generation failed validation or none ran. Both now

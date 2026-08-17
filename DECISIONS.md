@@ -20402,3 +20402,61 @@ as defects. Three review claims have already been overturned by measurement in t
 engagement, one of them from my own audit. They get triaged before they get fixed.
 
 38 pages, 0 verification failures, suite 16/16, cache `?v=693`, outline re-stamped.
+
+## 2026-08-17 — Blockers: three fixed, and what the other eighteen actually are
+
+Triage of the close-out read's 21 blockers. Each was checked against the artefact before
+being touched; **three were engine or renderer defects and are fixed**, the rest are not
+mine to fix and are misfiled as one class.
+
+### Fixed
+
+**The aim markers (p11)** — recorded in the previous entry. The chart plotted a stated aim
+for the two areas the register deliberately excludes.
+
+**The YOURS column carried the peer's number (p27).** A prevalence signal's
+`value_display` is the PEER adoption ("72%") and its `detail` is composed to *continue*
+it — "of the comparison pool … — you don't yet". Rendered as a sentence, that is correct.
+Rendered as a SIGNAL / YOURS / READS **table**, the peer's number lands under a heading
+claiming it as the organisation's, so the Wellbeing row read *"Employee assistance
+programme · YOURS 72%"* for a programme the organisation **does not run at all**. A
+director reading that row learns the opposite of the truth.
+
+Fixed by carrying the signal's `kind` on the payload rather than sniffing the detail for
+"of the comparison pool" — a string test there would make prose the contract between two
+composition sites. YOURS now reads **"Not offered"**; the 72% is restored to the sentence
+it was written for.
+
+**The fused sentence (p4).** *"…0 commitments sit unevidenced today.Indicative figures
+come from…"* — the htm newline-collapse trap, **three lines below a comment in the same
+file documenting that exact trap**. Closed with an explicit trailing space.
+
+### Not fixed, and why — these are three different things wearing one label
+
+**Ruled behaviour, not a defect (1).** The register omits position rows for Wellbeing and
+Governance & transparency because `STRATEGY_POSITION_EXCLUDE` says so (R3b). The reader
+wants them added and the counts restated. That is a **reversal of a ruling**, not a bug.
+
+**The organisation's own content (7).** The 15 Aug amendments are nowhere described; the
+approved action is three words; the approval record names an account not a person; family
+provision is "deliberately more generous" on p7 and "aimed below market" on p6, p12 and
+p24. **The family-provision contradiction is real and I verified it** — but the document
+is faithfully printing a strategy that says both things. The fix is to the strategy, or to
+a coherence rule that would catch it; it is not a rendering change.
+
+**Engine scope, needing a decision (10).** Findings covers four areas of eight; gaps carry
+no options where the aim itself is the problem; £27,000 prices one gap of ten and the
+population behind it is unstated; 43 of 55 signals are deferred to an app the reader does
+not have (D087); the worded aims are plotted as points on a percentile axis when they are
+bands. Each is a real weakness. Each changes what the engine computes or what the document
+is allowed to withhold, and none should be done inside a fix-the-blockers pass.
+
+### The thing worth keeping from this
+
+**"Blocker" was the readers' word for "I would not let this go to the committee", and it
+conflated a rendering bug, a ruled behaviour, a content gap and an engine scope decision.**
+Three of the twenty-one were mine. Reporting all twenty-one as a defect list would have
+been as misleading as reporting none — and fixing them as one class would have quietly
+reversed a ruling and rewritten an organisation's stated strategy.
+
+38 pages, 0 verification failures, suite 16/16, cache `?v=694`, outline re-stamped.
