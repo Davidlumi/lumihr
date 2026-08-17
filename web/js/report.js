@@ -487,6 +487,12 @@ const RR_FRAMING_RE = /Organisations in this position often size up[^.]*\.\s*(A 
 const RR_ALIGN_WORD = { on_target: "On strategy", ahead: "Above strategy", behind: "Below strategy" };
 const RR_POS_WORD = { below: "below market", at: "on market", above: "above market" };
 const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
+// ONE range glyph, in one place (F-007). FTE bands are stored with hyphens because the
+// string is a key — "1,000-4,999" indexes the band. The hyphen must not reach the page:
+// a hyphen joins, an en dash spans, and the cover printed "50–249 FTE" eight lines above
+// "1,000-4,999 FTE" because the normalisation had been written out by hand at four call
+// sites and missed the fifth. A repeated inline fix is a convention waiting to break.
+const rrDash = (s) => String(s == null ? "" : s).replace(/(\d)-(\d)/g, "$1–$2");
 
 // `chips` / `extraActions` / `hideBack` exist so /strategy can BE this document rather
 // than link to it (David 2026-08-16: "replace this page with just a view of the PDF
@@ -1175,7 +1181,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ? "Aggregate £ figures round to the nearest thousand and per-person figures to the "
         + "pound; every £ here is indicative on these assumptions, whether or not the word "
         + "sits beside it. Figures use the midpoint of your stated FTE band ("
-        + (money.fte_band ? money.fte_band.replace(/-/g, "–") + " FTE, midpoint " : "")
+        + (money.fte_band ? rrDash(money.fte_band) + " FTE, midpoint " : "")
         + ((money.unit_rates || {}).fte || "—") + ") and lumi's published salary and level-mix "
         + "assumptions. Peer rates are medians of " + cutLabel + ", which spans organisations of "
         + "every size — the £ scales on your headcount while the rates reflect that sample. "
@@ -1389,7 +1395,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                compared where they are asserted rather than 34 pages apart. */ ""}
           ${(al.entity || {}).fte_band || (al.entity || {}).sector ? html`
             <div><span>Organisation</span>${[(al.entity.sector || ""),
-              al.entity.fte_band ? al.entity.fte_band.replace(/-/g, "–") + " FTE" : ""]
+              al.entity.fte_band ? rrDash(al.entity.fte_band) + " FTE" : ""]
               .filter(Boolean).join(" · ")}</div>` : null}
           <div><span>Date of issue</span>${today}</div>
           <div><span>Document status</span>${ver
@@ -1405,15 +1411,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           ${al.pool_footer ? html`<div><span>Comparison pool</span>${al.pool_footer
             .replace("Comparison pool: ", "")
             .replace(/\.\s*See lumihr\.co\.uk methodology for sources\.\s*$/, " — lumihr.co.uk methodology")}</div>` : null}
+          ${/* F-008: one date format in the reader-facing layer. This printed a raw ISO
+               date beside three human ones on the same cover — "2026 H1 · 2026-06-11"
+               four lines under "17 Aug 2026". ISO is the storage format, not the page's. */ ""}
           <div><span>Data collection</span>${(al.snapshot || {}).window || "Current window"}${
-            (al.snapshot || {}).date ? " · " + al.snapshot.date : ""}</div>
+            (al.snapshot || {}).date ? " · " + (fmtDate(al.snapshot.date) || al.snapshot.date) : ""}</div>
           ${/* the two labels sit adjacent, so the cover itself points at the page
                that reconciles them (2026-08-16 ship gate) */ ""}
           ${/* D052 (v3.1): the cover asserted both labels side by side and left the
                reader to discover on p40 that NO read uses the stated group. The
                divergence is stated where it is asserted. */ ""}
           ${doc.comparator_label && doc.comparator_label !== cutLabel
-            ? html`<div><span>Stated peer group</span>${doc.comparator_label
+            ? html`<div><span>Stated peer group</span>${rrDash(doc.comparator_label)
                 + " — not the basis for the reads in this document; see Method and basis"}</div>` : null}
           ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
           <div><span>Classification</span>Private ${"&"} confidential</div>
@@ -1643,7 +1652,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <//>` : null}
         <div class=${(cons.selected || []).length || cons.notes ? "rr-grid2" : ""}>
           <${RrCard} head="Who we compare ourselves to">
-            <p class="rr-p">${orgCompareWords(null, doc)}</p>
+            <p class="rr-p">${rrDash(orgCompareWords(null, doc))}</p>
             ${/* the reconciliation lives here too — this card is the only comparator
                  statement with any detail, and the first place a reader asks which
                  basis actually governs the figures (2026-08-16 ship gate) */ ""}
@@ -2360,7 +2369,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             + "are routinely confused."}</p>
           ${al.snapshot ? html`<p class="rr-p rr-sm">${"The current window is "
             + (al.snapshot.window || "the latest collection")
-            + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
+            + (al.snapshot.date ? ", dated " + (fmtDate(al.snapshot.date) || al.snapshot.date) : "")
             + ". Everything in this document is measured against it."}</p>` : null}
         </div>`}`;
 
@@ -2417,8 +2426,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrStats} items=${[
         { v: money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—",
           k: "indicative investment, a year", note: "to reach the peer median" },
-        { v: money.savings_to_p50_gbp ? gbp(money.savings_to_p50_gbp) : "—",
-          k: "indicative saving, a year", note: "where you sit above it" },
+        // F-010: this tile printed a bare em dash. An em dash is not a value — the
+        // reader cannot tell "nothing is above the median", "nothing above the median is
+        // priceable" and "the model has not run" apart, and on a board paper a blank is
+        // read as an omission. The tile now says which of the three it is.
+        { v: money.savings_to_p50_gbp ? gbp(money.savings_to_p50_gbp)
+             : (nPriced ? "None" : "Not priced"),
+          k: "indicative saving, a year",
+          note: money.savings_to_p50_gbp ? "where you sit above it"
+                : nPriced ? "no priced metric sits above the peer median"
+                : "no metric in this review carries a priced saving" },
         { v: nPriced + " of " + nGaps, k: nGaps === 1 ? "gap priced" : "gaps priced",
           note: "lumi's cost model, published assumptions" },
       ]} />
@@ -2442,7 +2459,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-p rr-sm">${"Median salary " + gbp((money.assumptions || {}).median_salary_gbp)
           + " and your headcount" + ((money.unit_rates || {}).fte
             ? " (" + money.unit_rates.fte + " FTE, the midpoint of your stated "
-              + (money.fte_band ? money.fte_band.replace(/-/g, "–") + " " : "") + "band)"
+              + (money.fte_band ? rrDash(money.fte_band) + " " : "") + "band)"
             : " (from your stated FTE band)")
           + " drive every figure above. Cost per leaver ("
           + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0) + "% of salary) and the agency premium ("
@@ -2561,7 +2578,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       })()}</p><//>` : null}
       ${al.snapshot ? html`<${RrCard} label="Data vintage"><p class="rr-p rr-sm">
       ${"Peer figures are the " + (al.snapshot.window || "current") + " collection"
-        + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
+        + (al.snapshot.date ? ", dated " + (fmtDate(al.snapshot.date) || al.snapshot.date) : "")
         + ". Your own answers are as you last saved them."
       // the stated peer group vs the benchmark basis, reconciled where a reader can
       // find it — the cover carries both labels side by side, and no page said why
@@ -2569,11 +2586,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // (external review 2026-08-16). Lives on this card to balance the method
       // grid: the positions card had grown past its column partner.
       + (doc.comparator_label && doc.comparator_label !== cutLabel
-         ? " The strategy names " + doc.comparator_label + " as its stated peer group; no read here "
+         ? " The strategy names " + rrDash(doc.comparator_label) + " as its stated peer group; no read here "
            + "uses it — they run on " + cutLabel
            + (money.fte_band && /FTE/i.test(doc.comparator_label)
               && doc.comparator_label.indexOf(money.fte_band) === -1
-              ? ", and its size bands are not your own (" + money.fte_band.replace(/-/g, "–") + " FTE)."
+              ? ", and its size bands are not your own (" + rrDash(money.fte_band) + " FTE)."
               : ".")
          : "")}</p><//>` : null}
       <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">${"Positions come from your own "

@@ -20132,3 +20132,54 @@ fixture calling what production calls: a shared builder that constructs cut and 
 blocks the way `app.py` does, parameterised over the five cut dims, collapses the 26 in
 one change. The hand-built-payload cluster is per-gate and is the larger half. Nothing
 fixed in this phase.
+
+## 2026-08-17 — Format class 1: the three defects with one right answer
+
+David: "QA and polish big 4 quality needed", against the delivered 40pp artefact
+(sha256 `4e81eb24cb26cf38`), confirmed content-identical to the verified post-fix render.
+
+Phase 2 §6.1 warns that the failure mode here is taste-driven churn. So this class is
+deliberately only the defects where **no convention ruling is needed** — each has exactly
+one professional answer. Palette, typeface, layout concepts and the chart are untouched.
+
+**F-007 — one range glyph.** FTE bands are stored with hyphens because the string is a
+key (`"1,000-4,999"` indexes the band); a hyphen joins, an en dash spans. The cover
+printed `50–249 FTE` eight lines above `1,000-4,999 FTE` because the normalisation had
+been written out **by hand at four call sites and missed the fifth**. Now one helper,
+`rrDash` (`report.js:490`), applied at every site that prints a band — plus the two prose
+sites on pages 5 and 40 and the server-side composer (`claude_api.py:902`), which needed
+`STATEMENT_VERSION` bumped to v2 to clear its cache. **Printed result: 0 hyphenated
+ranges, 10 distinct en-dashed ones.**
+
+**F-008 — one date format in the reader-facing layer.** The cover printed
+`2026 H1 · 2026-06-11` four lines under `17 Aug 2026`, and §23 read "dated 2026-06-11".
+ISO is the storage format, not the page's. Both now route through `fmtDate`.
+**Printed result: 0 raw ISO dates; §23 reads "dated 11 Jun 2026".**
+
+**F-010 — an empty state states why it is empty.** §19's INDICATIVE SAVING tile printed a
+bare em dash. An em dash is not a value: a reader cannot separate "nothing sits above the
+median", "nothing above it is priceable" and "the model has not run", and on a board paper
+a blank reads as an omission. The tile now distinguishes all three — currently **"None /
+no priced metric sits above the peer median"**.
+
+Verified on the **print** artefact, not the screen: 40 pages, footers contiguous, 23
+contents entries landing, 0 failures. Suite **16/16 — "every gate ran every check it
+defines"** (P2-A's wording, first use in anger). Cache `?v=688` on both `index.html` and
+`share.html`.
+
+**Two corrections to my own §6.3 audit, found by looking at the delivered file rather
+than a harness render:**
+- **F-011 is wrong on the title.** The real export's title is
+  `lumi — Thornbridge Retail Group plc — Reward strategy and plan — 17 Aug 2026`. I
+  audited a harness render, whose `<title>` is `h`. That is Arm C — fixture divergence —
+  in my own audit, and it is the second time this pass that a harness stood in for the
+  artefact and reported something the artefact does not do. The rest of F-011 stands:
+  `author`, `subject`, `keywords` empty; `creator` leaks the Chrome user-agent.
+- **F-017 overstates.** "Prepared for" **does** render (`report.js:1386`), conditional on
+  `ver.approver_body`; it was absent because that field is empty, not because the field
+  does not exist. Distribution list and version history remain genuinely absent.
+
+Still held for David's ruling, all convention-dependent and untouched: F-001/F-002
+(continuation), F-003 (section-number ambiguity), F-004 (basis-of-preparation placement),
+F-005/F-006 (table typography), F-012 (bookmarks), F-014/F-015/F-016 (chart and colour
+semantics), F-017 remainder. F-009 (`/100`) stays with A2/BQ3 as substantive.

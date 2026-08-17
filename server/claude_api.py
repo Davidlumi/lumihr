@@ -844,7 +844,7 @@ STRATEGY_COMMENTARY_VERSION = "2026-08-16.strategy-v2"   # v2: deterministic wat
 # INTENT half of the document, so it is deliberately blind to benchmark data: it must
 # read the same before any metrics are in as it does after.
 STATEMENT_SECTIONS = ("context", "philosophy", "positioning", "mix", "performance", "governance")
-STATEMENT_VERSION = "2026-08-16.statement-v1"
+STATEMENT_VERSION = "2026-08-17.statement-v2"   # v2: F-007, one range glyph in the peer label
 
 STATEMENT_SCHEMA = {
     "type": "object",
@@ -899,7 +899,11 @@ def _statement_floor(p):
     cons = p.get("constraints") or []
     prin = p.get("principles") or []
     overrides = p.get("domain_overrides") or {}
-    peer = p.get("comparator_label")
+    # F-007, one range glyph. The comparator label carries FTE bands stored with
+    # hyphens ("1,000-4,999") because the string is a key; a hyphen joins and an en dash
+    # spans, and this sentence printed the hyphen four pages after the cover printed the
+    # en dash. Presentation only — the stored vocabulary is untouched.
+    peer = re.sub(r"(\d)-(\d)", "\\1\u2013\\2", p.get("comparator_label") or "") or None
 
     def para(bits):
         return " ".join(b for b in bits if b)
