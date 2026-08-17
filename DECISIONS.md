@@ -20552,3 +20552,41 @@ the model — so naming the approving body is prompting at approval time. And "w
 amendments changed" is derivable: `snapshot_json` stores the approved state on every
 version and superseded rows are retained (`app.py:5832-5834`), so it is a diff, not a new
 field.
+
+## 2026-08-17 — F-000 is not group-only: two of five cut shapes fail
+
+Wave 1's first item, built and run: **`server/verify_cuts.py`** renders the document on
+every shape `parse_cut` accepts and verifies each. It was the recommended first move
+because it settles a question rather than assuming one, and it did so on its first run.
+
+```
+all       clean          38 pages · All peers
+industry  7 FAILURE(S)   39 pages · Retail & Consumer Goods
+fte_band  clean          38 pages · 50-249
+twin      clean          38 pages · your peer group
+group     6 FAILURE(S)   39 pages · UK mid-size manufacturers
+```
+
+**The scoping investigator was right, and it is worse than reported.** The industry cut
+fails with **two** spills — pages 12 and 19, at **Findings** and **Pensions & savings** —
+where the group cut spills once, at Governance & transparency. Different cuts push
+*different* sections past A4. So F-000 is not "the group cut has a bad section": **the
+per-section page budgets are tuned to one cut and hold on only three of five.**
+
+Both failing cuts show the same signature — a section splits, the footer total keeps the
+pre-split count, and every contents entry past the split mis-targets. The document's page
+count is a claim it can only keep on the shape it was measured against.
+
+This also retires my own framing from the close-out, which called F-000 a group-cut
+blocker. It is a **document-wide pagination weakness**, and the fix is not a budget nudge
+on one section; it is either a measured budget per cut or a layout that cannot spill.
+
+The tool is deliberately standalone rather than wired into `run_gates.sh`: the suite runs
+without a browser today, which is why Gate A's artefact half is invoked with `--pdf`
+outside it. Putting a Chrome render inside the suite is its own decision, and this is what
+that decision would call. It never touches the live database — the caller points `--base`
+at the throwaway, as the rig does.
+
+**Remaining work is unchanged in shape and now better evidenced:** waves 2 to 4 of
+`SCOPING_2026-08-17.md`, roughly eight to ten days. Nothing else was started; the tree is
+clean and the delivered artefact is untouched by this commit.
