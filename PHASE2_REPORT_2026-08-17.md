@@ -6,8 +6,8 @@ the SQLite backup API, never on `lumi.db`.
 Companion documents: `FORMAT_AUDIT_2026-08-17.md` (§6.3, 17 F-numbered defects),
 `GATE_A_INVENTORY_2026-08-17.md`, `VACUITY_SWEEP_2026-08-17.md`.
 
-**§3 (Arm C sweep) is still running** and will be reported separately. Everything else
-in the authorised scope is below.
+§3's full candidate set is `ARM_C_SWEEP_2026-08-17.md`; its findings are at the end of
+this report.
 
 ---
 
@@ -253,3 +253,82 @@ terminology ruling when that lands, since internal consistency is not the same a
 conformance.
 
 Only F-000 is cut-dependent.
+
+---
+
+## §3 — the Arm C sweep
+
+**Read-only. Nothing fixed.** Full candidate set: `ARM_C_SWEEP_2026-08-17.md`.
+
+Twelve gates, their calls into the engine mapped against how `app.py` actually calls the
+same functions. **120 candidates.** The agents self-scored 107 confirmed and **100 as
+reaching something a reader sees**; those are their assessments, not mine. Below is what
+I verified myself, and then the pattern that matters more than any single row.
+
+### Verified by me
+
+**1 — `sector`, and the risk that prints.** `qa_strategy_align.py:371` calls
+`sa.derive_risks(...)` with no `sector=`. `grep 'sector=' server/qa_strategy_align.py` → **0**.
+Production passes `sector=org.get("industry")` at `app.py:6141`, always. `wage_floor`
+(`strategy_align.py:485`) is gated on it. Adding `sector="Retail"` to the gate's own
+fixture yields the eighth risk and nothing else changes. So a check named *"every derivable
+risk fires"* cannot reach the one risk that discusses statute — and the three
+string-hygiene checks that follow scan `_rtext`, built from the same seven, so
+`wage_floor`'s title and detail have **never been scanned for directive, legal or
+score language** either. It prints in §21.
+
+**2 — `visible_qids`, passed to a function that ignores it.** The gate passes
+`visible_qids` exactly once, at `qa_strategy_align.py:129`, to `evaluate()`. Parsed from
+the tree:
+
+```
+evaluate     declares visible_qids=True   uses in body: 0
+options_for  declares visible_qids=True   uses in body: 2
+```
+
+`options_for` is the function that strips levers whose prevalence metric the org cannot
+see — the engine's **only** entitlement mechanism. The gate calls it six times and never
+passes `visible_qids`; production passes it at all three sites (`app.py:4509`, `:5428`,
+`:5925`). The gate's own docstring claims entitlement coverage, and the claim is satisfied
+by a **no-op parameter**. This is Arm C at its most exact: not a check that would work on
+the right population, but a check that cannot fail.
+
+**3 — the status the gate can never produce.** The gate never sets `benefits_lead`,
+`reward_mix`, `location_approach` or `family_position` on any strategy fixture — 0
+occurrences each, against 12 / 5 / 4 / 4 in `app.py`, where `strategy_for_engine()`
+populates all of them. Four of the nine coherence rules key on the three it omits. And
+**both rules declaring `behind_intent` key on `benefits_lead`** — so no `evaluate()` call
+in this gate can produce a `behind_intent` commitment at all. `behind_intent` is the status
+that drives gaps into options into Part C. The gate's coherence half never produces the
+status the second half of the document is built from.
+
+### The pattern, which is bigger than the rows
+
+**26 of 120 candidates are the same divergence**: the fixture pins `cut` to
+`{"dim": "all"}` and the twin-block argument to `None`. It recurs in nine of the twelve
+gates — `qa_focus` ×6, `qa_overview` ×4, `qa_hero` ×3, and singly or doubly elsewhere.
+
+That is not twenty-six defects. It is **one**: across the entire sixteen-gate suite, the
+twin and group code paths are never exercised. `qa_overview.py:73`'s hard-coded `None` was
+the reference case; it is the house style. Which is the complete answer to "why did no gate
+catch P0-7f" — the branch that raised `TypeError` is, suite-wide, unreachable by
+construction.
+
+Three further clusters, same reading: **37** candidates pass a hand-built dict where
+production passes engine output; **19** run against one hardcoded, maximally-provisioned
+demo org (classified, submitted, unlocked, Retail); **19** omit keyword arguments
+production supplies at every site.
+
+### What this means for the fix
+
+Phase 1-B offered `check(..., over=P)` as a one-diff-per-gate answer to Arm B. **It does
+nothing here, and you said so.** Arm C is not fixed by reporting coverage — it is fixed by
+the fixture calling what production calls. The cheapest first move is a single shared
+fixture builder that constructs the cut and twin blocks the way `app.py` does, and one
+parameterisation over the five cut dims, which would collapse the 26 in one change. The
+rest — hand-built payloads standing in for engine output — is per-gate work and is the
+larger half.
+
+**Fix nothing yet, as instructed.** But the count you expected to be the interesting one
+is: 120 candidates, one systemic divergence behind a fifth of them, and the reference case
+was not an outlier.

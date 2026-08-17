@@ -20086,3 +20086,49 @@ author/subject and the HeadlessChrome UA string in `creator`; no PDF outline aga
 three pages; and the Exhibit 2 dot-colour contradiction survives — green *on market* dots
 plotted outside the green *"range lumi reads as on market"* band. F-G (canonical names)
 came back clean and got no F number.
+
+## 2026-08-17 — Arm C sweep: the twin/group path is untested suite-wide
+
+Phase 2 §3, read-only. Full set: `ARM_C_SWEEP_2026-08-17.md`; findings in
+`PHASE2_REPORT_2026-08-17.md` §3. Twelve gates, their engine calls mapped against
+`app.py`'s. **120 candidates** (agents scored 107 confirmed, 100 reader-visible — their
+assessment). Three verified independently:
+
+**① `sector` and the risk that prints.** `qa_strategy_align.py:371` passes no `sector=`;
+`grep 'sector=' server/qa_strategy_align.py` → 0. Production passes
+`sector=org.get("industry")` at `app.py:6141`, always, and `wage_floor`
+(`strategy_align.py:485`) is gated on it. A check named "every derivable risk fires"
+cannot reach the only risk that discusses statute — and `_rtext`, which the directive,
+legal and no-score scans read, is built from the same seven, so `wage_floor`'s prose has
+never been scanned for any of them. It prints in §21.
+
+**② `visible_qids` handed to a function that ignores it.** Parsed from the tree:
+`evaluate` declares the parameter and uses it **0** times; `options_for` uses it **2**.
+`options_for` is the engine's only entitlement mechanism. The gate calls it six times and
+never passes `visible_qids`; production passes it at all three sites (`app.py:4509`,
+`:5428`, `:5925`). The gate's docstring claims entitlement coverage and the claim is
+satisfied by a no-op parameter.
+
+**③ a status the gate cannot produce.** `benefits_lead`, `reward_mix`,
+`location_approach`, `family_position` are set 0 times in the gate against 12 / 5 / 4 / 4
+in `app.py`. Four of nine coherence rules key on them, and **both rules declaring
+`behind_intent` key on `benefits_lead`** — so no `evaluate()` call in this gate can
+produce a `behind_intent` commitment. That is the status driving gaps → options → Part C.
+
+**The systemic finding, and the one that matters.** **26 of 120 candidates are the same
+divergence** — the fixture pins `cut` to `{"dim": "all"}` and the twin-block argument to
+`None` — recurring in nine of twelve gates (`qa_focus` ×6, `qa_overview` ×4, `qa_hero`
+×3). That is not 26 defects; it is one. **Across the whole suite the twin and group code
+paths are never exercised.** `qa_overview.py:73`'s hard-coded `None` was not an outlier,
+it is the house style — and it is the complete answer to why no gate could have caught
+P0-7f: the branch that raised `TypeError` is unreachable by construction, suite-wide.
+
+Three further clusters: **37** candidates pass a hand-built dict where production passes
+engine output; **19** run against one maximally-provisioned demo org (classified,
+submitted, unlocked, Retail); **19** omit kwargs production supplies at every site.
+
+`check(..., over=P)` answers Arm B and does nothing here. Arm C is fixed only by the
+fixture calling what production calls: a shared builder that constructs cut and twin
+blocks the way `app.py` does, parameterised over the five cut dims, collapses the 26 in
+one change. The hand-built-payload cluster is per-gate and is the larger half. Nothing
+fixed in this phase.
