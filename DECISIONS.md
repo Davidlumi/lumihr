@@ -20639,3 +20639,38 @@ basis questions and never drove the org to the unlock gate. **A new org's docume
 therefore still never been rendered as a PDF.** That is the remaining half of this test and
 it is the last thing standing between here and an answer to "can a new user get a bespoke
 report".
+
+## 2026-08-17 — The answering pass: three findings, and the report is still not reached
+
+Continuing the new-user journey to the insight gate. Script: `server/qa_newuser_answer.py`.
+The basis set is `is_required` over `visible_questions` (app.py:4788-4796) — **77
+questions**, read from the bank because the `/api/questions` payload does not expose that
+flag.
+
+**Finding 1 — the answer path is draft-then-submit, and it is not `/api/answers`.** There
+is no such endpoint; 77 attempts returned 404. The real flow is
+`PUT /api/submission/draft` per question, then `POST /api/submission/submit`, and submit
+refuses until the firmographics step is complete. A sixth contract trap for the tally.
+
+**Finding 2 — five of 77 basis questions return HTTP 500 on a plausible first-option
+value.** Not a 400 with a reason: a server error. Every other refusal in this journey has
+been a clean, named 400, so these five are a different class. **Not diagnosed — recorded.**
+A customer working through the funnel would hit five dead ends with no explanation.
+
+**Finding 3, and the one to chase first — 72 drafts saved, submit returned 200, and the
+org counts 3 of 77 answered.** `core_pct` moved to 3.9. Submit did not reject the batch
+(it 200s and would 400 with "Fix the highlighted answers"), yet 69 drafts did not become
+answers. Either the commit silently drops values that fail a per-question validation, or
+the draft→answer path loses them. **My values are synthetic** — first option, "Yes", or 10
+— so many *should* fail validation; the finding is not that they were rejected, it is that
+**the batch reported success while 96% of it did not land.** A customer would see a
+submitted questionnaire and an unmoved completion bar.
+
+**The report is therefore still not reached.** The org sits locked at 3.9%, so the
+document renders in its pre-data form and a real new org's *populated* board paper has
+still never been produced. That remains the open question, and finding 3 is now the thing
+standing in front of it.
+
+What the journey has established: provisioning, invitation, terms, strategy capture and
+the pre-data document all work, and the gating is honest at every stage. What it has not:
+anything past the unlock gate.
