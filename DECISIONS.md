@@ -20505,3 +20505,50 @@ measures and silent about what it was never given. The remaining work is mostly 
 what it should be given — which is why it is a scoping session, not a fix pass.
 
 38 pages, 0 verification failures, suite 16/16, cache `?v=695`.
+
+## 2026-08-17 — Scoping session: two premises did not hold, and the first move is a gate
+
+Ten remaining items scoped against the source, one investigator each, told to say plainly
+when a reported premise does not hold. Full document: `SCOPING_2026-08-17.md`.
+
+**Two of ten premises were wrong** — the same rate this engagement has seen throughout,
+which is why nothing here goes straight to a fix.
+
+**§08's four cards are one line.** `strategy_diag.py:154` ends `compute_findings` with
+`return findings[:4]`. It is a hard truncation of a ranked list, not a coverage rule, and
+the diagnosis prompt is innocent — `validate_diagnosis` enforces a 1:1 count, so the model
+narrates exactly what the engine hands it. Uncapped, the same inputs return **seven**
+divergences, not four; only Health & Protection is genuinely on plan.
+
+**But the cap is load-bearing for a ruled sentence.** `strategy_diag.py:202` writes
+*"N areas sit below market against the position you set"*, counting every `gap` finding.
+Today all four gaps happen to read below market, so it is true. Uncapped it prints "5" when
+4 are — **and `validate_diagnosis` passes that string.** The accurate alternative wording is
+banned outright by the D071 regex added in an earlier review. So raising the cap reverses
+part of an external-review fix and reintroduces D071 in mirror image, with nothing to catch
+it. That is the difference between a one-line change and a class.
+
+Two incidental findings worth banking: **`DIAGNOSIS_GEN_VERSION` is dead** — nothing reads
+it; the cache keys on `DIAGNOSIS_VERSION`, so the D071/D055 validator work never
+invalidated a single cached diagnosis. And `positions.py:1422`'s docstring claim that
+Governance is non-competitive is stale against `market_position_config.json`.
+
+**The recommended first move is a gate, not a fix.** Wire `verify_report_pdf.py` into
+`run_gates.sh` across all five cut shapes. The investigator reports it is **red at HEAD
+today — 7 failures on industry as well as group**, which if so means F-000 is wider than
+the group cut I measured. *That figure is theirs and unverified.* The recommendation is
+self-verifying: green means the concern was overstated, red means it has already paid for
+itself. No ruling, cheapest item on the list.
+
+**Eight things are explicitly dropped**, including two I would have built: the Exhibit 2
+aim-band rendering (delete the marker or leave it; a shaded zone is work for no reader
+gain) and the shared `qa_cuts.py` roster (the sweep's 26 rows overstate how much of it is
+one change). A scoping session that recommends everything has scoped nothing.
+
+Also corrected from my own close-out: **two of the four "needs a capture change" items do
+not.** `strategy_versions` already carries `approver_body`, `approval_date`,
+`effective_date`, `next_review` and `submitted_by` — empty for this org, not absent from
+the model — so naming the approving body is prompting at approval time. And "what the
+amendments changed" is derivable: `snapshot_json` stores the approved state on every
+version and superseded rows are retained (`app.py:5832-5834`), so it is a diff, not a new
+field.
