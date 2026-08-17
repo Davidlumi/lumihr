@@ -20845,3 +20845,41 @@ class in other people's checks while writing it into my own.
 
 **The production answer is therefore better than I said an hour ago**, and I should not
 have said it: nothing here is evidence of customer data loss.
+
+## 2026-08-17 — The board pack is a second artefact, and it has had no review at all
+
+Scoping note, from reading only — a real review needs a rig session.
+
+**It is not the Total Reward Strategy & Plan.** `/api/boardpack/generate` (app.py:4616),
+persisted to `board_packs` with a `pack_id`, retrievable and listable. Everything in this
+engagement — the 38-page document, Gate A's 66 checks, the print verifier, the format
+audit, the five-reader close-out — was the *other* artefact. **The board pack has had zero
+attention.**
+
+Four things established by reading:
+
+**1. It was never affected by P0-7f.** Its signals come from `_pack_sigs`
+(app.py:4410) via `_get_block` bound at `:4409`, which goes through `pos.block_for`
+correctly. So while the strategy document was silently showing five of eight signal
+mechanisms, the board pack was showing all of them. **Two artefacts, same underlying
+question, different answers, for as long as the resolver was wrong.** Nobody would have
+seen it because nobody compares them.
+
+**2. It accepts all five cut shapes explicitly** (`all|industry|fte_band|twin|group`,
+app.py:4628). The strategy document's pagination fails on industry and group —
+`verify_cuts.py` proved that today. If the pack renders through comparable machinery it
+carries the same exposure, and it *invites* the cuts that break.
+
+**3. It carries an AI narrative.** `AI_BOARDPACK` gate, `narrative` and `ai` keys on the
+payload. The strategy document is deterministic and says so in Method §23 — *"no model
+output was used"*. **The board pack is a different risk class**: validation, spend cap,
+and the honesty claims are not the same, and none of this engagement's work touched them.
+
+**4. Same unlock gate** — admin/contributor, and `insights_unlocked` at the 90% threshold.
+So it sits behind the same new-user barrier that is still unproven.
+
+**The review that matters is a comparison, not an audit.** Two artefacts drawing on one
+engine and telling a board about the same organisation must not disagree. Nothing checks
+that today, and finding 1 shows they demonstrably did. That is the first thing to test:
+generate both for the same org and cut, and diff every shared assertion — verdicts,
+percentiles, counts, £ figures, signal identity.
