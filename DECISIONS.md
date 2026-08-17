@@ -20674,3 +20674,36 @@ standing in front of it.
 What the journey has established: provisioning, invitation, terms, strategy capture and
 the pre-data document all work, and the gating is honest at every stage. What it has not:
 anything past the unlock gate.
+
+## 2026-08-17 — Where the 69 drafts went: submit deletes what the org cannot see
+
+Located the mechanism behind the previous entry's finding 3, without resolving it.
+
+`POST /api/submission/submit` (app.py:6965) computes `_skipped` — drafts whose
+`question_id` is **not in the org's visible set** — then **logs a warning, DELETEs those
+drafts, and continues**, returning 200. The commit loop only ever sees what survived that
+filter. So a batch can report success while an arbitrary share of it is discarded, and the
+only trace is a server log line the member never sees.
+
+**That is the shape, not yet the cause.** `org_visible_questions` (app.py:365) states an
+invariant that should make this impossible for the basis set: *"Module questions are never
+is_required (invariant, asserted by qa_release) so the unlock gate is org-independent."*
+If that holds, all 77 `is_required` questions are visible to every org and nothing should
+have been skipped. Either the invariant is not holding, or my 77 came from a wider set
+than `visible_questions()` returns — my query took `is_required=1` with a permissive
+status filter straight off the bank, which may include rows the live core excludes.
+
+**Both possibilities matter and they are different bugs:**
+- if the invariant is broken, a real customer loses required answers on submit;
+- if my query was wider than the live core, the product is fine and the harness was wrong
+  — the same fixture-divergence class (Arm C) that has now produced a false finding three
+  times in this engagement, twice from my own tooling.
+
+**The diagnostic is one query**, and it should be the next thing run: compare
+`{q.id for q in visible_questions() if q.is_required}` against the 77 my script selected,
+and read the skip warning out of the throwaway's server log. Fifteen minutes, and it
+decides which of the two above is true.
+
+Stopping here rather than guessing. The distinction is exactly the kind this engagement has
+repeatedly got wrong by assuming, and a wrong call on it either invents a defect that does
+not exist or dismisses one that loses customer data on submit.
