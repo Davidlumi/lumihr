@@ -20025,3 +20025,64 @@ Recipe:
 ```bash
 LUMI_DOC_PDF=/path/to/delivered.pdf ./run_gates.sh <workdir>
 ```
+
+## 2026-08-17 — Phase 2 read-only: V1/V2 answered, D087 doubled, R-d resolved by measurement
+
+Reports: `PHASE2_REPORT_2026-08-17.md`, `FORMAT_AUDIT_2026-08-17.md` (17 F-numbered
+defects). Read-only — no fixes. The §3 Arm C sweep is still running and is not in these.
+
+**V1 CLOSED.** The entry authorising `3035ef7` exists: `DECISIONS.md:6897`, *"G&T
+competitiveness flag: TRUE (Diff 2, ruled Option 1)"*, with rationale (the FALSE premise
+was retired by the same-day reclassification) and, 22 lines earlier at `:6875`, the
+rejected alternative recorded in advance — doing the flip inside the metadata-only Diff 1
+was refused because Diff 1 had to be verdict-neutral. D077's branch is unblocked on this
+point.
+
+**V2 CLOSED — bounded, not general.** Entry `:8078` (18 July 2026) admits ASHE to
+**corroborate altitude and annotate**, and refuses it as a distribution source twice over:
+PENSION_MATCH corroborates altitude "not a distribution replacement"; ASHE Table P10 is
+explicitly PARKED; NO SEED WRITE, seed sha256 asserted byte-identical. Anything in BQ4
+relying on ASHE generally is outside this entry and needs its own ruling.
+
+**§4.1 — D088, new.** Time off & family reads on market, carries nine signals, and not one
+of them reads on market — yet it prints no caveat, because the caveat is gated on
+`sigShown.length` and its exhibit is folded by the zero-room rule. The warning is gated on
+the rows being *printed* rather than on the rows *existing*, so the area with the strongest
+claim on it is structurally guaranteed not to get it. Renderer change, not authorised,
+recorded not fixed.
+
+**§4.2 — D087 doubled, as predicted.** Signals the document names but does not print:
+**14 of 25 before the fix, 43 of 55 after.** The document prints 11 of 25 then 12 of 55 —
+deferral 56% → 78% while what a reader sees moved by one row. P0-7f tripled what the
+document knows and left what it shows unchanged.
+
+**§6.2 — R-d resolved for two families of three, by measurement.** `fontTools 4.60.2`
+instances both variable families at every weight in use. Same harness, same live plan,
+only the font sources differing:
+
+| | pages | verification | Type 3 | Type 0 |
+|---|---|---|---|---|
+| delivered (variable woff2) | 40 | 0 failures | 1339 | 0 |
+| Inter + PJS as instanced statics | **40** | **0 failures** | 458 | 118 |
+| + Poppins woff2 → TTF | 41 | **4 failures** | 1 | 161 |
+
+Instancing the two variable families is **layout-neutral** and yields real weights, no
+synthetic bold, and Type 0 / Identity-H embedded subsets. Converting the three static
+Poppins files is **not** — all three faces collapse to one `Poppins-Bold` subset and
+pagination moves. Poppins needs separate treatment; a blanket woff2 → TTF conversion is
+unsafe. `updateFontNames=True` fails at 550/650/750 (no STAT axis value); `False` works.
+Two stale facts corrected: `fonts.css:3` claims weight 570 is requested — **it is not**,
+anywhere; and Type 3 here **is** extractable by PyMuPDF (Gate A's 32 artefact checks
+depend on it), so the extraction driver should read "reliability across untested
+consumers", while the PDF/UA and PDF/A driver stands unchanged.
+
+Nothing installed into `web/vendor/fonts`; `fonts.css` untouched. Instances live in the
+scratchpad.
+
+**§6.3 — 17 format defects**, F-000 to F-017, rasterised not extracted. Only F-000 (the
+group-cut spill) is cut-dependent. Notables: the PDF title is `Overview · lumi` with empty
+author/subject and the HeadlessChrome UA string in `creator`; no PDF outline against a
+23-entry printed contents; two range dashes and two date formats on the cover; §12 heads
+three pages; and the Exhibit 2 dot-colour contradiction survives — green *on market* dots
+plotted outside the green *"range lumi reads as on market"* band. F-G (canonical names)
+came back clean and got no F number.
