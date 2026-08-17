@@ -20737,3 +20737,27 @@ org still cannot be driven to the unlock gate, so its populated document has sti
 been rendered. But the failure is now narrowed to one call, and the test is direct — PUT
 one draft with a genuinely valid value for its type, read the drafts table, and see whether
 a 200 means what it says.
+
+## 2026-08-17 — Beta label on the document
+
+David's call, given that the answer path is not yet proven end to end for a new
+organisation.
+
+**In the running footer, on all 38 sheets:** `Beta · Private & confidential`. Not only the
+cover, for the reason F-C names — anything appearing once at the front or back is lost the
+moment a page is screenshotted into a deck or an email, and a page of this document out of
+context is exactly where an unqualified figure does its damage.
+
+**On the cover, as a release status that says what it means for the reader**, rather than a
+badge:
+
+> **Beta** — this document's figures, and the way they are collected, are still being
+> validated. Treat it as a working draft for discussion, not as the sole basis for a
+> decision that cannot be revisited.
+
+**Gate A caught the first wording.** I wrote *"lumi is validating this document's
+figures"*, and `A2.4 the cover names no vendor` (D004) went red — the ruling that the
+vendor's name does not run in the member's own board paper. Reworded to the passive. The
+check was right and it fired on the first render, which is what it is for.
+
+38 pages, 0 verification failures, suite 16/16, cache `?v=696`, outline re-stamped.

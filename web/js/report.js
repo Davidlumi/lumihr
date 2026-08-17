@@ -143,7 +143,12 @@ function RrSheet({ page, total, foot, prov, children, cover, divider, head }) {
         ${prov ? html`<div class="pack-provline">${prov}</div>` : null}
         <div class="pack-footer">
           <span>${foot}</span>
-          <span>Private ${"&"} confidential</span>
+          ${/* BETA (2026-08-17, David's call). The label rides in the RUNNING FOOTER,
+               not only the cover, for the reason F-C names: anything that appears once
+               at the front or back is lost the moment a page is screenshotted into a
+               deck or an email — and a page of this document out of context is exactly
+               where an unqualified figure does its damage. Every sheet carries it. */ ""}
+          <span>Beta ${"·"} Private ${"&"} confidential</span>
           ${/* neutral page mark — the vendor's name ran in every footer of the
                member's own board paper (external review 2026-08-16). The print
                verifier's FOOT_RE matches this exact form; change them together. */ ""}
@@ -1520,6 +1525,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             ? html`<div><span>Stated peer group</span>${rrDash(doc.comparator_label)
                 + " — not the basis for the reads in this document; see Method and basis"}</div>` : null}
           ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
+          <div><span>Release status</span>${"Beta — this document's figures, and the way they "
+            + "are collected, are still being validated. Treat it as a working draft for "
+            + "discussion, not as the sole basis for a decision that cannot be revisited."}</div>
           <div><span>Classification</span>Private ${"&"} confidential</div>
         </div>
       </div>`;
