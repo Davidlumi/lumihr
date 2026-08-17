@@ -20271,3 +20271,50 @@ because numbering is computed by `exReg`. It fired on a comment, which does not 
 but the rule is sound and the fix is better prose: the chart is now referred to by name,
 which survives an exhibit being inserted before it. That is the rule's whole point.
 Reworded rather than weakening the check.
+
+## 2026-08-17 — Front matter, bookmarks, and a rename that had two sides
+
+**F-004 — the basis of preparation moves to the front.** It sat at §23, the last sheet, so
+the provenance, the suppression floor, the stated-peer-group divergence and *"an order of
+magnitude for a board discussion, not a budget"* all lived past every screenshot crop and
+past the point most readers stop. It is now **§03, page 4** — after the executive summary
+and after the ask, not before them: a reader who reads two pages reads the summary and the
+decision, and putting method above the ask would cost them that. One sheet, same content,
+position only.
+
+The comment at the old site claimed Method had to be last because "it also carries the
+provenance line". Checked before moving: the provenance line is in the **running footer on
+every page**, so the dependency was not real. The verifier agreed — 0 failures.
+
+**F-012 / F-011 — `server/finalise_pdf.py`.** Chrome's print path produces a faithful page
+image and nothing else. The document printed a 23-entry contents page and shipped with
+**zero PDF bookmarks**, so it opened with an empty navigation pane; and its properties
+carried the HeadlessChrome user-agent as `creator` with `author`, `subject` and `keywords`
+empty. Those fields are what a document-management system files a board paper under and
+what a mail client previews.
+
+The new tool stamps both. The outline is built from the document's **own rendered section
+headings**, not from a list kept in parallel — a parallel list drifts the first time a
+section moves, and a section just moved. Continuations fold into their parent, so the pane
+mirrors the printed contents rather than competing with it. **23 entries, flat, page count
+unchanged.**
+
+Kept **separate from `verify_report_pdf.py` deliberately**: the verifier is the authority
+on whether a render is sound and must not mutate what it judges. Finalising runs after it,
+and the artefact was re-verified afterwards — 0 failures, 38 pages.
+
+Two defects in the tool, caught on its own first run: the title read the cover, whose
+eyebrow is letter-spaced for display and extracts as `R E WA R D S T R AT E GY & P L A N`
+— straight into the field a mail client previews. It now reads the running head, which is
+clean text. And the outline levels were inconsistent; flattened, which is what a 23-entry
+contents wants.
+
+**F-001 attempted and reverted.** §03's two sheets are deliberate (the comment says so),
+but "(cont.)" is the document's only instance of that convention against 22 uses of
+"(N of M)". Renaming the `P()` titles broke the contents-to-heading match, because the
+contents entry and the page heading are rendered from **different places** — the verifier
+caught it immediately. Unifying the convention is a two-sided change; half of it is worse
+than none, so F-001 stays held rather than half-done.
+
+**Result: 38 pages (was 40 this morning), pages under 55% full 8 → 3, 0 verification
+failures, suite 16/16.** Cache `?v=691`.

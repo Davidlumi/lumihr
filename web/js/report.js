@@ -883,6 +883,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // where a reader who reads two pages and nothing else will look for it.
   if (wantsPlan) P("What we're asking the board to approve", "ask");
 
+  // F-004 (2026-08-17). The basis of preparation sat at §23, the last sheet — so the
+  // provenance, the suppression floor, the stated-peer-group divergence and "an order of
+  // magnitude for a board discussion, not a budget" all lived past every screenshot crop
+  // and past the point most readers stop. Board convention puts the important notice
+  // immediately after the front matter, before the paper asserts a single figure.
+  // It sits AFTER the ask, not before it: a reader who reads two pages reads the summary
+  // and the decision, and moving the method above the ask would cost them that.
+  P("Method and basis", "method");
+
   if (wantsIntent) {
     PART("A");
     // The narrative of the strategy — the thing a Mercer or WTW paper opens with, and
@@ -1034,7 +1043,6 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // three together run past A4. The verifier caught it on the first render — which is
   // the whole point of measuring the PDF instead of guessing (2026-08-16).
   if (wantsIntent) P("Governance and approval", "gov");
-  P("Method and basis", "method");
 
   // A divider announcing a single section is padding, not structure — so a part that
   // came out one section long loses its divider and keeps its sections. This happens
