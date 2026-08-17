@@ -20318,3 +20318,44 @@ than none, so F-001 stays held rather than half-done.
 
 **Result: 38 pages (was 40 this morning), pages under 55% full 8 → 3, 0 verification
 failures, suite 16/16.** Cache `?v=691`.
+
+## 2026-08-17 — Chart QA: two charts drew the same measure two different ways
+
+A pass over every graph in the document — the portfolio dot plot, the per-area percentile
+ruler, the market-mix bar and the plan timeline — against the dataviz anti-pattern
+catalogue. One finding was substantive and the rest followed from it.
+
+**The area ruler drew a fill and a band in the SAME COLOUR TOKEN.** `.rrc-fill.v-at` and
+`.rrc-band` were both `var(--favourable-tint)`. Not similar — identical. So on any area
+reading *on market*, a verdict-coloured fill running from the axis origin to the area's
+percentile ended exactly where the "middle of the market" band began, and the two abutted
+into **one continuous green region encoding two different things**. This is the same
+defect the portfolio chart's legend was rewritten for that morning, except here the marks
+physically touched, and the chart carried **no legend at all** to separate them.
+
+**It was also the wrong form.** A percentile is a *position on a scale*, not a magnitude;
+filling zero-to-here implies a quantity the number does not have. The portfolio chart, on
+the same measure, correctly plots a marker. Two charts, one measure, two grammars — and
+the one a reader meets eight times was the wrong one.
+
+Fixed by removing the fill. The ruler now plots a marker on a band, which is what it
+always meant, and it carries a legend naming both marks in the **same words as the
+portfolio chart** — *"35th–65th, the middle of the market"* — because it is the same band
+on the same ruler. Nine occurrences of that phrase, one wording.
+
+The marker stays neutral ink rather than taking the verdict colour: the verdict is already
+encoded twice on that page, in the stat card and in the mix bar, and a third would be
+redundant ink rather than clarity.
+
+**Mix bar: 2px surface gaps between segments.** They were butted, so the boundary between
+below and on market was a hue edge. The eye resolves a gap faster than a hue change — the
+same reason the fill could not be left touching the band.
+
+38 pages, 0 verification failures, suite 16/16, cache `?v=692`, outline re-stamped.
+
+**Still open and deliberately untouched: F-016.** Every stat card carries an identical
+orange top rule whether its value is neutral (*46 metrics benchmarked*), favourable
+(*on market*, green text) or adverse (*above strategy*, maroon text). Colour is semantic
+in the value and decorative in the rule, in the same component. It is a card defect rather
+than a chart one and it touches the cover, the area pages and the cost page, so it is its
+own fix class — flagged, not folded into this one.

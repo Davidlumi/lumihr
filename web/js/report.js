@@ -300,10 +300,18 @@ function RrDomainChart({ pctl, verdict, band, stance, label }) {
       aria-label=${has ? label + " sits around the " + Math.round(pctl) + "th percentile of the peer group"
                        : label + " has no market position yet"}>
       <${RrAxis} band=${band} y=${top} h=${barH} />
+      ${/* THE FILL IS GONE (2026-08-17 chart QA). It ran from the axis origin to the
+           area's percentile, coloured by verdict — so a green "on market" fill ended
+           exactly where the green "middle of the market" band began, and the two abutted
+           into one continuous green region meaning two different things. That is the
+           same defect the portfolio chart's legend was rewritten for, except here the
+           marks physically touch.
+           It was also the wrong form: a percentile is a POSITION on a scale, not a
+           magnitude, and filling zero-to-here implies a quantity the number does not
+           have — while the portfolio chart, on the same measure, correctly plots a
+           marker. One measure, one grammar, in both charts. */ ""}
       ${has ? html`
         <g>
-          <rect x=${rrX(0)} y=${top} width=${rrX(pctl) - rrX(0)} height=${barH}
-            class=${"rrc-fill v-" + (verdict || "none")} />
           <line x1=${rrX(pctl)} x2=${rrX(pctl)} y1=${top - 6} y2=${top + barH + 6}
             class="rrc-you" />
           <text x=${rrX(pctl)} y=${top - 10} text-anchor="middle" class="rrc-youlab"
@@ -1952,6 +1960,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <${RrCard} label="Where you sit">
           <${RrDomainChart} band=${mband} label=${domainLabel(b.name)}
             pctl=${pos.pctl} verdict=${pos.verdict} stance=${aim.stance} />
+          ${/* This chart had NO legend. It drew a shaded band and a marker and named
+               neither, so the band was an unexplained green region — the reader was left
+               to infer that shading meant something. Same words as the portfolio chart,
+               because it is the same band on the same ruler. */ ""}
+          <div class="rrc-key">
+            <span><i class="rrc-k-you"></i>${domainLabel(b.name) + " sits here"}</span>
+            <span><i class="rrc-k-band"></i>35th–65th, the middle of the market</span>
+          </div>
         <//>
 
         ${/* the split bar is GONE (2026-08-16): it and the chart above both draw "where

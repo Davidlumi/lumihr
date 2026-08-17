@@ -4954,9 +4954,13 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
    segments — at this width they would set below 6pt; the key underneath carries them
    in words instead, which is also what makes the bar readable in greyscale. */
 .rr-mix { margin: var(--s3) 0 0; }
-.rr-mix-bar { display: flex; width: 100%; height: 9px; border-radius: 2px; overflow: hidden;
-  background: var(--border); }
-.rr-mix-bar span { display: block; height: 100%; }
+/* 2px surface gaps between segments, not butted fills: abutting colours read as one
+   region whose boundary is a colour change, and the eye resolves a gap far faster than
+   a hue edge — the same reason the area ruler stopped abutting its fill to its band. */
+.rr-mix-bar { display: flex; width: 100%; height: 9px; gap: 2px; }
+.rr-mix-bar span { display: block; height: 100%; border-radius: 1px; }
+.rr-mix-bar span:first-child { border-radius: 2px 1px 1px 2px; }
+.rr-mix-bar span:last-child { border-radius: 1px 2px 2px 1px; }
 .rr-mix-below { background: var(--gauge-below); }
 .rr-mix-on { background: var(--gauge-on); }
 .rr-mix-above { background: var(--gauge-above); }
@@ -5335,10 +5339,11 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rrc-tick { stroke: var(--border); stroke-width: 1; }
 .rrc-base { stroke: var(--ink-faint); stroke-width: 1; }
 .rrc-rowline { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
-.rrc-fill { fill: var(--blue-tint); }
-.rrc-fill.v-below { fill: var(--neutral-perf-tint); }
-.rrc-fill.v-at    { fill: var(--favourable-tint); }
-.rrc-fill.v-above { fill: var(--blue-tint); }
+/* .rrc-fill removed (2026-08-17 chart QA). Its "on market" step was
+   var(--favourable-tint) — the SAME token as .rrc-band — so on any on-market area the
+   fill and the band were not merely similar but identical, abutting into one green
+   region encoding two different things. The chart now plots a marker, which is the
+   right form for a position anyway. */
 .rrc-you { stroke: var(--ink); stroke-width: 2; }
 .rrc-youlab { font-family: var(--font-head); font-size: 13px; font-weight: 700; fill: var(--ink); }
 .rrc-dot { fill: var(--blue); stroke: #fff; stroke-width: 1.5; }
@@ -5358,7 +5363,8 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rrc-key + .rrc-key { margin-top: 3px; }
 
 .rrc-key i { display: inline-block; vertical-align: middle; margin-right: 5px; }
-.rrc-key .rrc-k-band { width: 16px; height: 9px; background: var(--favourable-tint); border-radius: 2px; }
+.rrc-key .rrc-k-you { width: 2px; height: 11px; background: var(--ink); }
+.rrc-k-band { width: 16px; height: 9px; background: var(--favourable-tint); border-radius: 2px; }
 .rrc-key .rrc-k-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
 .rrc-key .rrc-k-dot.v-below { background: var(--neutral-perf-ink); }
 .rrc-key .rrc-k-dot.v-at { background: var(--favourable-ink); }
