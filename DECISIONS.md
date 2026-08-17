@@ -20707,3 +20707,33 @@ decides which of the two above is true.
 Stopping here rather than guessing. The distinction is exactly the kind this engagement has
 repeatedly got wrong by assuming, and a wrong call on it either invents a defect that does
 not exist or dismisses one that loses customer data on submit.
+
+## 2026-08-17 — The deciding query: the harness was right, so the drafts genuinely did not land
+
+```
+visible_questions() is_required : 77
+my harness selected             : 77
+in mine but NOT visible         : 0
+in visible but not mine         : 0
+```
+
+**The two sets are identical.** The innocent explanation is gone: every question the
+harness drafted an answer for is in the live core AND is_required, so the submit-time
+skip-and-delete cannot be what removed them. The 69 drafts genuinely did not become
+answers.
+
+**Most likely remaining cause, and it is the next thing to test:** `PUT
+/api/submission/draft` returned **200 for all 72** while saving only 3. If it accepts a
+value it cannot store — my synthetic values were the first option code, `"Yes"`, or `10`,
+which are wrong for most question types — and reports success anyway, then the loss is at
+draft time, not submit time. That would still be a real defect, and a nastier one than
+the submit path: **a member typing into the funnel would be told each answer saved.**
+
+It is not proven. What is proven is that the question set was correct, so the loss is real
+and sits somewhere between the draft PUT and the answers table.
+
+**This does not yet change the production answer, which remains: not established.** A new
+org still cannot be driven to the unlock gate, so its populated document has still never
+been rendered. But the failure is now narrowed to one call, and the test is direct — PUT
+one draft with a genuinely valid value for its type, read the drafts table, and see whether
+a 200 means what it says.
