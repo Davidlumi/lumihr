@@ -20359,3 +20359,46 @@ orange top rule whether its value is neutral (*46 metrics benchmarked*), favoura
 in the value and decorative in the rule, in the same component. It is a card defect rather
 than a chart one and it touches the cover, the area pages and the cost page, so it is its
 own fix class — flagged, not folded into this one.
+
+## 2026-08-17 — Close-out read: the polish was real, the substance was not audited
+
+Five readers over the delivered 38 pages, one lens each, plus a completeness critic.
+**102 findings — 21 blockers, 59 serious.** `CLOSE_OUT_READ_2026-08-17.md` carries them;
+`CLOSE_OUT_2026-08-17.md` carries the engagement ledger.
+
+**Almost none are format.** The last four classes of this engagement went on glyphs, empty
+states, visuals and charts, and the document still asks a committee to re-approve
+amendments it never describes and asserts two opposite things about family provision on
+facing pages. The craft work was real; the substance underneath it was never audited. A
+paper that looks like a Big-4 product and contradicts itself buys the contradiction
+credibility.
+
+**One blocker verified and fixed — and it was in the chart I QA'd an hour earlier.**
+Exhibit 2 plotted a "where your strategy aims" marker on all eight rows. The document says
+positions are set "for 6 of the 8", and neither Wellbeing nor Governance & transparency
+carries a "You aim … on <area>" sentence anywhere in 38 pages. Cause: the chart read
+`d.target.stance` off the hero domains, where `STRATEGY_POSITION_EXCLUDE` (app.py:5114) is
+**not** applied — it is applied when building commitments. So the two areas the register
+deliberately excludes were drawn with an inherited overall stance, and because both sit
+near the 28th percentile against a marker at the 83rd, **the two widest apparent gaps on
+the page were against aims nobody set.**
+
+Fixed by deriving the marker from the commitments register — the same source as the
+sentences — so the picture and the prose cannot disagree about what was stated. Six
+markers now, matching the six the document claims.
+
+I had audited this chart against the dataviz anti-pattern catalogue an hour before and
+found the fill/band collision, which was real. I did not check whether its marks
+corresponded to facts stated elsewhere in the document. **A chart audit that reads the
+chart is not a chart audit** — the encoding can be immaculate and the datum still absent.
+
+Two further claims verified: the family-provision contradiction is **real** (p7 against p6,
+p12 and p24). The "pay is fully open with no flag" claim is **partly overturned** — p9
+carries it under THE CONTRADICTIONS ON THE REGISTER; what stands is that Part A asserts it
+without a cross-reference.
+
+**The remaining 99 findings are unverified** and recorded as the readers' assessments, not
+as defects. Three review claims have already been overturned by measurement in this
+engagement, one of them from my own audit. They get triaged before they get fixed.
+
+38 pages, 0 verification failures, suite 16/16, cache `?v=693`, outline re-stamped.

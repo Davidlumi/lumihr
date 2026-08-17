@@ -792,6 +792,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const nGaps = money.gaps_total || 0;
 
   const mband = al.market_band || [40, 60];
+  // the areas that actually carry a stated position, read off the commitments register
+  const aimedAreas = new Set((al.commitments || [])
+    .filter(c => c.kind === "position").map(c => c.category));
   // A stated aim is a WORD ("lead"); the chart needs a point on the ruler. These are
   // the midpoints of what each word means against the engine's own market band — a
   // marker, not a target lumi is asserting.
@@ -2193,7 +2196,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         label: domainLabel(d.name),
         pctl: (d.position || {}).depth_pctl,
         verdict: (d.position || {}).verdict,
-        aim: RR_AIM_PCT[(d.target || {}).stance],
+        // AN AIM MARKER ONLY WHERE AN AIM WAS STATED (2026-08-17 close-out read).
+        // The hero domains carry a stance for all eight areas — inherited from the
+        // overall position — but the commitments register deliberately excludes two of
+        // them (STRATEGY_POSITION_EXCLUDE, app.py:5114), so no "You aim … on Wellbeing"
+        // sentence exists anywhere in the document. The chart plotted an aim for them
+        // anyway, which put the two WIDEST apparent gaps on the page against aims
+        // nobody set, on the one exhibit a committee actually looks at.
+        // The marker now reads the register — the same source as the sentences — so the
+        // picture and the prose cannot disagree about what was stated.
+        aim: aimedAreas.has(d.name) ? RR_AIM_PCT[(d.target || {}).stance] : null,
       })).sort((a, b) => (b.pctl == null ? -1 : b.pctl) - (a.pctl == null ? -1 : a.pctl))} />
       ${/* the key must show the colours the chart actually uses — a single blue dot
            labelled "where you sit" appeared nowhere on the chart, whose dots are
