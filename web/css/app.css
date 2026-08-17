@@ -5350,6 +5350,13 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rrc-none { font-family: var(--font-body); font-size: 11px; fill: var(--ink-faint); }
 .rrc-key { display: flex; flex-wrap: wrap; gap: var(--s4); font-size: var(--fs-micro);
   color: var(--ink-soft); margin: 0 0 var(--s4); }
+/* F-014: the key is now two rows, one per encoding channel, each with its own label.
+   The label is what stops a reader fusing "where it sits" with "how it reads" — the
+   fusion the single-row key invited. */
+.rrc-k-lab { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-faint); margin-right: 2px; }
+.rrc-key + .rrc-key { margin-top: 3px; }
+
 .rrc-key i { display: inline-block; vertical-align: middle; margin-right: 5px; }
 .rrc-key .rrc-k-band { width: 16px; height: 9px; background: var(--favourable-tint); border-radius: 2px; }
 .rrc-key .rrc-k-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }

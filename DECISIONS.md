@@ -20226,3 +20226,48 @@ top-level const.
 Diagnosed by reading computed style off the live DOM rather than inferring from the PDF —
 the bar's own `width: 0px` named the cause in one call. `--rule-faint` was also undefined
 and is now `--border`.
+
+## 2026-08-17 — Visuals class 2: the area bar everywhere, the chart's contradiction, the spills
+
+David: "fix all these issues — use best practice and think of the audience." Taken as the
+ruling on the position chart, which Phase 2 had left to him.
+
+**The market-mix bar on all eight area pages (§09–§16).** Each area page carried a
+percentile ruler and stated its split in prose only — *"12 sit below market, 31 sit on it
+and 3 sit above"*. The bar makes that shape visible. It is deliberately labelled in its
+own words and never borrows the ruler's: counts and percentile are different measures,
+which is the same lesson as the chart below.
+
+**The position chart's contradiction, F-014 — fixed by naming, not by changing data.**
+Green *on market* dots plotted outside a band the legend called *"the range lumi reads as
+on market"*. Both statements were true — the band is a **percentile** range, the colour is
+a **verdict** weighing every metric — but one phrase appeared twice meaning two things,
+and a RemCo member reads the picture, not the note beneath it. The legend is now two rows,
+one per encoding channel:
+
+> **WHERE IT SITS** — depth percentile · 35th–65th, the middle of the market · where your
+> strategy aims
+> **HOW IT READS** — below market · on market
+
+and the caption states the disagreement as intended rather than explaining it away.
+Nothing about the data or the plotting changed; the chart stopped claiming one word for
+two things.
+
+**The thin pages were spills, not gaps.** Five of the six under-55% pages were second
+halves of sections that split. Raising the plan's page budget 5 → 8 puts all four actions
+on one sheet and removes a continuation entirely. The schedule was tried at 8 and at 7 and
+**spilled at both** — the print verifier caught it twice — so it keeps its split at 6. The
+per-area bar also pushed §16's read sheet past A4, so that sheet now shows one signal row
+instead of two: the bar summarises every metric in the area and a signal row shows one, so
+on the most crowded sheet in the document the summary is worth more, and the heading still
+names what is not shown.
+
+**Result: 39 pages (was 40), pages under 55% full 8 → 4, 0 verification failures, suite
+16/16.** Cache `?v=690`.
+
+**qa_strategy went red and was right.** My new comments contained the literal string
+"Exhibit 2", and the gate forbids a hand-written exhibit number anywhere in `report.js`
+because numbering is computed by `exReg`. It fired on a comment, which does not render —
+but the rule is sound and the fix is better prose: the chart is now referred to by name,
+which survives an exhibit being inserted before it. That is the rule's whole point.
+Reworded rather than weakening the check.

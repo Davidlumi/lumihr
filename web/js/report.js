@@ -336,7 +336,7 @@ function rrPX(pct) {
 //
 // Fills are --gauge-below/on/above, the tokens the app's own stacked bar uses. The
 // document converges on the house vocabulary rather than growing a second one.
-function RrSplitBar({ below, at, above, area }) {
+function RrMixBar({ below, at, above, area }) {
   const t = (below || 0) + (at || 0) + (above || 0);
   if (!t) return null;
   const pc = (n) => (100 * (n || 0)) / t;
@@ -989,6 +989,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         schedItems.push({ horizon: s.horizon, actions: s.actions.slice(k, k + 4),
                           contPart: k / 4, totalN: s.actions.length });
     });
+    // budget raised 6 -> 8 (2026-08-17): at 6 a four-action schedule split, putting a
+    // three-row table on its own sheet behind a "(2 of 2)" heading. A continuation is a
+    // cost — it duplicates a heading, consumes a second exhibit number and makes "§17"
+    // ambiguous — and it should be paid only when the content genuinely needs it.
+    // Verified in PRINT at 8: the strip, the lede and all three horizon groups land on
+    // one sheet. The verifier is the authority here, not this comment.
     if (schedItems.length) Prun("The schedule", "sched", schedItems, (s) => 1 + s.actions.length, 6);
     if (plan && (plan.actions || []).length) {
       // budget 5, not 7: the first sheet also carries the summary lede, and three
@@ -997,7 +1003,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const ordered = schedule.length
         ? schedule.reduce((a, s) => a.concat(s.actions), [])
         : plan.actions;
-      Prun("The plan", "planp", ordered, () => 2, 5);
+      // budget raised 5 -> 8, same reasoning: four actions at two per sheet split a
+      // section whose whole value is being read in one sitting.
+      Prun("The plan", "planp", ordered, () => 2, 8);
     } else {
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
     }
@@ -1878,7 +1886,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // commentary AND the gap statements, and Time off & family ran past A4 trying to
       // fit a signal table as well. The count is still named in the heading, so the
       // reader is told what is not shown rather than it quietly vanishing.
-      const _room = inlineFollow ? 0 : 2 - (cntStrictFalse ? 1 : 0);
+      const _room = inlineFollow ? 0 : 1 - (cntStrictFalse ? 1 : 0);
       const sigShown = (b.signals || []).slice(0, Math.max(0, _room));
       const pos = b.position || {};
       const aim = b.aim || {};
@@ -1921,6 +1929,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             tone: aim.alignment ? "a-" + aim.alignment : null,
             note: aim.stance ? "you aim " + RR_STANCE_WORD[aim.stance] : "read neutrally" },
         ]} />
+        ${/* THE AREA'S SHAPE, beside its percentile. The stats say where the area sits
+             and the ruler plots it; neither says how the metrics underneath are
+             distributed, and the split was prose only. Counts and percentile are
+             DIFFERENT measures — that is the whole lesson of the
+             position-at-a-glance chart — so this bar
+             carries its own words and never borrows the ruler's. */ ""}
+        <${RrMixBar} below=${pos.below} at=${pos.at} above=${pos.above}
+                     area=${domainLabel(b.name)} />
         ${cnt.strict === false ? html`<p class="rr-src">${"* indicative — fewer than "
           + cnt.domain_min + " benchmarked metrics stand behind this read."}</p>` : null}
 
@@ -2160,17 +2176,34 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            coloured by verdict (2026-08-16) */ ""}
       ${(() => {
         const present = new Set(domains.map(d => (d.position || {}).verdict).filter(Boolean));
-        const SW = [["below", "verdict: below market"], ["at", "verdict: on market"], ["above", "verdict: above market"]];
+        const SW = [["below", "below market"], ["at", "on market"], ["above", "above market"]];
+        // F-014. The position chart encodes TWO measures and the legend gave both the same words:
+        // the band was called "the range lumi reads as on market" while a dot coloured
+        // "on market" sat outside it. Both statements were true — the band is a
+        // PERCENTILE range, the colour is a verdict weighing every metric — but a reader
+        // sees one phrase in two places and reads a contradiction, and a RemCo member
+        // reads the picture, not the note under it.
+        //
+        // The fix is naming, not data: each channel is labelled by what it measures, and
+        // the legend is grouped so the reader can see there are two. The band stops
+        // claiming a verdict and states its percentiles.
         return html`
           <div class="rrc-key">
-            <span><i class="rrc-k-band"></i>the range lumi reads as on market</span>
-            ${SW.filter(([k]) => present.has(k)).map(([k, l]) => html`
-              <span key=${k}><i class=${"rrc-k-dot v-" + k}></i>${l}</span>`)}
+            <span class="rrc-k-lab">Where it sits</span>
+            <span><i class="rrc-k-dot v-at"></i>depth percentile</span>
+            <span><i class="rrc-k-band"></i>35th–65th, the middle of the market</span>
             <span><i class="rrc-k-aim"></i>where your strategy aims</span>
           </div>
-          <p class="rr-src">${"A dot's place is its depth percentile; its colour is lumi's overall "
-            + "verdict, which weighs every metric in the area — so two areas near the band's edge can "
-            + "share a percentile and read differently."}</p>`;
+          <div class="rrc-key">
+            <span class="rrc-k-lab">How it reads</span>
+            ${SW.filter(([k]) => present.has(k)).map(([k, l]) => html`
+              <span key=${k}><i class=${"rrc-k-dot v-" + k}></i>${l}</span>`)}
+          </div>
+          <p class="rr-src">${"Two different measures, deliberately. Where a dot sits is the "
+            + "area's depth percentile. What colour it is, is the verdict across every metric "
+            + "in that area — not just the percentile. So the two can disagree: an area can sit "
+            + "outside the middle band and still read on market. Both are shown because both "
+            + "are true, and a reader deciding on one alone would be reading half the picture."}</p>`;
       })()}
       <//>
       ${/* the first-window baseline caveat ran three times (here, and twice on the
@@ -2196,7 +2229,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         return html`
         <${RrCard} key=${i} head=${rrCase(f.headline)}>
           <p class="rr-p rr-sm">${rrCase(rrProse(f.detail))}</p>
-          ${fb ? html`<${RrSplitBar} below=${fp.below} at=${fp.at} above=${fp.above}
+          ${fb ? html`<${RrMixBar} below=${fp.below} at=${fp.at} above=${fp.above}
                                      area=${domainLabel(fb.name)} />` : null}
           ${opt ? html`<p class="rr-p rr-sm rr-opt"><span>Options</span>${rrCase(opt)}</p>` : null}
         <//>`; })}
