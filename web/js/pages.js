@@ -2066,10 +2066,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [posFilter, setPosFilter] = useState(_ret.pos || "all");
   const [sortMode, setSortMode] = useState(_ret.sort || "priority");   // priority | domain | gap (David 2026-08-11)
   const [kbIdx, setKbIdx] = useState(-1);   // keyboard-triage focus ring index into the shown list (-1 = none)
-  const [domFilter, setDomFilter] = useState(null);   // domain filter axis — composes with position (null = all domains)
+  const [domFilter, setDomFilter] = useState(_ret.dom || null);   // domain filter axis — composes with position (null = all domains)
   const [lensFilter, setLensFilter] = useState(_ret.lens || []);    // outcome-lens filter (attract/retain/engage/save), multi
   const [stratFilter, setStratFilter] = useState(_ret.strat || []); // strategy-alignment filter (below/on/above strategy), multi
-  const [textQuery, setTextQuery] = useState("");     // client-side find-by-name over the current view
+  const [textQuery, setTextQuery] = useState(_ret.q || "");     // client-side find over the current view
   const [flashSid, setFlashSid] = useState(null);     // a restored/woken/recovered card flashes back into place
   // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
   // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
@@ -2091,7 +2091,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     else { try { localStorage.setItem("lumi-signals-folders", JSON.stringify(next)); } catch (e) {} setLsSig(next); }
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
-  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter, sort: sortMode, lens: lensFilter, strat: stratFilter }); }, [view, posFilter, sortMode, lensFilter, stratFilter]);
+  // every axis the user can set has to be in here — the category filter and the search box
+  // were missing, so Back from a metric landed in a wider list than the one you left.
+  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter, sort: sortMode, lens: lensFilter, strat: stratFilter, dom: domFilter, q: textQuery }); },
+    [view, posFilter, sortMode, lensFilter, stratFilter, domFilter, textQuery]);
   // Overview per-domain scent chip → land on THIS domain's signals only (2026-08-11). The
   // domain rides a module global set by OverviewHero.goToSignals (client-side hash nav, so it
   // survives); consume + clear it once on mount, showing the domain-filtered view.
@@ -2133,7 +2136,16 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     }).catch(e => { if (live) setErr(e.message); });
     return () => { live = false; };
   }, [_cutKey, _applyStrat]);
-  useEffect(() => () => { const ids = seenRef.current; if (ids && ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {}); }, []);
+  // marking seen on unmount also fired when the unmount WAS a metric round trip, so opening
+  // one card's evidence cleared every NEW badge and re-ordered the feed under the user on the
+  // way back. openMetric writes the lumi-return marker before navigating (core.js), so a
+  // round trip is distinguishable from actually leaving the feed.
+  useEffect(() => () => {
+    let leaving = true;
+    try { leaving = !sessionStorage.getItem("lumi-return"); } catch (e) {}
+    const ids = seenRef.current;
+    if (leaving && ids && ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
+  }, []);
   // Strategy-check signpost: the feed is flat now, so jump to the FIRST card of the target
   // domain (every card carries data-dom) and flash it — same sig-group-flash as before.
   useEffect(() => {
@@ -2306,14 +2318,22 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // leaves the feed; the Undo lives on the toast, so no placeholder row holds its slot.)
   const savedItems = all.filter(s => s.status === "saved");                 // ALL saved (foldered or not) — the star subset
   const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed");   // saved STAY in the inbox (star only marks them)
-  const ordKey = s => [s.status === "priority" ? 0 : 1, s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
+  // "priority" is NOT a rank term any more. SignalActions is the only surface with the pin
+  // and the metric page renders it with hidePriority (app.js:1542), while this page replaced
+  // that row with .brf-verbs in the folder redesign — so no user can set the status, and any
+  // Save/Snooze/Dismiss would overwrite it anyway (one status column). The sort keeps its
+  // name and its real terms: new first, then risk, then a market gap worth acting on.
+  const ordKey = s => [s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
   feedItems.sort((a, b) => { const ka = ordKey(a), kb = ordKey(b);
     for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; });
   const feedN = feedItems.length;
   const snoozedItems = all.filter(s => s.status === "snoozed");
   const dismissedItems = all.filter(s => s.status === "dismissed");
   // a folder deleted elsewhere (another tab) can leave a stale view — fall back to the feed
-  const v = ((view.kind === "folder" && !folders.includes(view.name)) || (view.kind === "saved" && !savedItems.length)) ? { kind: "all" } : view;
+  // a folder deleted in another tab leaves a stale view, so that half of the guard stays.
+  // The saved half did not: it bounced the Saved view back to the inbox whenever nothing was
+  // starred, so the tab looked live, did nothing, and its own empty state was unreachable.
+  const v = (view.kind === "folder" && !folders.includes(view.name)) ? { kind: "all" } : view;
   const baseItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
     : v.kind === "snoozed" ? snoozedItems
     : v.kind === "dismissed" ? dismissedItems
@@ -2323,8 +2343,13 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // old {kind:"domain"} view — the Overview scent chip + StrategyCheck both set this one filter.
   const domainOpts = Array.from(new Set(baseItems.map(s => s.domain).filter(Boolean))).sort((a, b) => domainLabel(a).localeCompare(domainLabel(b)));
   const tq = textQuery.trim().toLowerCase();
+  // the haystack is what the card actually shows: name, category, the headline sentence and
+  // the reason line. Matching the name alone meant typing the biggest text on a card — its
+  // headline — returned "no signals match".
+  const sigHay = s => ((s.name || s.label_short || "") + " " + domainLabel(s.domain || "") + " "
+    + (s.stand || s.detail || "") + " " + (LENS_LABEL[s.lens] || "")).toLowerCase();
   const viewItems = baseItems.filter(s => (!domFilter || (s.domain || "") === domFilter)
-    && (!tq || ((s.name || s.label_short || "") + " " + domainLabel(s.domain || "")).toLowerCase().includes(tq)));
+    && (!tq || sigHay(s).includes(tq)));
   // market-position filter: counts come from the current view, then narrow the list to the picked
   // position ("all" keeps everything, incl. practice signals which carry no below/on/above position)
   const posCounts = { below: 0, on: 0, above: 0, practice: 0 };
