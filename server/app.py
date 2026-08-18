@@ -5112,6 +5112,10 @@ STRATEGY_PLANE_A_KEYS = {"lifecycle": "Business_Maturity", "talent": "Talent_Com
 # ruling, not an engine constraint — post-Diff-2 the engine can verdict all eight; the
 # document stays honest by register. A ruled pin, not a derivable list.
 STRATEGY_POSITION_EXCLUDE = ("Wellbeing", "Governance & Transparency")
+# and hand it to the engine, so a domain the user cannot set a stance for never comes back
+# carrying an alignment verdict against one (2026-08-18). One assignment rather than a new
+# argument on nine hero_signals call sites.
+pos.NO_POSITION_TARGET = STRATEGY_POSITION_EXCLUDE
 STRATEGY_CONSTRAINTS = ["affordability", "collective_bargaining", "statutory_pressure",
                         "headcount_change", "system_change", "other"]
 STRATEGY_CADENCES = ["annual", "twice_yearly", "quarterly", "ad_hoc"]
