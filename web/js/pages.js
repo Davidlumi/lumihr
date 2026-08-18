@@ -2420,7 +2420,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         ${s.alignment ? html`<span class="brf-strat" title=${ALIGN_LABEL[s.alignment]}><${StrategyGlyph} alignment=${s.alignment} w=${32} /></span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
-        <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
+        <div class="brf-stratline"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs" onClick=${e => e.stopPropagation()}>
         ${v.kind === "all" ? html`
           <${SigSaveMenu} folders=${folders} saved=${s.status === "saved"} onToggle=${() => fileIt(s)} onPick=${n => fileToFolder(s, n)} />

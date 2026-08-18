@@ -98,7 +98,7 @@
   --blue-tint: #EBF0FA;
   --blue-tint-2: #D7E0F4;
   --navy: #1F2A44;
-  --navy-tint: color-mix(in srgb, var(--navy) 8%, #fff);  /* pale navy — strategy/trust channel backgrounds (.brf-strat) */
+  --navy-tint: color-mix(in srgb, var(--navy) 8%, #fff);  /* pale navy — strategy/trust channel backgrounds (.brf-stratline) */
 
   /* ---- lumi brand kit (logo system) — see lumi_brand_kit/INTEGRATION.md ---- */
   --lumi-navy: var(--blue);   /* #2048B0 primary — alias, not a duplicate */
@@ -4517,10 +4517,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-chips { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s3) 0; }
 /* the reward-strategy "why this is ranked" line (2026-07-10) — NAVY (trust/strategy channel,
    never RAG): explains which strategy inputs shaped the signal, a fact, not advice. */
-.brf-strat { display: flex; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s1)) 0 var(--s2);
+.brf-stratline { display: flex; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s1)) 0 var(--s2);
   font-size: var(--fs-micro); color: var(--navy); background: var(--navy-tint);
   border-radius: var(--radius-xs); padding: 3px var(--s2); width: fit-content; max-width: 100%; }
-.brf-strat svg { color: var(--navy); flex: none; }
+.brf-stratline svg { color: var(--navy); flex: none; }
 .brf-pos { font-size: var(--fs-micro); font-weight: 650; border-radius: 999px; padding: var(--s1) var(--s3); white-space: nowrap; }
 .brf-pos-amber    { background: var(--gauge-below); color: var(--brf-below-ink); }
 .brf-pos-red      { background: var(--gauge-above); color: var(--brf-above-ink); }
