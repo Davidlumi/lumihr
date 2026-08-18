@@ -2597,23 +2597,33 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         ${/* FOLDER NAV — the only control above the feed: All · user folders · Snoozed ·
               Dismissed · a quiet + New folder. The active user folder carries a small "…"
               (Rename / Delete). */ ""}
-        <div class="sfold-nav" role="group" aria-label="Signal folders">
+        <div class="sfold-nav" role="group" aria-label="Signal views" aria-controls="sig-feed">
+          ${/* the accessible name carries both figures — "Inbox 47 12" read out as two bare
+                numbers with nothing to separate them, so the unread count is a dot on screen
+                and words to a screen reader. */ ""}
           <button type="button" class=${"sfold-pill sfold-inbox" + (v.kind === "all" ? " on" : "")} aria-pressed=${v.kind === "all"}
-            onClick=${() => setView({ kind: "all" })}>Inbox <b class="num">${feedN}</b>${unread > 0 ? html`<span class="sfold-unread" title=${unread + " new since your last visit"}>${unread}</span>` : null}</button>
+            aria-label=${"Inbox — " + feedN + " signal" + (feedN === 1 ? "" : "s") + (unread > 0 ? ", " + unread + " new" : "")}
+            onClick=${() => setView({ kind: "all" })}>Inbox <b class="num" aria-hidden="true">${feedN}</b>${unread > 0 ? html`<span class="sfold-unread" aria-hidden="true" title=${unread + " new since your last visit"}>${unread}</span>` : null}</button>
           ${/* Saved is the PARENT bucket (David 2026-08-14): the star saves here; the folders beside
-                it are labels WITHIN Saved. Reading order: Inbox · Saved · [its folders] · +New folder. */ ""}
-          ${(savedItems.length || folders.length) ? html`
-            <button type="button" class=${"sfold-pill sfold-saved" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
-              onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved <b class="num">${savedItems.length}</b></button>
+                it are labels WITHIN Saved. Reading order: Inbox · Saved · [its folders] · +New folder.
+                All three lifecycle buckets now follow ONE rule (2026-08-18): the tab is always there
+                because it is where a signal went, and the figure only appears once there is one.
+                Saved used to vanish at zero while Snoozed and Dismissed sat there printing "0". */ ""}
+          <button type="button" class=${"sfold-pill sfold-saved" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
+            aria-label=${"Saved — " + savedItems.length + " signal" + (savedItems.length === 1 ? "" : "s")}
+            onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved ${savedItems.length ? html`<b class="num" aria-hidden="true">${savedItems.length}</b>` : null}</button>
+          ${folders.length ? html`
             <span class="sfold-subgroup">
               ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
                 <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
                   onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
-                ${isFold(f) ? html`<${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />` : null}
+                ${/* rename/delete used to appear only on the folder you were already inside, so
+                      the controls were unreachable from the rail and their arrival shoved it
+                      sideways. Always in the DOM now, revealed on hover, focus or when active. */ ""}
+                <${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />
               </span>`)}
-              ${newFolderCtl}
-            </span>`
-          : newFolderCtl}
+            </span>` : null}
+          ${newFolderCtl}
           ${/* lifecycle bins pushed right, recessive — filing, not active triage. A count is a
                 reason to look, so an empty bin shows no figure at all rather than a "0" — the
                 bin itself stays, because it is where a dismissed signal went. */ ""}

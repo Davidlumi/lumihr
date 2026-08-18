@@ -4332,7 +4332,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
      26px of air between them        (was 16px, which read as one block) */
 .sfold-nav { display: flex; align-items: stretch; gap: var(--s1); flex-wrap: wrap;
   margin: 0 0 var(--s5); padding: 0 var(--s2); border-bottom: 2px solid var(--chrome-edge);
-  background: color-mix(in srgb, var(--blue) 4%, transparent);
+  background: color-mix(in srgb, var(--blue) 4%, var(--paper));   /* opaque: it is sticky now */
   border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
 .sfold-pillwrap { display: inline-flex; align-items: center; gap: 2px; }
 /* folders read as children OF Saved (David 2026-08-14): a subtle left rule brackets them after the
@@ -4357,15 +4357,20 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-pill svg { color: var(--ink-faint); }
 /* the count is the tab's payload: a filled chip on the selected tab, bare figure off it */
 .sfold-pill b { font-weight: 700; margin-left: 1px; font-size: var(--fs-caption);
-  color: var(--ink-faint); background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink-soft); background: color-mix(in srgb, var(--ink) 7%, transparent);
   border-radius: 999px; padding: 1px 7px; }
 .sfold-pill.on { color: var(--blue); font-weight: 700; border-bottom-color: var(--blue); }
 .sfold-pill.on svg { color: var(--blue); }
 .sfold-pill.on b { color: #fff; background: var(--blue); }
+/* always rendered so the rail never shifts when a folder becomes active, and so rename and
+   delete are reachable without first navigating into the folder. Hidden until hover/focus. */
+.sfold-pillwrap .sfold-ops { opacity: 0; transition: opacity var(--dur-base) var(--ease-out); }
+.sfold-pillwrap:hover .sfold-ops, .sfold-pillwrap:focus-within .sfold-ops,
+.sfold-pillwrap .sfold-pill.on ~ .sfold-ops { opacity: 1; }
 .sfold-ops { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 0; border-radius: 999px; font-size: var(--fs-body); font-weight: 700;
   color: var(--ink-faint); cursor: pointer; line-height: 0; }
-.sfold-ops:hover { background: rgba(15,23,42,.08); color: var(--ink); }
+.sfold-ops:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink); }
 /* "+ New folder" is an ACTION, not a tab — it keeps a control's shape so it never reads
    as another place to be, and sits clear of the rule the tabs are seated on. */
 .sfold-new { background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm);
@@ -4439,8 +4444,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
    z-index:1 (over the aurora bg), so the filter row ties with the feed/strategy-strip below it and
    the popover would bleed. Lift it with a specificity-matched selector so its subtree outranks the
    later siblings. */
-.sig-filter-row { margin: 0 0 var(--s4); position: relative; }
+.sig-filter-row { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  margin: 0 0 var(--s5); position: relative; }
 .signals-page > .sig-filter-row { z-index: 20; }
+/* Sticky rail: triaging 47 signals otherwise means scrolling back thousands of pixels to
+   change tab or clear a filter. It MUST be written at this specificity — `.signals-page >
+   :not(.ov-aurora)` (app.css:4095) sets position: relative and beats a bare .sfold-nav, and
+   because `top` still applies under relative it silently shifted the rail 56px down over the
+   filter row instead of doing nothing. Same trap as the aurora z-index. */
+.signals-page > .sfold-nav { position: sticky; top: var(--brandbar-live, var(--brandbar-h)); z-index: 21; }
+@media (max-width: 700px) { .signals-page > .sfold-nav { position: relative; top: auto; } }
 .sig-filter-row .filterbar { padding: 0; }
 .sig-peer-locked { gap: var(--s2); }
 .sig-peer-pill { padding: 4px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-sunk);
@@ -4452,9 +4465,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-peer-note { max-width: 640px; }
 .sig-reg-btn { white-space: nowrap; flex: none; }
 /* inbox unread badge */
-.sfold-unread { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px;
-  padding: 0 4px; margin-left: 2px; border-radius: 999px; background: var(--blue); color: #fff; font-size: var(--fs-micro); font-weight: 700; }
-.sfold-pill.on .sfold-unread { background: #fff; color: var(--navy); }
+/* a dot, not a second figure. "Inbox 47 12" put two unlabelled numbers side by side, the
+   second of them wearing the same filled-chip shape the rail uses for "you are here". The
+   count moves into the tab's accessible name and the title. */
+.sfold-unread { display: inline-block; width: 7px; height: 7px; padding: 0; min-width: 0;
+  margin-left: 5px; border-radius: 50%; background: var(--blue); font-size: 0; }
+.sfold-pill.on .sfold-unread { background: var(--navy); }
 /* lifecycle bins pushed right, recessive (filing, not active triage) */
 .sfold-life { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
 /* the bins are filing, not triage: one step down in size and weight so the eye lands on
