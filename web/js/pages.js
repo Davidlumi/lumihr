@@ -1396,9 +1396,15 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                         the engine), an ink dot at the true percentile with its P-label riding
                         the dot (hollow dot = indicative basis; aria carries the word). */ ""}
                   ${barMode !== "position" ? html`
+                  ${/* the segments count METRICS, not readings (2026-08-18). They read pos[k] — the
+                        per-READING mass from _pool_verdict — while the domain page's chips read
+                        position_metrics, the per-METRIC counts. Same domain, two different sets of
+                        numbers on two surfaces, and a matrix question with six rows moved the home
+                        bar six times and the domain page once. The verdict word and depth_pctl stay
+                        mass-level, exactly as the 2026-06-27 ruling requires; only the counts move. */ ""}
                   <span class="di-bar" aria-hidden="true">
                     ${[["below", "di-fill-below"], ["at", "di-fill-on"], ["above", "di-fill-above"]].map(([k, cls]) => {
-                      const v = pos[k] || 0;
+                      const v = (d.position_metrics || pos)[k] || 0;
                       if (!v) return null;
                       const mw = (String(v).length * 8 + 18) + "px";
                       return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
