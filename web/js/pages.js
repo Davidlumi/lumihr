@@ -3368,10 +3368,37 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
           <button type="button" class="btn small cat-insights-toggle" aria-expanded="true"
             onClick=${() => setHeroHidden(true)}><${Icon} name="chevron-up" size=${13} /> Hide insights</button>
         </div>
+        ${/* MIRRORS "WHERE YOU STAND" (David 2026-08-18: "mirror the home page — the donut for
+              the count in each RAG, the position bar underneath, the space on the right for
+              commentary"). Same three atoms in the same order as OverallArc, one level down:
+              Donut over the METRIC counts, legend, then the band scale with its axis words.
+              The card's own comment above already said the donut should read posM — this is
+              §1 CARD A finally rendering as specified. */ ""}
         <div class="cat-brief-read">
-          <span class="cat-brief-lab">Market</span>
           ${posM && posM.pool ? html`
-            <span class=${"chip " + chipCls + (indicative ? " chip-indicative" : "")}>${chip}</span>
+            <div class="arc-duo cat-stand-duo">
+              <div class="arc-stage" role="img"
+                aria-label=${"Of " + posM.pool + " positioned metrics in " + name + ": " + posM.below
+                  + " below market, " + posM.at + " on market, " + posM.above + " above. Overall: " + chip + "."}>
+                <${Donut}
+                  segments=${[
+                    { value: posM.below, color: (verdict === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
+                    { value: posM.at, color: (verdict === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
+                    { value: posM.above, color: (verdict === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
+                  ]}
+                  total=${posM.pool} centerNum=${posM.pool} sub=${posM.pool === 1 ? "metric" : "metrics"}
+                  centerWord=${chip} size=${168} stroke=${18} />
+              </div>
+              <div class="arc-caption num">
+                ${indicative ? html`<span class="arc-lean">indicative read</span>
+                  <span class="arc-caption-sep" aria-hidden="true">—</span>` : null}
+                <span><i class="arc-leg-dot di-fill-below" aria-hidden="true"></i><span class="arc-leg-fig">${posM.below}</span> below</span>
+                <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${posM.at}</span> on market</span>
+                <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${posM.above}</span> above</span>
+                ${hero.target ? html`<span class="cat-stand-aim"><${AlignmentChip} target=${hero.target} /></span>` : null}
+              </div>
+            </div>
+            <p class="cat-brief-basis caption" title=${_basisTip}><b class="num">${posM.pool}</b> of <b class="num">${(all || []).length}</b> benchmarks have a market rate</p>
             <div class="cat-brief-ruler">${pos && pos.depth_pctl != null ? html`
               <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
             ${/* THE DENOMINATOR (2026-08-18). The counts used to end at "3 above" while the header
@@ -3381,14 +3408,15 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                   prevalence band and no market band is an approach choice with no market rate; the
                   rest are eligible metrics still waiting on data. Same disclosure SuperpowerPage
                   has shipped since 2026-08-13 (pages.js _ratedClause). */ ""}
-            <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>
-            <span class="cat-brief-basis caption" title=${_basisTip}>of <b class="num">${posM.pool}</b> with a market rate${_unrated > 0 ? html` · <b class="num">${_unrated}</b> without` : ""}</span>` :
+            ` :
             html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this area is assessed on practice.</span>`}
           ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
                 practice from analysis — the home bucket and the practice lens carry the
                 story; practice ROWS stay in the metric list below, tagged. */ ""}
         </div>
-        <div class="cat-brief-body">
+        ${/* the right column takes BOTH the drivers and the read — the space David pointed at.
+              The left column is the stand block: ring, legend, scale. */ ""}
+        <div class="cat-brief-body cat-brief-body-solo">
           <div class="cat-brief-drivers">
             <div class="cat-brief-collab">What's driving it</div>
             ${(hero.drivers || []).length ? (hero.drivers || []).map(d => html`
