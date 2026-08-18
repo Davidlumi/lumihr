@@ -2203,14 +2203,21 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     if (el) { scrollIntoViewSafe(el, { block: "nearest" }); el.classList.add("sig-group-flash"); setTimeout(() => el.classList.remove("sig-group-flash"), 1700); }
     setFlashSid(null);
   }, [flashSid, view, posFilter, domFilter]);
-  if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err}
+  // a failure is not an empty inbox: it used to render the same grey ring and the same flag
+  // glyph as "Nothing to flag yet", so the two were indistinguishable.
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your signals"
+    body=${err + " Nothing is lost — your saved, snoozed and dismissed signals are all still there."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  // the skeleton wears the SAME shell as the loaded page — it used to render full-bleed,
+  // so every visit to Signals snapped the whole column inwards when the fetch returned. The
+  // bars also now match the real bands, so nothing jumps vertically either.
   if (!data) return html`
-    <div>
-      <div class="skel" style=${{ height: "30px", width: "180px", marginBottom: "var(--s3)" }}></div>
-      <div class="skel" style=${{ height: "20px", width: "420px", marginBottom: "var(--s4)" }}></div>
-      <div class="skel" style=${{ height: "36px", width: "520px", marginBottom: "var(--s4)", borderRadius: "999px" }}></div>
-      ${[0, 1, 2, 3].map(i => html`<div key=${i} class="skel" style=${{ height: "120px", marginBottom: "var(--s3)", borderRadius: "14px" }}></div>`)}
+    <div class="signals-page brf-page" style=${{ maxWidth: "1120px", margin: "0 auto" }} aria-busy="true">
+      <div class="skel" style=${{ height: "34px", width: "180px", marginBottom: "var(--s2)" }}></div>
+      <div class="skel" style=${{ height: "22px", width: "420px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "47px", marginBottom: "var(--s5)", borderRadius: "var(--radius-sm)" }}></div>
+      <div class="skel" style=${{ height: "30px", width: "520px", marginBottom: "var(--s5)", borderRadius: "var(--radius-sm)" }}></div>
+      ${[0, 1, 2, 3].map(i => html`<div key=${i} class="skel" style=${{ height: "180px", marginBottom: "var(--s3)", borderRadius: "var(--radius)" }}></div>`)}
     </div>`;
   const contrib = data.contribution || {};
   const unlocked = data.contribution ? !!contrib.insights_unlocked : !(data.callouts && data.callouts.gaps_locked);
