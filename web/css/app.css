@@ -3799,7 +3799,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
   font-size: var(--fs-label); color: var(--ink); cursor: pointer; text-align: left; }
 .fb-row:hover { background: color-mix(in srgb, var(--navy) 7%, transparent); }
 .fb-row-sep { margin-top: 5px; padding-top: 11px; border-top: 1px solid var(--border); border-radius: 0; }
-.fb-ck { width: 15px; height: 15px; border-radius: var(--radius-2xs); border: 1.5px solid color-mix(in srgb, var(--ink) 30%, transparent); flex: none; position: relative; }
+/* 1.92:1 unchecked — below the 3:1 that 1.4.11 asks of a control boundary, so the rows did
+   not read as toggles until one was selected. 45% measures 3.06:1 on --surface. */
+.fb-ck { width: 15px; height: 15px; border-radius: var(--radius-2xs); border: 1.5px solid color-mix(in srgb, var(--ink) 45%, transparent); flex: none; position: relative; }
 .fb-ck-radio { border-radius: 50%; }
 .fb-row.sel .fb-ck { background: var(--navy); border-color: var(--navy); }
 .fb-row.sel .fb-ck:not(.fb-ck-radio)::after { content: "\2713"; color: #fff; font-size: 10px; line-height: 14px; text-align: center; position: absolute; inset: 0; }
@@ -4584,7 +4586,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-pos-red      { background: var(--unfavourable-tint); color: var(--brf-above-ink); }
 .brf-pos-green    { background: var(--favourable-tint); color: var(--brf-on-ink); }
 .brf-pos-approach { background: var(--prev-rare); color: var(--prev-ink); }
-.brf-pos-neutral  { background: var(--blue-tint); color: var(--navy); }
+/* blue is reserved for identity and actions ("never performance meaning", palette line 8),
+   so the neutral verdict chip comes off it and onto the page's own sunk surface. */
+.brf-pos-neutral  { background: var(--surface-sunk); color: var(--ink-soft); }
 /* the magnitude as legible toned text (was an aria-hidden grey bar with the number only on hover) */
 .brf-gap { font-size: var(--fs-caption); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .brf-gap-amber { color: var(--brf-below-ink); }
