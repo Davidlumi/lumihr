@@ -3234,6 +3234,15 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // mass-level (the canonical domain read, consistent with tile/chip/home). Falls back to mass
   // if an older payload lacks position_metrics.
   const posM = (hero && hero.position_metrics) || pos;
+  // the un-positioned remainder, named rather than left as a silent gap between the counts and
+  // the "All benchmarks N" head below. approach = carries a prevalence reading but no market band
+  // (an approach choice the market has no rate for); waiting = eligible, no band yet.
+  const _unrated = Math.max(0, (all || []).length - ((posM && posM.pool) || 0));
+  const _approachN = (all || []).filter(c => !fbBand(c) && fbPrev(c)).length;
+  const _basisTip = _unrated <= 0 ? "Every benchmark here carries a market rate."
+    : (_approachN + " approach choice" + (_approachN === 1 ? "" : "s") + " the market has no rate for"
+       + (_unrated - _approachN > 0 ? " · " + (_unrated - _approachN) + " awaiting data" : "")
+       + ". They stay in the list below, and in the practice and approach reads.");
   const indicative = hero && hero.position_basis === "indicative";
   const ev = hero && hero.position_evidence;
   const evC = ev ? ev.polarised + ev.practice : 0;
@@ -3359,7 +3368,15 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <span class=${"chip " + chipCls + (indicative ? " chip-indicative" : "")}>${chip}</span>
             <div class="cat-brief-ruler">${pos && pos.depth_pctl != null ? html`
               <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
-            <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>` :
+            ${/* THE DENOMINATOR (2026-08-18). The counts used to end at "3 above" while the header
+                  two rows down said "All benchmarks 61" — for Pay that is 34 counted and 27 with no
+                  account given anywhere on the page. posM.pool was already here, used only as a
+                  truthiness gate. The remainder splits by what the cards carry: a metric with a
+                  prevalence band and no market band is an approach choice with no market rate; the
+                  rest are eligible metrics still waiting on data. Same disclosure SuperpowerPage
+                  has shipped since 2026-08-13 (pages.js _ratedClause). */ ""}
+            <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>
+            <span class="cat-brief-basis caption" title=${_basisTip}>of <b class="num">${posM.pool}</b> with a market rate${_unrated > 0 ? html` · <b class="num">${_unrated}</b> without` : ""}</span>` :
             html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this area is assessed on practice.</span>`}
           ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
                 practice from analysis — the home bucket and the practice lens carry the

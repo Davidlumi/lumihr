@@ -1697,6 +1697,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-brief-ruler .z-below { border-radius: var(--radius-sm) 0 0 11px; }
 .cat-brief-ruler .z-above { border-radius: 0 11px 11px 0; }
 .cat-brief-ruler .bp-scale-labels { display: none; }
+/* the counts' denominator — quiet, on its own line so the RAG figures keep the row */
+.cat-brief-basis { flex-basis: 100%; color: var(--ink-faint); cursor: help; }
+.cat-brief-basis b { color: var(--ink-soft); font-weight: 650; }
 .cat-brief-minibar { display: flex; gap: 3px; height: 22px; }
 .cat-brief-minibar span { border-radius: var(--radius-2xs); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 .cat-brief-minibar span:first-child { border-radius: var(--radius-sm) 5px 5px 11px; }
