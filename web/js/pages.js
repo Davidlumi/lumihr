@@ -1628,7 +1628,9 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
    save), filterable, each row the peer fact with a click through to the metric.
    Flags, never advice: the user decides whether each difference is good or bad. */
 const LENS_ORDER = ["attract", "retain", "engage", "save"];
-const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Save" };
+// "Save" was both this lens and the Save verb on the same card. The lens is about where
+// spend sits — its own description says so — so it is named for that, not for the verb.
+const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Cost" };
 const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
   engage: "how people experience work", save: "where your spend sits vs the market" };
 // legacy fallback tags (the engine now supplies s.tag in plain market language)
@@ -2268,7 +2270,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const unsave = (s) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
     if (prev) { const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na }); }   // unsaving also drops its folder label
     setStatus(sid, null);
-    sigToast("Removed from saved — back in your feed — " + sigName(s),
+    sigToast("Removed from Saved — back in your feed — " + sigName(s),
       () => { if (prev) writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
   // ---- folder-view verbs (same pattern: exit + toast-borne Undo)
   const moveTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
@@ -2378,7 +2380,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   if (hasPos) sigFacets.push({ key: "pos", lab: "Market", title: "Market position", radio: true, count: posFilter !== "all" ? 1 : 0,
     items: ["below", "on", "above", "practice"].filter(p => posCounts[p]).map(p => ({ k: p, lab: POS_LABEL[p], n: posCounts[p], dot: _POS_DOT[p],
       sel: posFilter === p, onClick: () => setPosFilter(posFilter === p ? "all" : p) })) });
-  const _stratItems = FB_STRAT_DEF.filter(d => stratCounts[d.k]).map(d => ({ ...d, n: stratCounts[d.k], glyph: true, sel: stratFilter.includes(d.k),
+  // the Strategy facet used FB_STRAT_DEF's "below / on / above" — the same three words the
+  // Market facet next to it uses, so the two menus read identically. ALIGN_LABEL names them.
+  const _stratItems = FB_STRAT_DEF.filter(d => stratCounts[d.k]).map(d => ({ ...d, lab: ALIGN_LABEL[d.k] || d.lab, n: stratCounts[d.k], glyph: true, sel: stratFilter.includes(d.k),
     onClick: () => setStratFilter(sel => sel.includes(d.k) ? sel.filter(x => x !== d.k) : [...sel, d.k]) }));
   if (data.strategy_complete && _stratItems.length) sigFacets.push({ key: "strat", lab: "Strategy", title: "Strategy alignment", count: stratFilter.length, items: _stratItems });
   const _lensItems = LENS_ORDER.filter(l => lensCounts[l]).map(l => ({ k: l, lab: LENS_LABEL[l], n: lensCounts[l], sel: lensFilter.includes(l),
@@ -2389,12 +2393,27 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const filtersActive = posFilter !== "all" || stratFilter.length || lensFilter.length || !!domFilter;
   const clearSigFilters = () => { setPosFilter("all"); setStratFilter([]); setLensFilter([]); setDomFilter(null); };
   const triaged = dismissedItems.length + snoozedItems.length + savedItems.length;   // #28: cleared queue vs quiet org (savedItems now covers foldered)
-  const emptyLine = (stratFilter.length || lensFilter.length) && !shownItems.length ? "No signals match these filters — clear them to see the rest."
-    : posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
-    : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
-    : domFilter ? "No live signals in " + domainLabel(domFilter) + " right now — clear the category filter, or check the Snoozed and Dismissed tabs."
+  // WHICH control emptied the list? Re-run the pipeline with one axis lifted at a time and
+  // name the axis responsible. The old chain tested in a fixed order, so with a lens filter on
+  // AND a search typed it always blamed the lens even when the search was what emptied it.
+  const _narrow = o => baseItems
+    .filter(x => o.dom === false || !domFilter || (x.domain || "") === domFilter)
+    .filter(x => o.q === false || !tq || sigHay(x).includes(tq))
+    .filter(x => o.pos === false || !posOn || (posFilter === "practice"
+        ? (x.position === "differs" || x.position === "practice") : x.position === posFilter))
+    .filter(x => o.facet === false || !lensFilter.length || lensFilter.includes(x.lens))
+    .filter(x => o.facet === false || !stratFilter.length || stratFilter.includes(x.alignment));
+  const _blame = shownItems.length ? null
+    : (tq && _narrow({ q: false }).length) ? "q"
+    : (posOn && _narrow({ pos: false }).length) ? "pos"
+    : ((lensFilter.length || stratFilter.length) && _narrow({ facet: false }).length) ? "facet"
+    : (domFilter && _narrow({ dom: false }).length) ? "dom" : null;
+  const emptyLine = _blame === "q" ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
+    : _blame === "pos" ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
+    : _blame === "facet" ? "No signals match these filters — clear them to see the rest."
+    : _blame === "dom" ? "No live signals in " + domainLabel(domFilter) + " right now — clear the category filter, or check the Snoozed and Dismissed tabs."
     : v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
-    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — File a signal from the feed to keep it here.'
+    : v.kind === "folder" ? 'Nothing in \u201C' + v.name + '\u201D yet — save a signal into this folder from your inbox.'
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
     : triaged > 0 ? "Inbox zero. Everything's filed — saved, snoozed or dismissed. New signals land here as your position or the market moves."
@@ -2438,21 +2457,25 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     const gapDir = s.position === "above" ? "above" : s.position === "on" ? "off" : "below";
     // the whole card opens the metric (verbs/menus stopPropagation); keyboard ring adds .kb-focus
     return html`<article key=${sid} class=${"brf-card brf-tone-" + tone + (focused ? " kb-focus" : "")} data-dom=${s.domain || ""} data-sid=${sid}
-      onClick=${() => window.openMetric(s.question_id)}>
+      tabindex="-1" aria-label=${(s.name || s.label_short || "Signal") + " — " + brfCap(s.stand || s.detail)}
+      onClick=${e => { const sel = window.getSelection && window.getSelection();
+        if (sel && String(sel).trim().length > 1) return;   // the user is selecting text, not navigating
+        window.openMetric(s.question_id); }}>
       <div class="brf-cap">
-        <span class="brf-cap-name">${s.name || s.label_short}</span>
+        ${/* the NAME is the heading — heading navigation used to return 47 h3s that were
+              mostly the same engine sentence, with nothing to tell them apart. */ ""}
+        <h3 class="brf-cap-name">${s.name || s.label_short}</h3>
         ${s.domain ? html`<span class="brf-cap-dom">${domainLabel(s.domain)}</span>` : null}
         ${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}
-        ${s.status === "priority" ? html`<span class="sfold-prio" title="Prioritised — ranks first in your feed"><${Icon} name="pin" size=${10} /> priority</span>` : null}
         ${s.risk_framed ? html`<span class="brf-shield"><${Icon} name="shield" size=${10} /> risk</span>` : null}
         ${v.kind === "snoozed" && s.snooze_until ? html`<span class="sfold-snz"><${Icon} name="clock" size=${10} /> ${snoozeReturn(s.snooze_until)}</span>` : null}
       </div>
-      <h3 class="brf-head">${brfCap(s.stand || s.detail)}</h3>
+      <p class="brf-head">${brfCap(s.stand || s.detail)}</p>
       <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num" title="Organisations comparable on this metric in your default peer group — can be smaller than the metric page's n."> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
-        ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the market median"}>${s.gap_pct}% ${gapDir}</span>` : null}
-        ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens}</span>` : null}
+        ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the peer median"}>${s.gap_pct}% ${gapDir}</span>` : null}
+        ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens} lens</span>` : null}
         ${s.alignment ? html`<span class="brf-strat" title=${ALIGN_LABEL[s.alignment]}><${StrategyGlyph} alignment=${s.alignment} w=${32} /></span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
@@ -2491,9 +2514,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const navyFooter = html`
     <div class="brf-navy">
       <div class="brf-navy-reg"><${Icon} name="table" size=${15} />
-        <span><b>Full gap register</b> — every metric against the market, not only those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
+        <span><b>Full gap register</b> — every metric against the market, not only those flagged. <a href="#/priorities" onClick=${() => { window.__gapJumpCut = sigCut; }}>Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
       </div>
-      <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
+      <div class="brf-life"><span class="brf-life-note">Snoozed and dismissed signals move to their own tabs — <b>nothing is deleted</b>.</span></div>
     </div>`;
   return html`
     <div class="signals-page brf-page" style=${{ maxWidth: "1120px", margin: "0 auto" }}>
