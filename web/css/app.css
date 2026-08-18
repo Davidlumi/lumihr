@@ -4319,8 +4319,17 @@ textarea:focus-visible, [tabindex]:focus-visible {
    the rule and own the boundary, the filters stay bordered controls floating below it.
    Shape alone was never going to carry this — the pill-vs-rectangle difference was
    already there and the rows still read as siblings. */
-.sfold-nav { display: flex; align-items: flex-end; gap: var(--s1); flex-wrap: wrap;
-  margin: 0 0 var(--s4); border-bottom: 2px solid var(--border); }
+/* MEASURED, not guessed (2026-08-18). The previous attempt set tabs to --fs-label and
+   facets to --fs-caption and called it a hierarchy: 13px against 12px. A one-pixel
+   difference is not a hierarchy, which is why two rounds of shape changes did nothing.
+   The rail now differs in SIZE, COLOUR and SURFACE, and the gap below it is real:
+     tabs 15px/700 in brand blue   vs  facets 12px/500 in soft ink
+     a tinted band with its own edge vs  bare page
+     26px of air between them        (was 16px, which read as one block) */
+.sfold-nav { display: flex; align-items: stretch; gap: var(--s1); flex-wrap: wrap;
+  margin: 0 0 var(--s5); padding: 0 var(--s2); border-bottom: 2px solid var(--border);
+  background: color-mix(in srgb, var(--blue) 4%, transparent);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
 .sfold-pillwrap { display: inline-flex; align-items: center; gap: 2px; }
 /* folders read as children OF Saved (David 2026-08-14): a subtle left rule brackets them after the
    Saved pill, so "Saved · [its folders]" reads as one bucket + its labels. */
@@ -4330,18 +4339,20 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* a tab, not a pill: square, seated on the rule, and the selected one is marked by a
    navy underline that overlaps the container's own border — the join between the tab and
    the list it governs. A filled pill floated; an underline is attached to something. */
-.sfold-pill { display: inline-flex; align-items: center; gap: var(--s1); background: transparent;
-  border: 0; border-bottom: 2px solid transparent; margin-bottom: -2px; border-radius: 0;
-  font: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--ink-soft);
-  cursor: pointer; padding: var(--s2) var(--s3); min-height: 38px;
+.sfold-pill { display: inline-flex; align-items: center; gap: var(--s2); background: transparent;
+  border: 0; border-bottom: 3px solid transparent; margin-bottom: -2px; border-radius: 0;
+  font: inherit; font-size: var(--fs-body); font-weight: 600; color: var(--ink-soft);
+  cursor: pointer; padding: var(--s3) var(--s3) var(--s2); min-height: 44px;
   transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
-.sfold-pill:hover { color: var(--ink); border-bottom-color: color-mix(in srgb, var(--navy) 28%, transparent); }
+.sfold-pill:hover { color: var(--blue); border-bottom-color: color-mix(in srgb, var(--blue) 30%, transparent); }
 .sfold-pill svg { color: var(--ink-faint); }
-/* the count is the tab's payload — it carries weight on the selected tab and recedes off it */
-.sfold-pill b { font-weight: 700; margin-left: 3px; color: var(--ink-faint); }
-.sfold-pill.on { color: var(--navy); border-bottom-color: var(--navy); }
-.sfold-pill.on svg { color: var(--navy); }
-.sfold-pill.on b { color: var(--navy); }
+/* the count is the tab's payload: a filled chip on the selected tab, bare figure off it */
+.sfold-pill b { font-weight: 700; margin-left: 1px; font-size: var(--fs-caption);
+  color: var(--ink-faint); background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: 999px; padding: 1px 7px; }
+.sfold-pill.on { color: var(--blue); font-weight: 700; border-bottom-color: var(--blue); }
+.sfold-pill.on svg { color: var(--blue); }
+.sfold-pill.on b { color: #fff; background: var(--blue); }
 .sfold-ops { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 0; border-radius: 999px; font-size: var(--fs-body); font-weight: 700;
   color: var(--ink-faint); cursor: pointer; line-height: 0; }
@@ -4351,7 +4362,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-new { background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm);
   font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
   cursor: pointer; padding: var(--s1) var(--s3); min-height: 30px; align-self: center;
-  margin-left: var(--s2); margin-bottom: var(--s2); }
+  margin-left: var(--s3); }
 .sfold-new:hover { color: var(--ink); border-color: var(--ink-faint); }
 .sfold-newrow { display: flex; align-items: center; gap: var(--s2); padding: var(--s1) var(--s2); }
 .sfold-newrow-nav { padding: 0; }
@@ -4434,8 +4445,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-pill.on .sfold-unread { background: #fff; color: var(--navy); }
 /* lifecycle bins pushed right, recessive (filing, not active triage) */
 .sfold-life { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
-.sfold-quiet:not(.on) { color: var(--ink-faint); border-color: transparent; background: none; }
-.sfold-quiet:not(.on):hover { border-color: var(--border); color: var(--ink-soft); }
+/* the bins are filing, not triage: one step down in size and weight so the eye lands on
+   Inbox/Saved/folders first, and their counts stay bare figures rather than chips. */
+.sfold-quiet { font-size: var(--fs-label); font-weight: 500; }
+.sfold-quiet:not(.on) { color: var(--ink-faint); background: none; }
+.sfold-quiet:not(.on) b { background: none; padding: 0 0 0 2px; font-weight: 600; }
+.sfold-quiet:not(.on):hover { color: var(--ink-soft); }
 @media (max-width: 640px) { .sfold-life { margin-left: 0; } }
 /* find-by-name search */
 .sig-search { height: 30px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
