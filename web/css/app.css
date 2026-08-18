@@ -4408,7 +4408,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-pos-pill.pos-below.on b, .sig-pos-pill.pos-on.on b, .sig-pos-pill.pos-above.on b { color: inherit; }
 .sig-pos-pill:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 /* feed toolbar: sort control (left), bulk actions on a narrowed view (middle), keyboard hint (right) */
-.sig-toolbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s3); }
+/* the last gap before the feed is the one boundary that matters, and it was --s3 — the
+   same 12px that separates one card from the next, so the toolbar read as the first card's
+   header. The folder-rail gap above stays at --s5 (ruled 2026-08-18). */
+.sig-toolbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s5); }
 .sig-sort { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); color: var(--ink-soft); font-weight: 600; }
 .sig-sort select { height: 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
   font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0 var(--s2); cursor: pointer; }
