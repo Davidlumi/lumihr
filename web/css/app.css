@@ -4331,14 +4331,19 @@ textarea:focus-visible, [tabindex]:focus-visible {
      a tinted band with its own edge vs  bare page
      26px of air between them        (was 16px, which read as one block) */
 .sfold-nav { display: flex; align-items: stretch; gap: var(--s1); flex-wrap: wrap;
-  margin: 0 0 var(--s5); padding: 0 var(--s2); border-bottom: 2px solid var(--border);
+  margin: 0 0 var(--s5); padding: 0 var(--s2); border-bottom: 2px solid var(--chrome-edge);
   background: color-mix(in srgb, var(--blue) 4%, transparent);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
 .sfold-pillwrap { display: inline-flex; align-items: center; gap: 2px; }
 /* folders read as children OF Saved (David 2026-08-14): a subtle left rule brackets them after the
    Saved pill, so "Saved · [its folders]" reads as one bucket + its labels. */
-.sfold-subgroup { display: inline-flex; align-items: flex-end; gap: var(--s1); flex-wrap: wrap;
-  padding-left: var(--s3); margin-left: var(--s1); border-left: 1px solid var(--border); }
+.sfold-subgroup { display: inline-flex; align-items: center; gap: var(--s1); flex-wrap: wrap;
+  padding-left: var(--s3); margin-left: var(--s1); }
+/* a short centred tick, not a floor-to-ceiling rule: .sfold-nav is align-items:stretch, so a
+   border-left on this box ran the full 45px of a 47px rail and read as a section split —
+   the opposite of "these belong to Saved". */
+.sfold-subgroup::before { content: ""; flex: none; width: 1px; height: 16px;
+  margin-right: var(--s3); background: var(--chrome-edge); }
 .sfold-saved svg { color: var(--navy); }   /* the star marks Saved as the parent bucket */
 /* a tab, not a pill: square, seated on the rule, and the selected one is marked by a
    navy underline that overlaps the container's own border — the join between the tab and

@@ -2509,12 +2509,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
               ${newFolderCtl}
             </span>`
           : newFolderCtl}
-          ${/* lifecycle bins pushed right, recessive — filing, not active triage */ ""}
+          ${/* lifecycle bins pushed right, recessive — filing, not active triage. A count is a
+                reason to look, so an empty bin shows no figure at all rather than a "0" — the
+                bin itself stays, because it is where a dismissed signal went. */ ""}
           <span class="sfold-life">
             <button type="button" class=${"sfold-pill sfold-quiet" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
-              onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
+              onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed ${snoozedItems.length ? html`<b class="num">${snoozedItems.length}</b>` : null}</button>
             <button type="button" class=${"sfold-pill sfold-quiet" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
-              onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="close" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
+              onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="close" size=${12} /> Dismissed ${dismissedItems.length ? html`<b class="num">${dismissedItems.length}</b>` : null}</button>
           </span>
         </div>
 
