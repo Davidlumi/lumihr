@@ -3398,7 +3398,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                 <span class="cat-driver-lab">${d.label}</span>
                 <span class=${"num cat-driver-p " + d.kind}>P${Math.round(d.percentile)}${d.polarity === "lower_is_better" ? html` <i>· lower is better</i>` : ""}</span>
               </button>`) : html`<div class="caption">No positioned metrics to rank yet.</div>`}
-            ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="Open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged in Signals →</a>` : null}
+            ${/* the flag count is the ONLY number in this panel not read against the selected cut:
+                  signals are anchored to the org default peer group (David 2026-08-11) so the page
+                  and the nightly alerts can never disagree. Sitting unlabelled beside counts on the
+                  chosen cut, it invited a comparison that does not hold. */ ""}
+            ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals"
+              title=${"Open the Signals view. Signals are always flagged against your company default peer group"
+                + ((me.org && me.org.signal_peer_label) ? " (" + me.org.signal_peer_label + ")" : "")
+                + ", not the peer group selected above."}><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged in Signals →</a>` : null}
           </div>
           <div class="cat-brief-narr">
             <${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} embedded=${true}
