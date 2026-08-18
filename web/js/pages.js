@@ -1881,7 +1881,10 @@ function brfRule(s) {
       : s.absence ? "almost all of your peers have something in place here"
       : "few of your peers make this choice";
   else if (s.position === "below" || s.position === "above")
-    r = "your value sits " + severityAdverb(s) + (s.position === "below" ? "below" : "above") + " the peer median";
+    // the severity adverb lived here AND in the chip beside it ("clearly below market") AND in
+    // the headline above it — the same verdict three times in three consecutive lines. The chip
+    // owns severity; this line owns the reason, so it states direction only.
+    r = "your value sits " + (s.position === "below" ? "below" : "above") + " the peer median";
   else if (s.bucket === "peer position") r = "you sit apart from most of your peers here";
   else if (s.bucket === "context") r = "a neutral peer read — context, not a verdict";
   else r = "your approach differs from the usual peer pattern";

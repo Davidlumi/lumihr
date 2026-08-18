@@ -288,15 +288,26 @@ def _compare(mine, med, higher):
     return "you %s, peer median %s" % (q(mine), q(med))
 
 
-def _ordinal_leak(vd):
+def _ordinal_leak(vd, p50=None):
     """The position engine emits an internal 0-100 ordinal for banded/scale
     metrics; it must never reach the UI. Returns a plain-language replacement
-    when value_display is that raw ordinal, else None (use the real value)."""
+    when value_display is that raw ordinal, else None (use the real value).
+
+    The replacement used to be one of two CONSTANTS, so every banded metric a
+    org scored zero on carried the identical headline — an inbox of below-market
+    gaps repeated one sentence down the whole page, and the only thing telling two
+    cards apart was the metric name in the eyebrow. The org's own value is
+    genuinely meaningless here (that is the whole point of the leak), but the peer
+    median is not, so it carries the comparison and the sentence varies by metric.
+    Same "you …, peer median …" grammar the rest of the headlines use."""
     import re as _re
     m = _re.match(r"^\s*(\d+)\s*/\s*100\s*$", str(vd or ""))
     if not m:
         return None
-    return "you provide none, the market provides it" if m.group(1) == "0" else "below the peer median"
+    p50 = (str(p50).strip() if p50 else "")
+    if m.group(1) == "0":
+        return ("you provide none, peer median %s" % p50) if p50 else "you provide none, the market provides it"
+    return ("you sit below, peer median %s" % p50) if p50 else "below the peer median"
 
 
 def _signal_position(sig, cls):
@@ -600,7 +611,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         nm = _label(qid, questions.get(qid), i["label"].split(" — ")[0])
         if row_lbl:
             nm = "%s (%s)" % (nm, row_lbl)
-        leak = _ordinal_leak(i["value_display"])
+        leak = _ordinal_leak(i["value_display"], i["p50_display"])
         stand = leak or _compare(i["value_display"], i["p50_display"] or "n/a", False)
         out.append({
             "lens": pos_lenses[qid], "kind": "behind", "question_id": qid,
