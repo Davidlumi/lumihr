@@ -1681,10 +1681,14 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* two columns (2026-08-18): the stand block (ring · legend · scale) on the left, the
    commentary on the right — the same split the home page uses, one level down. */
 .cat-brief { padding: var(--s5) var(--s6); margin: var(--s5) 0 var(--s6);
-  display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
-  grid-template-areas: "head head" "stand read"; gap: 0 var(--s6); align-items: start; }
+  display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  grid-template-areas: "head head" "stand read"; gap: 0 var(--s6); align-items: stretch; }
 .cat-brief > .cat-brief-head { grid-area: head; }
-.cat-brief > .cat-brief-read { grid-area: stand; }
+/* the stand block is shorter than the commentary on most domains — on Wellbeing by 115px.
+   Centring it spreads that air above and below the ring instead of dumping all of it under
+   the scale, and the two columns start on the same line (the left used to carry BOTH a
+   margin-top and a padding-top, so it began 16px below the right). */
+.cat-brief > .cat-brief-read { grid-area: stand; align-self: center; }
 .cat-brief > .cat-brief-body { grid-area: read; }
 @media (max-width: 900px) {
   .cat-brief { grid-template-columns: 1fr; grid-template-areas: "head" "stand" "read"; }
@@ -1696,7 +1700,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    22px on one shared grid so the market ruler and practice bar start, end and centre on
    identical edges; the ruler's axis words are dropped here (the pill + counts carry the
    meaning; asymmetric label rows were the misalignment David could feel but not name). */
-.cat-brief-read { display: block; padding: var(--s4) 0 0; margin-top: var(--s4); }
+.cat-brief-read { display: block; padding: var(--s4) 0; }
 .cat-brief-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
   text-transform: uppercase; letter-spacing: .04em; }
 .cat-brief-read .chip { justify-self: start; min-width: 88px; justify-content: center; }
