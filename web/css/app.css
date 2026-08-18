@@ -1200,7 +1200,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    cue). The metric total is demoted to a small line beneath. centerWord is opt-in: the market
    gauge passes it; the practice donut keeps its count-centric centre. Sized to fit "On market". */
 .donut-word { font-family: var(--font-head); font-size: var(--fs-metric); line-height: 30px; letter-spacing: -0.015em; font-weight: 700;
-  letter-spacing: -0.015em; color: var(--ink); text-align: center; }
+  letter-spacing: -0.015em; color: var(--ink); text-align: center; max-width: 100%; }
+/* "on market" and "practice view" are wider than the hole at --fs-metric — one step down,
+   expressed off the token so the scale stays one system. SCOPED to the domain panel: the
+   home ring is 192/20, whose 152px hole already takes "On market" at full size, and shrinking
+   it there would change a page nobody asked to change. The padding fix in the atom is
+   unscoped, because "cannot overflow the ring" is right everywhere. */
+.cat-brief .donut-word-long { font-size: calc(var(--fs-metric) * 0.8); line-height: 26px; }
 .donut-count { font-size: var(--fs-caption); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
 /* spectrum hero SVG: mirror .arc-svg so it can't collapse to 0 width in WebKit
    (an SVG with only a viewBox and no width rule has no intrinsic size here) */
@@ -1681,7 +1687,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* two columns (2026-08-18): the stand block (ring · legend · scale) on the left, the
    commentary on the right — the same split the home page uses, one level down. */
 .cat-brief { padding: var(--s5) var(--s6); margin: var(--s5) 0 var(--s6);
-  display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  /* the stand column grows into the space on a wide screen but never takes more than a
+     third of the card — a flat 340px left the commentary on 350px at 1060px wide. */
+  display: grid; grid-template-columns: minmax(0, clamp(240px, 33%, 340px)) minmax(0, 1fr);
   grid-template-areas: "head head" "stand read"; gap: 0 var(--s6); align-items: stretch; }
 .cat-brief > .cat-brief-head { grid-area: head; }
 /* the stand block is shorter than the commentary on most domains — on Wellbeing by 115px.

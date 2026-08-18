@@ -892,9 +892,13 @@ function Donut({ segments, total, centerNum, sub, size, stroke, centerWord, onSe
         <circle cx=${cx} cy=${cy} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
         ${arcs}
       </svg>
-      <div class="donut-center">
+      ${/* the centre box is the HOLE, not the whole square (2026-08-18): .donut-center was
+            inset:0, so a two-word verdict like "on market" at --fs-metric measured ~135px
+            inside a 132px hole and printed over the ring. Padding it by the stroke confines it
+            to the hole, and a long verdict steps the type down rather than overflowing. */ ""}
+      <div class="donut-center" style=${{ paddingLeft: stroke + "px", paddingRight: stroke + "px" }}>
         ${centerWord
-          ? html`<div class="donut-word">${centerWord}</div>
+          ? html`<div class=${"donut-word" + (String(centerWord).length > 7 ? " donut-word-long" : "")}>${centerWord}</div>
               <div class="donut-count num">${centerNum}${sub ? " " + sub : ""}</div>`
           : html`<div class="donut-num num">${centerNum}</div>
               ${sub ? html`<div class="donut-sub">${sub}</div>` : null}`}
@@ -3387,7 +3391,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                     { value: posM.above, color: (verdict === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
                   ]}
                   total=${posM.pool} centerNum=${posM.pool} sub=${posM.pool === 1 ? "metric" : "metrics"}
-                  centerWord=${chip} size=${168} stroke=${18} />
+                  centerWord=${chip} size=${216} stroke=${20} />
               </div>
               <div class="arc-caption num">
                 ${indicative ? html`<span class="arc-lean">indicative read</span>
