@@ -5542,3 +5542,18 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-dec-set:hover, .rr-dec-clear:hover { border-color: var(--blue-deep); color: var(--blue-deep); }
 .rr-dec-set.on { background: var(--blue-deep); border-color: var(--blue-deep); color: #fff; }
 .rr-dec-clear { color: var(--ink-soft); }
+
+/* ---- Signals: touch targets in the refinement row (2026-08-18) ----
+   The ≤700px sweep raised the tabs and the card verbs to 44px and skipped every control in
+   the refinement row, so on a phone the bulk verbs were the smallest targets on the page. */
+@media (max-width: 700px) {
+  .sig-find, .sig-sort select, .sig-bulk-btn, .fb-facet, .fb-row, .fb-clear { min-height: 44px; }
+  .sig-tools { margin-left: 0; padding-left: 0; border-left: 0; width: 100%; }
+}
+/* ---- Signals in print: the feed is the artefact, the chrome is not ---- */
+@media print {
+  .signals-page .ov-aurora, .signals-page .sfold-nav, .signals-page .sig-filter-row,
+  .signals-page .sig-kbhint, .signals-page .brf-verbs, .signals-page .brf-navy { display: none !important; }
+  .signals-page .brf-card { break-inside: avoid; page-break-inside: avoid;
+    box-shadow: none; border-color: #bbb; }
+}
