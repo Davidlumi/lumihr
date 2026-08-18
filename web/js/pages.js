@@ -2437,13 +2437,47 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     } };
   // bulk actions on a NARROWED active view (a position filter, or a single domain) — one Undo reverts the batch
   const bulkable = v.kind === "all" && (posOn || !!domFilter) && sortedItems.length >= 2;   // bulk on a narrowed feed (position or domain)
+  // ONE write for the batch. This used to loop setStatus over the view, firing N separate
+  // POSTs with no confirmation: a partial failure left the feed half-triaged under a stack of
+  // red toasts and no way back. /api/signals/action-bulk was built for exactly this and had
+  // no caller. Snooze stays per-signal — the endpoint excludes it, because it needs a
+  // duration per row — but it now reports failure once instead of N times.
+  const bulkStatus = (sids, status) => api("/api/signals/action-bulk",
+    { method: "POST", body: { question_ids: sids, status: status || "active" } })
+    .then(() => apiCacheInvalidate("/api/overview"));
   const bulkAct = (status, days) => {
     const items = sortedItems.slice();
+    if (!items.length) return;
     const prior = items.map(s => ({ sid: sidOf(s), status: s.status || null }));
-    items.forEach(s => setStatus(sidOf(s), status, days));
+    const sids = prior.map(p => p.sid);
+    // dismissing the whole view is the one destructive-looking bulk verb, so it asks first
+    if (status === "dismissed" && !window.confirm("Dismiss these " + items.length + " signal"
+        + (items.length === 1 ? "" : "s") + "? They move to the Dismissed tab — nothing is deleted.")) return;
     setKbIdx(-1);
-    sigToast((status === "dismissed" ? "Dismissed " : "Snoozed ") + items.length + " signal" + (items.length === 1 ? "" : "s")
-      + (status === "snoozed" ? " · until " + sigRetDate(days) : ""), () => prior.forEach(p => setStatus(p.sid, p.status)));
+    // the undo restores each prior status in as few writes as there are distinct statuses
+    const undo = () => {
+      const byStatus = {};
+      prior.forEach(p => { (byStatus[p.status || ""] = byStatus[p.status || ""] || []).push(p.sid); });
+      Object.keys(byStatus).forEach(k => {
+        if (k === "snoozed") byStatus[k].forEach(sid => setStatus(sid, "snoozed", 14));
+        else bulkStatus(byStatus[k], k || null).catch(() => toast("Couldn't undo that — try again", "error"));
+      });
+      setActing(a => { const n = { ...a }; sids.forEach(x => delete n[x]); return n; });
+    };
+    const done = () => sigToast((status === "dismissed" ? "Dismissed " : "Snoozed ") + items.length + " signal"
+      + (items.length === 1 ? "" : "s") + (status === "snoozed" ? " · until " + sigRetDate(days) : ""), undo);
+    setActing(a => { const n = { ...a }; sids.forEach(x => { n[x] = status; }); return n; });
+    if (status === "snoozed") {
+      Promise.all(sids.map(sid => api("/api/signals/action",
+        { method: "POST", body: { question_id: sid, status: "snoozed", snooze_days: days } })))
+        .then(() => { apiCacheInvalidate("/api/overview"); done(); })
+        .catch(() => { setActing(a => { const n = { ...a }; sids.forEach(x => delete n[x]); return n; });
+                       toast("Couldn't snooze those — nothing was changed", "error"); });
+    } else {
+      bulkStatus(sids, status).then(done)
+        .catch(() => { setActing(a => { const n = { ...a }; sids.forEach(x => delete n[x]); return n; });
+                       toast("Couldn't dismiss those — nothing was changed", "error"); });
+    }
   };
   kbRef.current = { items: sortedItems, idx: kbIdx, setKbIdx, dismissIt, snoozeIt, fileIt };
 
