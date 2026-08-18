@@ -4416,20 +4416,29 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* the last gap before the feed is the one boundary that matters, and it was --s3 — the
    same 12px that separates one card from the next, so the toolbar read as the first card's
    header. The folder-rail gap above stays at --s5 (ruled 2026-08-18). */
-.sig-toolbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s5); }
+/* ONE refinement row (2026-08-18). .sig-toolbar is retired as a band — the search, sort,
+   count and bulk verbs now ride at the end of the facet row inside .sig-tools. */
+.sig-tools { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; flex: 1 1 320px; }
+/* the divider only earns its place while the two groups actually share a line; once the row
+   wraps, a rule hanging off the left of the second line reads as a mistake. */
+@media (min-width: 1040px) { .sig-tools { padding-left: var(--s3); border-left: 1px solid var(--border); } }
 .sig-sort { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); color: var(--ink-soft); font-weight: 600; }
 .sig-sort select { height: 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
   font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0 var(--s2); cursor: pointer; }
 .sig-sort select:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
-.sig-bulk { display: inline-flex; align-items: center; gap: var(--s2); padding-left: var(--s3); border-left: 1px solid var(--border); }
-.sig-bulk-lab { font-size: var(--fs-caption); color: var(--ink-faint); font-weight: 600; }
+.sig-bulk { display: inline-flex; align-items: center; gap: var(--s2); }
+/* how many of the whole set am I looking at (the tab count is the unfiltered inbox) */
+.sig-count { font-size: var(--fs-caption); color: var(--ink-soft); font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sig-bulk-btn { background: none; border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: var(--fs-caption);
   font-weight: 600; color: var(--ink-soft); cursor: pointer; padding: 3px var(--s3); min-height: 28px; }
 .sig-bulk-btn:hover { border-color: var(--blue); color: var(--blue-deep); }
-.sig-kbhint { margin-left: auto; font-size: var(--fs-micro); color: var(--ink-faint); white-space: nowrap; }
-@media (max-width: 640px) { .sig-kbhint { display: none; } }   /* keyboard triage is desktop-only affordance */
+/* the shortcut map: no longer chrome parked in the primary-action slot. It appears under
+   the controls only once the ring is up, i.e. once the user has reached for the keyboard. */
+.sig-kbhint { margin: calc(-1 * var(--s3)) 0 var(--s4); font-size: var(--fs-micro); color: var(--ink-soft);
+  white-space: nowrap; overflow-x: auto; }
 /* by-domain grouping subhead */
-.sig-domhead { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
+.sig-domhead { font-size: var(--fs-micro); font-family: inherit; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
   font-weight: 650; margin: var(--s4) 0 var(--s2); padding-left: calc(var(--s4) + 6px); }
 .sig-domhead:first-child { margin-top: 0; }
 /* ── Signals review batch 3 (David 2026-08-11) ── */
@@ -4481,9 +4490,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-quiet:not(.on):hover { color: var(--ink-soft); }
 @media (max-width: 640px) { .sfold-life { margin-left: 0; } }
 /* find-by-name search */
-.sig-search { height: 30px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
-  font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0 var(--s3); min-width: 150px; }
-.sig-search:focus-visible { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
+/* a field, not a status pill: 999px is the shape this system uses for inert chips, and the
+   only text input on the page was wearing it, with no magnifier to say what it was. */
+.sig-find { display: inline-flex; align-items: center; gap: var(--s2); height: 30px;
+  padding: 0 var(--s3); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); flex: 1 1 200px; max-width: 320px; }
+.sig-find svg { color: var(--ink-faint); flex: none; }
+.sig-find:focus-within { border-color: var(--blue); outline: var(--focus-outline); outline-offset: 1px; }
+.sig-search { border: 0; background: none; flex: 1 1 auto; min-width: 0;
+  font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0; }
+.sig-search:focus-visible { outline: none; }
 /* strategy-check orienting strip, now above the feed (collapsible) */
 .sig-strat-strip { margin: 0 0 var(--s4); }
 .sig-strat-toggle { display: flex; align-items: center; gap: var(--s2); width: 100%; background: var(--blue-tint);

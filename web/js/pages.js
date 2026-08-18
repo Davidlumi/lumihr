@@ -2636,30 +2636,49 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         </div>
 
         ${/* filters sit BELOW the folders (David 2026-08-14): folders pick the set, filters refine it;
-              the popover opens down over the feed, not the folder row. */ ""}
-        ${sigFacets.length ? html`<div class="sig-filter-row"><${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} /></div>` : null}
+              the popover opens down over the feed, not the folder row.
+              ONE refinement row (2026-08-18): the facets and the search/sort pair rendered as two
+              stacked bands at identical size, ink and height, each about half empty, with nothing
+              saying why they were two things. They do the same job — narrow what the tabs chose —
+              so they share a row, split by the divider idiom the bulk strip already used.
+              The row now also survives when the facets do not: switching to Snoozed with a lens
+              filter still set used to drop the whole row, and with it the only Clear button. */ ""}
+        ${(sigFacets.length || filtersActive || baseItems.length > 0) ? html`
+          <div class="sig-filter-row">
+            ${(sigFacets.length || filtersActive) ? html`<${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} />` : null}
+            ${baseItems.length > 0 ? html`
+              <div class="sig-tools">
+                <span class="sig-find">
+                  <${Icon} name="search" size=${13} />
+                  <input class="sig-search" type="search" placeholder="Find a signal…" aria-label="Find a signal"
+                    value=${textQuery} onInput=${e => setTextQuery(e.target.value)} />
+                </span>
+                ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
+                  <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
+                    <option value="priority">Priority</option>
+                    <option value="domain">By category</option>
+                    <option value="gap">Biggest gap</option>
+                  </select></label>` : null}
+                ${/* how many am I looking at? The tab count is the whole inbox, so once anything
+                      narrows the list the page has to say what is actually on screen. */ ""}
+                ${(filtersActive || tq) && baseItems.length ? html`<span class="sig-count" role="status">${sortedItems.length} of ${baseItems.length}</span>` : null}
+                ${bulkable ? html`<span class="sig-bulk">
+                  <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("snoozed", 14)}>Snooze these ${sortedItems.length}</button>
+                  <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("dismissed")}>Dismiss these ${sortedItems.length}</button>
+                </span>` : null}
+              </div>` : null}
+          </div>` : null}
         ${/* the "Reward strategy check" strip moved to Home/Overview (David 2026-08-14): it's a
               board-level "are we delivering the strategy?" roll-up, not a triage item. Its findings
               still deep-link back into this feed by domain via window.__sigJumpDomain. */ ""}
+        ${/* the shortcut map names its verbs now, and is no longer hidden from the readers most
+              likely to use it. It appears once the ring is actually in play. */ ""}
+        ${baseItems.length > 0 && kbIdx >= 0 ? html`
+          <p class="sig-kbhint">j/k move · f save · s snooze · e dismiss · ↵ open</p>` : null}
 
-        ${baseItems.length > 0 ? html`
-          <div class="sig-toolbar">
-            <input class="sig-search" type="search" placeholder="Find a signal…" aria-label="Find a signal by name"
-              value=${textQuery} onInput=${e => setTextQuery(e.target.value)} />
-            ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
-              <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
-                <option value="priority">Priority</option>
-                <option value="domain">By category</option>
-                <option value="gap">Biggest gap</option>
-              </select></label>` : null}
-            ${bulkable ? html`<span class="sig-bulk">
-              <span class="sig-bulk-lab">${sortedItems.length} shown</span>
-              <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("snoozed", 14)}>Snooze all</button>
-              <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("dismissed")}>Dismiss all</button>
-            </span>` : null}
-            <span class="sig-kbhint" aria-hidden="true">j / k move · e·s·f triage · ⏎ open</span>
-          </div>` : null}
-
+        ${/* the feed is the region the tab rail controls (aria-controls on .sfold-nav), and its
+              count is announced so triage that empties the list is not silent. */ ""}
+        <div id="sig-feed" role="region" aria-label="Signals">
         ${sortedItems.length === 0 ? html`
             <div class="signals-empty sfold-empty" role="status" style=${{ marginTop: "var(--s5)" }}>
               <span class="signals-empty-ring"><${Icon} name=${v.kind === "snoozed" ? "clock" : v.kind === "dismissed" ? "close" : v.kind === "folder" ? "folder" : "flag"} size=${18} /></span>
