@@ -2572,7 +2572,12 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           ${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html`<a href="#/settings" class="sig-peer-change">Change</a>` : null}
         </span>
         <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
-        <a href="#/priorities" class="btn small sig-reg-btn"><${Icon} name="table" size=${13} /> Full gap register</a>
+        ${/* the register is the same table against a DIFFERENT peer group unless the anchor
+              travels with the link: Signals is pinned to the org default (David 2026-08-11)
+              while /priorities honours the app-wide selector, so clicking through silently
+              re-based every row. Consume-once global, same contract as __sigJumpDomain. */ ""}
+        <a href="#/priorities" class="btn small sig-reg-btn"
+          onClick=${() => { window.__gapJumpCut = sigCut; }}><${Icon} name="table" size=${13} /> Full gap register</a>
       </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`

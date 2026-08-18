@@ -15,6 +15,10 @@ window.gapGroups = function (data) {
 
 window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   const ui = (prefs && prefs._ui_gap) || {};
+  // arrived from Signals? Then read against the SAME peer group Signals is anchored to, or
+  // the same table silently re-bases between the two pages. Consumed once, on mount.
+  const [jumpCut] = useState(() => { const j = window.__gapJumpCut; window.__gapJumpCut = null; return j || null; });
+  const effCut = jumpCut || cut;
   const [data, setData] = useState(null);
   const [sp, setSpRaw] = useState(ui.sp || "");
   const [show, setShowRaw] = useState(ui.show || "gaps"); // gaps | all
@@ -27,7 +31,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   // commonly held missing items lead" order); STATUS_RANK orders the status column.
   const [sort, setSort] = useState({ key: "peer_adoption_pct", dir: -1 });
   useEffect(() => { setData(null); setGerr(null);
-    api("/api/gap-register?" + cutQS(cut)).then(setData).catch(e => setGerr(e.message)); }, [cutKeyOf(cut), gretry]);
+    api("/api/gap-register?" + cutQS(effCut)).then(setData).catch(e => setGerr(e.message)); }, [cutKeyOf(effCut), gretry]);
   if (gerr) return html`<${EmptyState} title="Couldn't load the register" body=${gerr}
     action=${html`<button class="btn small primary" onClick=${() => setGretry(k => k + 1)}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
