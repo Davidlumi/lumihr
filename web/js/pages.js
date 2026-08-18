@@ -2154,14 +2154,22 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       const st = kbRef.current; const list = st.items || [];
       if (!list.length) return;
       const k = (e.key || "").toLowerCase();
-      if (k === "j" || e.key === "ArrowDown") { e.preventDefault(); st.setKbIdx(i => Math.min((i < 0 ? -1 : i) + 1, list.length - 1)); }
-      else if (k === "k" || e.key === "ArrowUp") { e.preventDefault(); st.setKbIdx(i => Math.max((i < 0 ? 0 : i) - 1, 0)); }
+      // j/k opt IN to the ring; the arrows only join once it is showing. Arrow keys used to
+      // preventDefault on every keydown the moment the feed had items, which killed ordinary
+      // page scrolling on this page and swallowed arrowing inside the triage popovers.
+      const ringOn = st.idx >= 0;
+      if (k === "j" || (ringOn && e.key === "ArrowDown")) { e.preventDefault(); st.setKbIdx(i => Math.min((i < 0 ? -1 : i) + 1, list.length - 1)); }
+      else if (k === "k" || (ringOn && e.key === "ArrowUp")) { e.preventDefault(); st.setKbIdx(i => Math.max((i < 0 ? 0 : i) - 1, 0)); }
       else if (st.idx >= 0 && st.idx < list.length) {
         const s = list[st.idx];
         if (k === "e") { e.preventDefault(); st.dismissIt(s); }
         else if (k === "s") { e.preventDefault(); st.snoozeIt(s, 14); }
         else if (k === "f") { e.preventDefault(); st.fileIt(s); }
-        else if (e.key === "Enter" || k === "o") { e.preventDefault(); window.openMetric(s.question_id); }
+        // Enter belongs to whatever the user has focused. Only claim it when nothing
+        // interactive holds focus, or Tabbing to Dismiss and pressing Enter opened the
+        // metric instead of dismissing.
+        else if ((e.key === "Enter" && !(t && t.closest && t.closest('button, a, [role="menuitem"]'))) || k === "o") {
+          e.preventDefault(); window.openMetric(s.question_id); }
       }
     };
     window.addEventListener("keydown", onKey);
