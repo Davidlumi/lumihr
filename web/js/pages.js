@@ -2193,7 +2193,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
   // keep the focused card in view; reset the ring whenever the shown list changes underneath it
-  useEffect(() => { if (kbIdx < 0) return; const el = document.querySelectorAll(".signals-page .brf-card")[kbIdx]; if (el) scrollIntoViewSafe(el, { block: "nearest" }); }, [kbIdx]);
+  // move REAL focus with the ring, not just a class: the ring was invisible to a screen
+  // reader and drifted out of step with Tab, because DOM focus never left where it was.
+  useEffect(() => { if (kbIdx < 0) return; const el = document.querySelectorAll(".signals-page .brf-card")[kbIdx];
+    if (el) { if (el.focus) el.focus({ preventScroll: true }); scrollIntoViewSafe(el, { block: "nearest" }); } }, [kbIdx]);
   useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode, domFilter, textQuery, lensFilter, stratFilter]);
   // a restored card (Undo / wake / recover) flashes back into place using the existing sig-group-flash primitive
   useEffect(() => {
@@ -2536,7 +2539,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`
         : html`
           <button type="button" class="sfold-recover" onClick=${() => recover(s)}><${Icon} name="refresh" size=${12} /> Recover</button>`}
-        <button type="button" class="brf-see" onClick=${() => openMetric(s.question_id)}>See the evidence <span aria-hidden="true">→</span></button>
+        ${/* a real link: the card-wide click stays as a convenience, but the payoff can now be
+              middle-clicked, ⌘-clicked and opened in a new tab like anything else. */ ""}
+        <a class="brf-see" href=${"#/metric/" + s.question_id} onClick=${e => { e.preventDefault(); openMetric(s.question_id); }}>See the evidence <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
   };
@@ -2688,12 +2693,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
               const rows = []; let last = null;
               sortedItems.forEach((s, i) => {
                 const dl = s.domain ? domainLabel(s.domain) : "Other";
-                if (dl !== last) { last = dl; rows.push(html`<div key=${"dh-" + i} class="sig-domhead">${dl}</div>`); }
+                if (dl !== last) { last = dl; rows.push(html`<h2 key=${"dh-" + i} class="sig-domhead">${dl}</h2>`); }
                 rows.push(sigCard(s, i === kbIdx));
               });
               return rows;
             })()
           : sortedItems.map((s, i) => sigCard(s, i === kbIdx))}
+        </div>
+        <p class="sr-only" role="status">${sortedItems.length} signal${sortedItems.length === 1 ? "" : "s"} shown</p>
 
         ${navyFooter}`}
     </div>`;

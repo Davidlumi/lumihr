@@ -4534,8 +4534,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--radius); padding: var(--s4) var(--s4) var(--s3) calc(var(--s4) + 6px);
   margin-bottom: var(--s3); box-shadow: var(--shadow-card);
   scroll-margin-top: calc(var(--brandbar-h) + var(--s6)); }
-.brf-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  border-radius: var(--radius) 0 0 14px; background: var(--border); }
+/* inset so it can never reach the card's corners, and a symmetric pill end — the old
+   `var(--radius) 0 0 14px` mixed a token with a hardcoded 14px and mismatched top to bottom. */
+.brf-card::before { content: ""; position: absolute; left: 1px; top: var(--s2); bottom: var(--s2); width: 4px;
+  border-radius: 999px; background: var(--border); }
 .brf-tone-amber::before    { background: var(--gauge-below); }
 .brf-tone-red::before      { background: var(--gauge-above); }
 .brf-tone-green::before    { background: var(--gauge-on); }
@@ -4544,13 +4546,15 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* the whole card opens the metric (verbs stopPropagation) — signal that with a pointer + hover lift */
 .brf-card { cursor: pointer; transition: box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease; }
 .brf-card:hover { border-color: var(--blue-tint-2); box-shadow: 0 6px 20px rgba(31,42,68,.10); }
-.brf-card.kb-focus { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-tint-2), var(--shadow-card); }
+.brf-card.kb-focus, .brf-card:focus-visible { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-tint-2), var(--shadow-card); }
+.brf-card:focus { outline: none; }        /* the ring above IS the focus indicator */
 .brf-card .brf-verbs, .brf-card .brf-menu, .brf-card .sfold-newrow { cursor: auto; }
 .brf-cap { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
   font-size: var(--fs-micro); color: var(--ink-faint); }
 /* the card's identity. Two cards can carry the same headline — the metric name is the only
    thing that tells them apart — so it does not sit in the eyebrow's faint ink. */
-.brf-cap-name { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink); }
+.brf-cap-name { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink);
+  font-size: inherit; font-family: inherit; margin: 0; }   /* it is the card's <h3> now */
 .brf-shield { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 700; color: color-mix(in srgb, var(--unfavourable) 72%, var(--ink));
   border: 1px solid color-mix(in srgb, var(--unfavourable) 32%, var(--surface));
@@ -4560,7 +4564,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
   letter-spacing: -.01em; color: var(--ink); margin: var(--s1) 0 var(--s2); }
 .brf-why { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.5; }
 .brf-why b { color: var(--ink); font-weight: 600; }
-.brf-chips { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s3) 0; }
+/* the market verdict and its magnitude are ONE reading and sit tight together; the lens and
+   the strategy glyph are separate channels and get pushed away from the pair. Everything used
+   to sit on the same gap, so four marks of three different kinds read as one undifferentiated run. */
+.brf-chips { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin: var(--s3) 0; }
+.brf-chips .brf-lens { margin-left: var(--s3); }
 /* the reward-strategy "why this is ranked" line (2026-07-10) — NAVY (trust/strategy channel,
    never RAG): explains which strategy inputs shaped the signal, a fact, not advice. */
 .brf-stratline { display: flex; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s1)) 0 var(--s2);
@@ -4595,8 +4603,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-verb:hover { color: var(--ink); }
 .brf-verb.on { color: var(--navy); }
 .brf-verb.on svg { color: var(--navy); }
-.brf-see { margin-left: auto; color: var(--ink-soft); font-weight: 600; }
-.brf-see:hover { color: var(--navy); text-decoration: underline; }
+/* the one control that carries the card forward — it read as metadata next to the three
+   triage verbs, so it takes link colour at rest rather than only on hover. */
+.brf-see { margin-left: auto; color: var(--blue); font-weight: 650; text-decoration: none;
+  cursor: pointer; font-size: var(--fs-caption); }
+.brf-see:hover { color: var(--blue-deep); text-decoration: underline; }
 /* (.brf-stub/.brf-stub-txt/.brf-undo retired 2026-07-10, David: toast instead of stub rows —
    an actioned card exits via .brf-leave and the Undo rides the confirmation toast.) */
 /* exit — JS pins the measured height, then this class collapses + fades it in ~240ms
@@ -4619,7 +4630,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
    Fix: anchor under the button's left edge + lift the OPEN card above its siblings. */
 .brf-later-wrap { position: relative; display: inline-flex; flex: none; }
 .brf-split { gap: 2px; align-items: center; }   /* unified Save control: [★ Save][▾] one tight unit */
-.brf-split-caret { padding-left: 2px; padding-right: 2px; }
+/* the caret was about 15x30px — under the 24px minimum — so a miss landed on the star and
+   silently UNSAVED the signal. A real box, and a hairline so the two halves read as two. */
+.brf-split-caret { min-width: 26px; padding-left: var(--s2); padding-right: var(--s2);
+  justify-content: center; border-left: 1px solid var(--border); }
 .brf-split-main svg { color: var(--ink-faint); }
 .brf-split-main:hover svg, .brf-split-caret.on svg { color: var(--navy); }
 /* saved = a GOLD-FILLED star (David 2026-08-14). Applies to the Signals-card star (.brf-star) and the
