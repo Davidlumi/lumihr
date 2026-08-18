@@ -4302,9 +4302,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-std { color: var(--ink-soft); }
 .brf-std b { color: var(--ink); }
 /* chip/accent ink pairs — text on the soft gauge tints, contrast-safe (same recipe as .pos-*) */
+/* verdict inks. --brf-above/--brf-on were never defined, so both color-mix()es were
+   invalid and the above/on chips fell back to plain body ink; only the amber worked.
+   The palette already carries this exact 78% recipe as --favourable-ink /
+   --unfavourable-ink (app.css:123/127), so point at those rather than restate it. */
 .brf-page { --brf-below-ink: var(--neutral-perf);
-  --brf-above-ink: color-mix(in srgb, var(--brf-above) 78%, var(--ink));
-  --brf-on-ink: color-mix(in srgb, var(--brf-on) 78%, var(--ink)); }
+  --brf-above-ink: var(--unfavourable-ink);
+  --brf-on-ink: var(--favourable-ink); }
 
 /* (.brf-newstrip and .brf-brieflbl retired 2026-07-10 with the Folders simplification —
    NOTHING sits above the feed except the masthead and the folder nav; NEW rides card tags.) */
@@ -4522,9 +4526,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--radius-xs); padding: 3px var(--s2); width: fit-content; max-width: 100%; }
 .brf-stratline svg { color: var(--navy); flex: none; }
 .brf-pos { font-size: var(--fs-micro); font-weight: 650; border-radius: 999px; padding: var(--s1) var(--s3); white-space: nowrap; }
-.brf-pos-amber    { background: var(--gauge-below); color: var(--brf-below-ink); }
-.brf-pos-red      { background: var(--gauge-above); color: var(--brf-above-ink); }
-.brf-pos-green    { background: var(--gauge-on); color: var(--brf-on-ink); }
+/* on the TINT, not the gauge fill. --gauge-* are 42-46% mixes built for bars and
+   segments; carrying 11px text they left the verdict at 4.48/3.55/3.48 against a 4.5
+   requirement. The -tint tokens are the text-backing member of each hue and take the
+   same three chips to 5.30/5.86/5.72. Measured, canvas-rastered, not estimated. */
+.brf-pos-amber    { background: var(--neutral-perf-tint); color: var(--brf-below-ink); }
+.brf-pos-red      { background: var(--unfavourable-tint); color: var(--brf-above-ink); }
+.brf-pos-green    { background: var(--favourable-tint); color: var(--brf-on-ink); }
 .brf-pos-approach { background: var(--prev-rare); color: var(--prev-ink); }
 .brf-pos-neutral  { background: var(--blue-tint); color: var(--navy); }
 /* the magnitude as legible toned text (was an aria-hidden grey bar with the number only on hover) */
