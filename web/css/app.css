@@ -3779,8 +3779,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .fb-cue { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); margin-right: var(--s1); }
 .fb-cue svg, .fb-facet svg { color: var(--ink-faint); }
 .fb-wrap { position: relative; }
-.fb-facet { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px 7px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  background: var(--surface); font-size: var(--fs-label); font-weight: 500; color: var(--ink); cursor: pointer;
+/* the refinement row sits UNDER the tabs in the hierarchy, so it sits under them in
+   weight too: one step down in type and a softer ink. Before this, tabs and facets were
+   the same size and the page had two things shouting equally. */
+.fb-facet { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); cursor: pointer;
   transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease; }
 .fb-facet:hover { border-color: color-mix(in srgb, var(--ink) 22%, var(--surface)); }
 .fb-facet.on { background: color-mix(in srgb, var(--navy) 9%, var(--surface)); border-color: color-mix(in srgb, var(--navy) 34%, var(--border)); color: var(--navy); }
@@ -4309,30 +4312,46 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* ---- FOLDER NAV — the only control row above the feed ---- */
 /* folders read as VIEW TABS (2026-08-13, David: "folders look too similar to the filters") — borderless
    on a hairline strip, one filled active; distinct from the bordered filter dropdown buttons below. */
-.sfold-nav { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin: 0 0 var(--s3);
-  padding-bottom: var(--s2); border-bottom: 1px solid var(--border); }
+/* FOLDERS ARE NAVIGATION, FILTERS ARE REFINEMENT (2026-08-18). The two rows sat one
+   above the other as chips of the same height and weight, so the eye read them as one
+   control strip — and a reader cannot tell "which set am I in" from "how am I narrowing
+   it". They are now different in KIND, not in detail: the folders are TABS that sit ON
+   the rule and own the boundary, the filters stay bordered controls floating below it.
+   Shape alone was never going to carry this — the pill-vs-rectangle difference was
+   already there and the rows still read as siblings. */
+.sfold-nav { display: flex; align-items: flex-end; gap: var(--s1); flex-wrap: wrap;
+  margin: 0 0 var(--s4); border-bottom: 2px solid var(--border); }
 .sfold-pillwrap { display: inline-flex; align-items: center; gap: 2px; }
 /* folders read as children OF Saved (David 2026-08-14): a subtle left rule brackets them after the
    Saved pill, so "Saved · [its folders]" reads as one bucket + its labels. */
-.sfold-subgroup { display: inline-flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
-  padding-left: var(--s3); border-left: 1px solid var(--border); }
+.sfold-subgroup { display: inline-flex; align-items: flex-end; gap: var(--s1); flex-wrap: wrap;
+  padding-left: var(--s3); margin-left: var(--s1); border-left: 1px solid var(--border); }
 .sfold-saved svg { color: var(--navy); }   /* the star marks Saved as the parent bucket */
+/* a tab, not a pill: square, seated on the rule, and the selected one is marked by a
+   navy underline that overlaps the container's own border — the join between the tab and
+   the list it governs. A filled pill floated; an underline is attached to something. */
 .sfold-pill { display: inline-flex; align-items: center; gap: var(--s1); background: transparent;
-  border: 1px solid transparent; border-radius: 999px; font: inherit; font-size: var(--fs-caption);
-  font-weight: 600; color: var(--ink-soft); cursor: pointer; padding: var(--s1) var(--s3); min-height: 32px;
-  transition: color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
-.sfold-pill:hover { background: color-mix(in srgb, var(--navy) 7%, transparent); color: var(--ink); }
+  border: 0; border-bottom: 2px solid transparent; margin-bottom: -2px; border-radius: 0;
+  font: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--ink-soft);
+  cursor: pointer; padding: var(--s2) var(--s3); min-height: 38px;
+  transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+.sfold-pill:hover { color: var(--ink); border-bottom-color: color-mix(in srgb, var(--navy) 28%, transparent); }
 .sfold-pill svg { color: var(--ink-faint); }
-.sfold-pill b { font-weight: 700; margin-left: 2px; }
-.sfold-pill.on { background: var(--navy); border-color: var(--navy); color: #fff; }
-.sfold-pill.on svg, .sfold-pill.on b { color: #fff; }
+/* the count is the tab's payload — it carries weight on the selected tab and recedes off it */
+.sfold-pill b { font-weight: 700; margin-left: 3px; color: var(--ink-faint); }
+.sfold-pill.on { color: var(--navy); border-bottom-color: var(--navy); }
+.sfold-pill.on svg { color: var(--navy); }
+.sfold-pill.on b { color: var(--navy); }
 .sfold-ops { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
   background: none; border: 0; border-radius: 999px; font-size: var(--fs-body); font-weight: 700;
   color: var(--ink-faint); cursor: pointer; line-height: 0; }
 .sfold-ops:hover { background: rgba(15,23,42,.08); color: var(--ink); }
-.sfold-new { background: none; border: 1px dashed var(--border); border-radius: 999px; font: inherit;
-  font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint); cursor: pointer;
-  padding: var(--s1) var(--s3); min-height: 32px; }
+/* "+ New folder" is an ACTION, not a tab — it keeps a control's shape so it never reads
+   as another place to be, and sits clear of the rule the tabs are seated on. */
+.sfold-new { background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
+  cursor: pointer; padding: var(--s1) var(--s3); min-height: 30px; align-self: center;
+  margin-left: var(--s2); margin-bottom: var(--s2); }
 .sfold-new:hover { color: var(--ink); border-color: var(--ink-faint); }
 .sfold-newrow { display: flex; align-items: center; gap: var(--s2); padding: var(--s1) var(--s2); }
 .sfold-newrow-nav { padding: 0; }

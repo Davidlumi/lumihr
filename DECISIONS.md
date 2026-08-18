@@ -20908,3 +20908,38 @@ password into a form, so the visual confirmation is David's — the phrase and t
 unchanged, and the two remaining hits on the phrase are this comment and the unmounted
 component's own heading. A paren-balance check I ran flagged −2, which the original file
 also shows: my check was counting parens inside regexes and strings, not finding a defect.
+
+## 2026-08-18 — Folders become tabs; filters recede
+
+David: "we need more definition for the folders section, they look like the filters below
+— make them materially different."
+
+**They were already different in detail and that was the problem.** Folders were
+transparent pills (`radius 999px`, `--fs-caption`, weight 600); filter facets were
+bordered white rectangles (`--radius-sm`, `--fs-label`, weight 500). Shape and fill
+already differed. But the two rows sat one above the other at the same height and the same
+type size, so the eye read them as **one control strip** — and a reader could not separate
+*"which set am I in"* from *"how am I narrowing it"*.
+
+Detail was never going to fix that. They are now different in **kind**:
+
+**Folders are TABS, seated on the rule.** Square, no fill, `align-items: flex-end`, and a
+2px bottom border that overlaps the container's own 2px rule via `margin-bottom: -2px`.
+The selected tab is marked by a navy underline joining it to the list it governs. A filled
+pill floats; an underline is attached to something, and that attachment is the whole point
+— the tab and the signals below it are one object.
+
+**"+ New folder" stays a control**, deliberately: `--radius-sm`, dashed, centred rather
+than seated on the rule. It is an action, not a place to be, and it must never read as a
+fourth tab.
+
+**Filters step down one level.** `--fs-caption` and `--ink-soft`, matching their place in
+the hierarchy. Two rows shouting equally was half the problem; the tabs now own the
+boundary and the facets sit under them.
+
+The counts keep their weight on the selected tab and recede off it, so the rail reads as
+"you are here, and here is what's in the others".
+
+Nothing in the gate suite asserts on `.sfold-pill` or `.fb-facet`. Suite 16/16, brace
+balance checked, cache `?v=698`. **Visual confirmation is David's** — the preview pane is
+signed out and I will not enter a password.
