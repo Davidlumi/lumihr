@@ -2405,7 +2405,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       onClick=${() => window.openMetric(s.question_id)}>
       <div class="brf-cap">
         <span class="brf-cap-name">${s.name || s.label_short}</span>
-        ${s.domain ? html`<span class="brf-cap-dom">· ${domainLabel(s.domain)}</span>` : null}
+        ${s.domain ? html`<span class="brf-cap-dom">${domainLabel(s.domain)}</span>` : null}
         ${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}
         ${s.status === "priority" ? html`<span class="sfold-prio" title="Prioritised — ranks first in your feed"><${Icon} name="pin" size=${10} /> priority</span>` : null}
         ${s.risk_framed ? html`<span class="brf-shield"><${Icon} name="shield" size=${10} /> risk</span>` : null}

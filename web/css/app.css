@@ -4516,7 +4516,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-card .brf-verbs, .brf-card .brf-menu, .brf-card .sfold-newrow { cursor: auto; }
 .brf-cap { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
   font-size: var(--fs-micro); color: var(--ink-faint); }
-.brf-cap-name { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+/* the card's identity. Two cards can carry the same headline — the metric name is the only
+   thing that tells them apart — so it does not sit in the eyebrow's faint ink. */
+.brf-cap-name { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink); }
 .brf-shield { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 700; color: color-mix(in srgb, var(--unfavourable) 72%, var(--ink));
   border: 1px solid color-mix(in srgb, var(--unfavourable) 32%, var(--surface));
