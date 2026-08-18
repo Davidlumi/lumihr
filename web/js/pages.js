@@ -491,7 +491,6 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
   // nav, so it survives); SignalsPage reads + clears it on mount. nav stays a BARE route so the
   // app's cut-reapply logic is untouched. (_domCounts above feeds the per-row count.)
   const goToSignals = (dom) => { window.__sigJumpDomain = (typeof dom === "string" && dom) ? dom : null; nav("/signals"); };
-  const [stratOpen, setStratOpen] = useState(false);   // Home "Reward strategy check" — collapsed by default so Home stays short
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   // (.ov-wrap scope, 2026-07-08: the signals card moved below the hero row, so the
@@ -556,18 +555,12 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${goToSignals}
           barMode=${barMode} setBarMode=${setBarMode} />
       </div>
-      ${/* Reward strategy check (moved from Signals, David 2026-08-14): a board-level "are we
-            delivering the strategy?" roll-up belongs on Home, not the triage inbox. Collapsed by
-            default so Home stays short; each finding deep-links into the Signals feed for that
-            domain via goToSignals → window.__sigJumpDomain. Gated on strategy_complete + unlocked. */ ""}
-      ${!locked && data.strategy_complete ? html`
-        <div class=${"sig-strat-strip ov-strat-strip" + (stratOpen ? " open" : "")}>
-          <button type="button" class="sig-strat-toggle" aria-expanded=${stratOpen} onClick=${() => setStratOpen(o => !o)}>
-            <${Icon} name="compass" size=${14} /> <span>Are you delivering the strategy you set?</span>
-            <span class="sfold-caret" aria-hidden="true">${stratOpen ? "▴" : "▾"}</span>
-          </button>
-          ${stratOpen ? html`<${StrategyCheck} onGoToDomain=${goToSignals} signalDomains=${new Set(Object.keys(_domCounts))} />` : null}
-        </div>` : null}
+      ${/* The "are you delivering the strategy you set?" strip is RETIRED from Home
+            (David 2026-08-18). It was moved here from Signals on 2026-08-14 as a
+            board-level roll-up, but Home had already been cut back to a clean market
+            dashboard, and a collapsed bar the reader must open is not a roll-up — it is
+            a second front door to the thing /strategy is. StrategyCheck stays defined
+            and unmounted, the same way PracticeBucketCard and SignalsPanel do above. */ ""}
       ${/* Home signals band retired 2026-08-11 (David: "clean dashboard" — "the bottom signals
             detail"). Signals live on the dedicated Signals page; the per-domain scent counts on
             Position-by-domain deep-link there via goToSignals. SignalsPanel stays defined but is

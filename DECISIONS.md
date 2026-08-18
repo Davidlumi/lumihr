@@ -20883,3 +20883,28 @@ engine and telling a board about the same organisation must not disagree. Nothin
 that today, and finding 1 shows they demonstrably did. That is the first thing to test:
 generate both for the same org and cut, and diff every shared assertion — verdicts,
 percentiles, counts, £ figures, signal identity.
+
+## 2026-08-18 — The strategy strip comes off Home
+
+David: "remove the bottom blue bar." The collapsed *"Are you delivering the strategy you
+set?"* strip at the foot of Overview is unmounted.
+
+It arrived on Home on 2026-08-14, moved from Signals on the reasoning that a board-level
+roll-up belongs on the dashboard rather than the triage inbox. That reasoning was sound and
+the placement was not: Home had already been cut back to a clean market dashboard on
+2026-08-11, and **a collapsed bar the reader has to open is not a roll-up — it is a second
+front door to the thing `/strategy` already is.** With the strategy document now its own
+destination, the strip was a stub pointing at a room the reader can walk into.
+
+`StrategyCheck` stays **defined and unmounted**, the same convention `PracticeBucketCard`
+and `SignalsPanel` follow a few lines above — the component is intact if it earns a home
+later. The `stratOpen` state went with the mount rather than being left dangling.
+
+No gate asserts on it (`qa_overview`, `qa_focus` checked). Suite 16/16, cache `?v=697`.
+
+**Verified by source, not by eye.** The preview pane was signed out and I will not type a
+password into a form, so the visual confirmation is David's — the phrase and the
+`ov-strat-strip` class are gone from the mounted tree, brace and backtick balance is
+unchanged, and the two remaining hits on the phrase are this comment and the unmounted
+component's own heading. A paren-balance check I ran flagged −2, which the original file
+also shows: my check was counting parens inside regexes and strings, not finding a defect.
