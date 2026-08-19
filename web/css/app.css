@@ -2518,7 +2518,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   .pulse-pdf-foot { display: block; font-size: 8.5pt; color: var(--ink-soft); border-top: 1px solid var(--border);
     padding-top: 6pt; margin-top: 16pt; }
   .pulse-report-doc .card { box-shadow: none; border: 0; margin: 0; padding: 0; }
-  .pulse-report-doc .q-block { break-inside: avoid; page-break-inside: avoid; }
+  .pulse-report-doc .pulse-card { break-inside: avoid; page-break-inside: avoid; }
   .pulse-narrative { break-inside: avoid; background: var(--surface-sunk) !important; }
 }
 
@@ -5679,32 +5679,32 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 .pulse-head-stat.pulse-credits.none .num { color: var(--unfavourable-ink); }
 .pulse-credit-wall { margin: var(--s3) 0 var(--s2); }
 
-/* ===== Pulse report: definition between questions (David 2026-08-19) ==========
-   Every question sat in one card separated by a single --chart-grid hairline, so
-   at six or seven questions the charts melded into one continuous stripe with no
-   edge to tell you where an answer stopped and the next question began. A firmer
-   rule, real vertical rhythm, and a number that gives the eye a fixed left edge. */
-.pulse-report-doc .q-block { padding: var(--s5) 0 var(--s4); border-bottom: 0; }
-.pulse-report-doc .q-block + .q-block { border-top: 1px solid var(--border); }
-.pulse-report-doc .q-block:first-of-type { padding-top: var(--s3); }
+/* ===== Pulse report reads as a dashboard (David 2026-08-19) ==================
+   It used to be a document: every question stacked inside ONE card, separated by a
+   single hairline, so six charts melded into a continuous stripe and nothing looked
+   like the rest of the platform. Now the results are .bench-card in a .bench-grid —
+   the same shell, the same controls, the same chart calibration as every other card,
+   with the report's own commentary sitting above the grid. Almost nothing needs new
+   CSS, which is the point. */
+.pulse-grid-cards { margin-top: var(--s4); }
+.pulse-card .bench-title { font-size: var(--fs-card-title); }
+/* the card's own foot line, matching .bench-foot spacing on a benchmark card */
+.pulse-card .bench-foot { margin-top: auto; }
 
-.prq-head { display: flex; align-items: baseline; gap: var(--s3); margin-bottom: var(--s3); }
-.prq-num {
-  flex: none; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em;
-  color: var(--blue); font-variant-numeric: tabular-nums; padding-top: 2px;
+/* commentary sits inside the card, between the chart and the controls that opened it */
+.pulse-com {
+  margin: var(--s3) 0 0; padding: var(--s3);
+  background: var(--surface-sunk); border-radius: var(--radius-sm);
 }
-.prq-of { color: var(--ink-faint); font-weight: 400; }
-.prq-title {
-  margin: 0; font-size: var(--fs-card-title); font-weight: 600; line-height: 1.35;
-  letter-spacing: -.005em; text-wrap: balance;
+.pulse-detail {
+  margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--border);
 }
-/* the chart and its footnote hang off the same left edge as the title */
-.pulse-report-doc .q-block > div:not(.prq-head) { padding-left: calc(var(--s3) + 2.1rem); }
-@media (max-width: 700px) {
-  .pulse-report-doc .q-block > div:not(.prq-head) { padding-left: 0; }
-}
+.pulse-detail p { margin: var(--s1) 0 var(--s2); }
+.pulse-detail .btn { margin-top: var(--s2); }
+
 @media print {
-  .pulse-report-doc .q-block + .q-block { border-top: 1px solid #ccc; }
+  .pulse-grid-cards { grid-template-columns: 1fr; gap: var(--s3); }
+  .pulse-card { break-inside: avoid; page-break-inside: avoid; }
 }
 
 /* Pulse commentary: the comparison leads, the caveats recede — they are identical on
