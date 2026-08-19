@@ -1296,6 +1296,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
           ${railItem("ai-insights", "AI insights")}
           <div class="settings-rail-group">Organisation</div>
           ${railItem("profile", "Company profile")}
+          ${isAdmin ? railItem("team", "Team access") : null}
           ${railItem("defaults", "Default peer group")}
           ${railItem("modelling", "Modelling assumptions")}
           <div class="settings-rail-group">Legal & sharing</div>
@@ -1381,6 +1382,15 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
                 <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
               </div>
               <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>`)}
+
+          ${/* DELEGATE CARD, not the console (the 2026-08-11 design review ruled that a full
+                CRUD table is "too heavy to sit inline among the calm settings cards", which is
+                why Sharing and Company profile are entry cards to their own routes). The team
+                table is the same shape — role selects, destructive verbs and an invite form —
+                so it stays on /team and Settings points at it. */ ""}
+          ${isAdmin ? card("team", "Team access", "Org-wide", false,
+            html`Who can reach your organisation's data, what each of them can do, and the invitations still outstanding.`,
+            html`<a class="btn small" href="#/team">Manage team access</a>`) : null}
 
           ${isAdmin ? card("sharing", "Sharing", "Org-wide", false,
             html`Read-only links for people outside your team — they show only what your team sees.`,
