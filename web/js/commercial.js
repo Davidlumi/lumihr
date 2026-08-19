@@ -921,6 +921,21 @@ window.TeamPage = function ({ me }) {
       if (self) window.location.assign("/"); }
     catch (e) { setErr(e.message); }
   };
+  // the REVERSIBLE revoke. Remove deletes the account; this only cuts access, so
+  // "on garden leave" and "has left" stop having one irreversible answer.
+  const setSuspended = async (u, on) => {
+    setErr(null);
+    const who = u.display_name || u.email;
+    const ask = on
+      ? "Suspend " + who + "? They are signed out immediately and cannot sign in again until you restore them. "
+        + "Nothing is deleted — their account and everything they contributed stay exactly as they are."
+      : "Restore access for " + who + "? They will be able to sign in again with their existing password.";
+    if (!window.confirm(ask)) return;
+    try {
+      await api("/api/team/suspend", { method: "POST", body: { email: u.email, suspend: on } });
+      refresh(); toast(who + (on ? " suspended — signed out now" : " can sign in again"));
+    } catch (e) { setErr(e.message); }
+  };
   const revoke = async (token) => {
     setErr(null);
     if (!window.confirm("Revoke this invite? The link stops working — if the colleague already has it, they won't be able to join.")) return;
@@ -957,10 +972,21 @@ window.TeamPage = function ({ me }) {
               ${/* ACCESS replaces "Joined" (2026-08-18). A join date answers no question this
                     page is for; whether the account can actually get in answers the only one. */ ""}
               <td>${u.disabled_at
-                ? html`<span class="team-state team-state-off" title=${u.disabled_reason || "Deactivated by lumi support"}>No — deactivated</span>`
+                ? html`<span class="team-state team-state-off"
+                    title=${(u.disabled_by === "org" ? "Suspended by an Admin" : "Suspended by lumi support")
+                      + (u.disabled_reason ? " — " + u.disabled_reason : "")}>
+                    Suspended${u.disabled_by === "org" ? "" : " · support"}</span>`
                 : html`<span class="team-state team-state-on">Active</span>`}</td>
               ${/* three identically-labelled buttons read as one control to a screen reader */ ""}
               <td class="team-actions">
+                ${u.email === me.user.email ? null
+                  : u.disabled_at
+                    ? (u.disabled_by === "org"
+                        ? html`<button class="btn small quiet" aria-label=${"Restore access for " + (u.display_name || u.email)}
+                            onClick=${() => setSuspended(u, false)}>Restore</button>`
+                        : null)
+                    : html`<button class="btn small quiet" aria-label=${"Suspend " + (u.display_name || u.email)}
+                        onClick=${() => setSuspended(u, true)}>Suspend</button>`}
                 <button class="btn small quiet team-remove" aria-label=${"Remove " + (u.display_name || u.email)}
                   onClick=${() => remove(u.email)}>Remove</button></td></tr>`)}
             ${/* an unaccepted invite IS access, granted and in flight. It used to sit as a

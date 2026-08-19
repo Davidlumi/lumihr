@@ -1374,7 +1374,10 @@ async def team(request: Request):
     users = [{"email": (_uid.get(r["user_id"]) or {}).get("email"), "role": r["role"],
               "display_name": (_uid.get(r["user_id"]) or {}).get("display_name"),
               "created_at": r["created_at"],
-              "disabled_at": r["disabled_at"], "disabled_reason": r["disabled_reason"]}
+              "disabled_at": r["disabled_at"], "disabled_reason": r["disabled_reason"],
+              # who suspended: an Admin may restore their own org's suspensions, never
+              # support's (NULL predates the column and reads as support — only they could)
+              "disabled_by": (r["disabled_by"] or "platform") if r["disabled_at"] else None}
              for r in _urows]
     _irows = list(conn.execute(
         "SELECT * FROM invites WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now')",
@@ -1493,7 +1496,12 @@ async def change_role(request: Request):
     if target is None:
         raise HTTPException(404, "No member with that email in your organisation.")
     if target["role"] == "admin" and role != "admin":
-        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin'",
+        # a SUSPENDED admin cannot sign in, so it must not satisfy "at least one Admin".
+        # Before suspend existed every admin was usable and a bare count was right; now
+        # counting one would let an Admin suspend the only other Admin, demote themselves,
+        # and leave the org with nobody able to get in. (2026-08-19)
+        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin' "
+                              "AND disabled_at IS NULL",
                               (org["org_id"],)).fetchone()["c"]
         if admins <= 1:
             raise HTTPException(400, "Promote another Admin before removing yourself — "
@@ -1506,6 +1514,59 @@ async def change_role(request: Request):
     _audit(user, "team.role", "user", target["user_id"],
            {"from": _was, "to": role, "org_id": org["org_id"]})
     return {"ok": True, "email": ident["email"], "role": role}
+
+
+@app.post("/api/team/suspend")
+async def team_suspend(request: Request):
+    """An Admin cuts a colleague's access WITHOUT deleting them, and restores it.
+
+    Until now Remove was the only revoke an Admin had, and Remove DELETES the account —
+    so "they're on garden leave" and "they've left" had one, irreversible answer. This is
+    the reversible one: the account and everything they contributed stay, they simply
+    cannot sign in.
+
+    Two guards, both mirroring the ones Remove and role-change already enforce, plus one
+    that is new: an Admin may not lift a suspension lumi SUPPORT applied (disabled_by =
+    'platform', or NULL for rows predating the column — the safe reading, since only
+    support could set it then)."""
+    user, org = require_admin(request)
+    body = await _json(request)
+    email = (body.get("email") or "").strip().lower()
+    on = bool(body.get("suspend"))
+    reason = (body.get("reason") or "").strip()[:200] or None
+    conn = get_conn()
+    ident = identity.lookup_user_by_email(email)
+    target = conn.execute("SELECT * FROM users WHERE user_id=? AND org_id=?",
+                          (ident["user_id"], org["org_id"])).fetchone() if ident else None
+    if target is None:
+        raise HTTPException(404, "No member with that email in your organisation.")
+    if target["user_id"] == user["user_id"]:
+        raise HTTPException(400, "You can't suspend your own account — you would lock yourself out. "
+                                 "Ask another Admin, or use Remove if you are leaving.")
+    if on and target["role"] == "admin":
+        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin' "
+                              "AND disabled_at IS NULL", (org["org_id"],)).fetchone()["c"]
+        if admins <= 1:
+            raise HTTPException(400, "Promote another Admin first — your organisation must always "
+                                     "have at least one Admin who can sign in.")
+    if not on and target["disabled_at"] and (target["disabled_by"] or "platform") != "org":
+        raise HTTPException(403, "lumi support suspended this account. Contact support to restore it.")
+    if on and target["disabled_at"]:
+        raise HTTPException(400, "That account is already suspended.")
+    if not on and not target["disabled_at"]:
+        raise HTTPException(400, "That account isn't suspended.")
+    if on:
+        conn.execute("UPDATE users SET disabled_at=datetime('now'), disabled_reason=?, disabled_by='org' "
+                     "WHERE user_id=?", (reason, target["user_id"]))
+    else:
+        conn.execute("UPDATE users SET disabled_at=NULL, disabled_reason=NULL, disabled_by=NULL "
+                     "WHERE user_id=?", (target["user_id"],))
+    conn.commit()
+    # suspension must bite NOW, not when the session happens to expire
+    n = identity.delete_sessions_for_user(target["user_id"]) if on else 0
+    _audit(user, "team.suspend" if on else "team.restore", "user", target["user_id"],
+           {"role": target["role"], "reason": reason, "sessions_revoked": n, "org_id": org["org_id"]})
+    return {"ok": True, "suspended": on, "sessions_revoked": n}
 
 
 @app.delete("/api/team/member")
@@ -1523,7 +1584,12 @@ async def remove_member(request: Request):
     if target is None:
         raise HTTPException(404, "No member with that email in your organisation.")
     if target["role"] == "admin":
-        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin'",
+        # a SUSPENDED admin cannot sign in, so it must not satisfy "at least one Admin".
+        # Before suspend existed every admin was usable and a bare count was right; now
+        # counting one would let an Admin suspend the only other Admin, demote themselves,
+        # and leave the org with nobody able to get in. (2026-08-19)
+        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin' "
+                              "AND disabled_at IS NULL",
                               (org["org_id"],)).fetchone()["c"]
         if admins <= 1:
             raise HTTPException(400, "Promote another Admin before removing yourself — "
@@ -8469,7 +8535,7 @@ async def admin_user_deactivate(user_id: str, request: Request):
         raise HTTPException(400, "Staff accounts can't be deactivated from the console.")
     if row["disabled_at"]:
         raise HTTPException(400, "That account is already deactivated.")
-    conn.execute("UPDATE users SET disabled_at=datetime('now'), disabled_reason=? "
+    conn.execute("UPDATE users SET disabled_at=datetime('now'), disabled_reason=?, disabled_by='platform' "
                  "WHERE user_id=?", (reason, user_id))
     conn.commit()
     n = identity.delete_sessions_for_user(user_id)
@@ -8488,7 +8554,7 @@ async def admin_user_reactivate(user_id: str, request: Request):
         raise HTTPException(400, "That account isn't deactivated.")
     # reason cleared with the state (it describes the CURRENT suspension only;
     # the audit log keeps the history)
-    conn.execute("UPDATE users SET disabled_at=NULL, disabled_reason=NULL WHERE user_id=?",
+    conn.execute("UPDATE users SET disabled_at=NULL, disabled_reason=NULL, disabled_by=NULL WHERE user_id=?",
                  (user_id,))
     conn.commit()
     _audit(staff, "user.reactivate", "user", user_id)

@@ -832,6 +832,13 @@ def init_schema(conn=None):
                 # but nothing is deleted and contributed answers stay in the pool
                 # (retire-never-delete; any data removal is a separate governed act).
                 "ALTER TABLE users ADD COLUMN disabled_at TEXT",
+                # WHO suspended (2026-08-19). An org Admin can now suspend a colleague, and
+                # lumi support can suspend anyone — so the state alone is ambiguous, and an
+                # Admin must never be able to lift a suspension support applied (abuse,
+                # non-payment). "org" = an Admin inside the org; "platform" = support.
+                # NULL on rows suspended before this column existed: treated as "platform",
+                # the safe default, because only support could set it then.
+                "ALTER TABLE users ADD COLUMN disabled_by TEXT",
                 "ALTER TABLE orgs ADD COLUMN deactivated_at TEXT"):
         try:
             conn.execute(ddl)
