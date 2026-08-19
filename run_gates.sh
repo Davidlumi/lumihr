@@ -231,6 +231,11 @@ start_server "$DB" srv_hero;    run_gate qa_hero; run_gate qa_focus
 start_server "$DB" srv_signals "LUMI_OPEN_REGISTRATION=on"; run_gate qa_signals_system; run_gate qa_strategy
 start_server "$DB" srv_engine;  run_gate qa_engine_audit
 
+# --- static frontend contract (no DB, no HTTP — reads web/js) ---
+# the Settings rail, its cards and the scroll-spy list are three sequences nothing keeps in
+# step; the Team card broke two of them at once and every other gate stayed green.
+run_gate qa_settings_nav
+
 # --- direct-DB suites (server can stay up; they read LUMI_DB directly) ---
 run_gate qa_overview
 run_gate qa_domain_summary
