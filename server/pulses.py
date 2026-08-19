@@ -690,22 +690,59 @@ def pulse_narrative_deterministic(report):
                 "benchmark, nothing is shown where fewer than 5 organisations answered." %
                 (shown, "" if shown == 1 else "s",
                  "" if shown == total else " of %d" % total))
-    findings = []
+    # A finding is what the numbers SHOW. Walking the questions in order and appending each
+    # one's top answer produced five interchangeable table rows — the shape never came first,
+    # and questions 6 and 7 were never reached however striking they were (David 2026-08-20).
+    # Score each result for how notable it is, then say what it is.
+    scored = []
     for q in qs:
         blk = q.get("block") or {}
-        opts = blk.get("options") or []
+        opts = sorted((blk.get("options") or []), key=lambda o: o.get("pct") or 0, reverse=True)
+        # Keep the question INTACT and interrogative. Lower-casing it and splicing it into
+        # a prepositional phrase produced "divides on at peak season what share…" and
+        # "On by what percentage does…" — the questions are full sentences, not noun
+        # phrases, so the finding follows the question rather than swallowing it.
+        qn = q["title"].strip().rstrip("?") + "?"
+        nq = blk.get("n", n)
         if opts:
-            top = max(opts, key=lambda o: o.get("pct", 0))
-            # the question leads, then the answer — the old form opened every finding with
-            # "On “<the whole question>”, …", which read as five near-identical sentences
-            findings.append("%s — %s of the cohort answered “%s” (%s%%, n=%s)." %
-                            (q["title"].rstrip("?") + "?", _pct_word(top.get("pct", 0)),
-                             top.get("label", ""), top.get("pct", 0), blk.get("n", n)))
+            top = opts[0]
+            tp = top.get("pct") or 0
+            second = opts[1] if len(opts) > 1 else None
+            sp = (second.get("pct") or 0) if second else 0
+            if tp >= 75:
+                score = tp
+                text = ("%s \u2014 near-unanimous: %s%% answered \u201c%s\u201d (n=%s)."
+                        % (qn, tp, top.get("label", ""), nq))
+            elif tp >= 55:
+                score = tp - 10
+                text = ("%s \u2014 a clear majority, %s%%, answered \u201c%s\u201d (n=%s)."
+                        % (qn, tp, top.get("label", ""), nq))
+            elif second is not None and abs(tp - sp) <= 8:
+                score = 70 - abs(tp - sp)
+                text = ("%s \u2014 the cohort divides, \u201c%s\u201d %s%% against "
+                        "\u201c%s\u201d %s%% (n=%s)."
+                        % (qn, top.get("label", ""), tp, second.get("label", ""), sp, nq))
+            else:
+                score = 45 - tp
+                text = ("%s \u2014 no answer dominates; the most common, \u201c%s\u201d, "
+                        "reaches only %s%% (n=%s)." % (qn, top.get("label", ""), tp, nq))
         elif blk.get("p50") is not None:
-            findings.append("%s — the cohort median is %s (n=%s)." %
-                            (q["title"].rstrip("?") + "?",
-                             _fmt_num(blk["p50"], q.get("unit")), blk.get("n", n)))
-    return {"summary": summary, "key_findings": findings[:5],
+            med = _fmt_num(blk["p50"], q.get("unit"))
+            p25, p75 = blk.get("p25"), blk.get("p75")
+            if p25 is not None and p75 is not None:
+                score = 40
+                text = ("%s \u2014 the median is %s, with the middle half of the cohort "
+                        "between %s and %s (n=%s)."
+                        % (qn, med, _fmt_num(p25, q.get("unit")),
+                           _fmt_num(p75, q.get("unit")), nq))
+            else:
+                score = 30
+                text = "%s \u2014 the cohort median is %s (n=%s)." % (qn, med, nq)
+        else:
+            continue
+        scored.append((score, text))
+    scored.sort(key=lambda t: -t[0])
+    return {"summary": summary, "key_findings": [t[1] for t in scored[:5]],
             "_fallback": True}
 
 

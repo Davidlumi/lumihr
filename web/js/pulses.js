@@ -280,7 +280,7 @@ window.PulseDetailPage = function ({ me, pid }) {
       style=${p.report ? { margin: "0 auto" } : { maxWidth: "820px", margin: "0 auto" }}>
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
-      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>
+      <h1 class="display-title pulse-title">${p.name}</h1>
       <p class="caption pulse-subhead">
         <span class="pulse-subhead-desc">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating</span>
         <${CloseChip} p=${p} /></p>

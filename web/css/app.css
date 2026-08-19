@@ -5762,4 +5762,13 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
    to the words. */
 .pulse-subhead { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: baseline; margin: 0; }
 .pulse-subhead-desc { max-width: 96ch; }
-.pulse-page-report .display-title { margin-bottom: var(--s1); }
+
+/* Header rhythm. The masthead ran banner → title → description → report card on 8px and
+   4px steps, so four different things sat in one undifferentiated block and the eye had
+   nothing to step down (David 2026-08-20). Each level now gets room proportional to its
+   weight, and the description keeps a measure so it wraps before the close chip rather
+   than pushing it across the page. */
+.pulse-title { margin: var(--s4) 0 var(--s3); }
+.pulse-page .pulse-subhead { margin: 0 0 var(--s5); line-height: 1.55; }
+.pulse-page .pulse-subhead .chip { flex: none; }
+.pulse-page-report .pulse-report-doc { margin-top: 0; }

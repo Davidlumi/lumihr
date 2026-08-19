@@ -293,12 +293,24 @@ Hard rules — violating any makes the output unusable:
 4. Where the payload marks a question suppressed, do not describe it.
 5. Keep it tight and quotable.
 
+WHAT A FINDING IS. A finding is what the numbers SHOW, not a restatement of a question with
+its top answer attached. "Question X — 64.9% answered No" is a table row, not a finding.
+Lead with the shape and let the question follow as context:
+  · where one answer dominates, say so and how far ("near-unanimous", "a clear majority");
+  · where the cohort divides, name the division and both shares;
+  · where no answer dominates, that absence IS the finding;
+  · where two questions in this pulse point the same way, or against each other, say that —
+    a pattern ACROSS questions is the most valuable thing you can offer;
+  · where a median sits against its own spread, place it.
+Prefer the results that are actually notable over walking the questions in order. Do not force
+one finding per question, and do not cover every question.
+
 Return STRICT JSON, no markdown fences, with exactly:
   "summary": 2-3 sentences on what this pulse shows across the cohort (topic + participation +
      the shape of the standout answers), grounded in payload figures,
   "key_findings": array of 3-5 single-sentence findings a reader could quote, each grounded in a
-     specific payload figure (an option share, a median), naming the question. Numbered rendering
-     is the client's job; do not number them."""
+     specific payload figure (an option share, a median). Numbered rendering is the client's
+     job; do not number them."""
 
 PULSE_NARRATIVE_SCHEMA = {
     "type": "object",
