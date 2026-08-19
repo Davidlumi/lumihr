@@ -5596,3 +5596,43 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   .signals-page .brf-card { break-inside: avoid; page-break-inside: avoid;
     box-shadow: none; border-color: #bbb; }
 }
+
+/* ---- Team (admin) — QA pass 2026-08-18 -----------------------------------------------
+   The page was built with inline styles and a dead isAdmin branch; these are the classes
+   that replace them, plus the fixes the pass turned up. */
+.team-page { max-width: 800px; }
+.team-card { padding: var(--s4); }
+.team-card + .team-card { margin-top: var(--s4); }
+.team-page .team-card:first-of-type { margin: var(--s4) 0; }
+/* a fourth column and a long email overflowed the card below ~600px. NOTE: an overflow
+   container becomes the containing block for sticky children, and table.data th is
+   `position: sticky; top: var(--brandbar-h)` for long tables elsewhere — inside this wrapper
+   that pinned the header 56px DOWN, over the first member. A team is a handful of people, so
+   the sticky header buys nothing here and is switched off. */
+.team-tablewrap { overflow-x: auto; }
+.team-tablewrap table.data th { position: static; }
+.team-role { min-width: 130px; }
+.team-actions { text-align: right; }
+/* Remove DELETES the person's account — it should not look like a link in a corner */
+/* .btn.quiet is (0,2,0) and sets its own colour, so a bare .team-remove never applied —
+   measured, not assumed. Matched specificity. */
+.btn.team-remove { color: var(--unfavourable-ink); }
+.btn.team-remove:hover { background: var(--unfavourable-tint); border-color: var(--unfavourable); color: var(--unfavourable-ink); }
+/* what the roles mean, on the page rather than in a title attribute */
+.team-roles { display: grid; gap: var(--s1) var(--s3); margin: var(--s4) 0 0;
+  padding-top: var(--s3); border-top: 1px solid var(--border); }
+.team-roles > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--s3); }
+.team-roles dt { font-weight: 650; color: var(--ink); }
+.team-roles dd { margin: 0; color: var(--ink-soft); }
+.team-note { margin: var(--s3) 0 0; }
+.team-subhead { font-size: var(--fs-label); margin: var(--s4) 0 var(--s2); }
+.team-inviterow { flex-wrap: wrap; }
+.team-invite-email { flex: 1 1 220px; }
+.team-invite-role { flex: 0 1 auto; }
+.team-linkrow { margin-top: var(--s2); gap: var(--s2); }
+.team-linkfield { flex: 1; max-width: none; }
+.invite-form .ok-text, .invite-form .error-text, .team-card > .error-text { margin-top: var(--s2); }
+@media (max-width: 560px) {
+  .team-roles > div { grid-template-columns: 1fr; gap: 0; }
+  .team-inviterow > * { flex: 1 1 100%; }
+}

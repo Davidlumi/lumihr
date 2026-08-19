@@ -855,24 +855,24 @@ window.TeamPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("contributor");
-  const [msg, setMsg] = useState(null);
-  const [err, setErr] = useState(null);
+  const [msg, setMsg] = useState(null);        // invite result — renders IN the invite card
+  const [err, setErr] = useState(null);        // table-action error — renders by the table
+  const [inviteErr, setInviteErr] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
   const refresh = () => { setLoadErr(null); api("/api/team").then(setData).catch(e => setLoadErr(e.message)); };
   useEffect(() => { refresh(); }, []);
-  const isAdmin = me.user.role === "admin";
   const [inviting, setInviting] = useState(false);
   const [inviteLink, setInviteLink] = useState(null);
   const invite = async () => {
     if (inviting) return;
-    setErr(null); setMsg(null); setInviting(true);
+    setInviteErr(null); setMsg(null); setInviting(true);
     try {
       const r = await api("/api/team/invite", { method: "POST", body: { email, role } });
       setMsg(`Invite sent to ${email} — the link expires in ${r.expires_days} days. You can also copy it and share it yourself:`);
       setInviteLink(r.link);
       toast("Invite sent to " + email);
       setEmail(""); refresh();
-    } catch (e) { setErr(e.message); }
+    } catch (e) { setInviteErr(e.message); }
     setInviting(false);
   };
   const setMemberRole = async (uEmail, newRole) => {
@@ -886,69 +886,105 @@ window.TeamPage = function ({ me }) {
     }
     try {
       await api("/api/team/role", { method: "PUT", body: { email: uEmail, role: newRole } });
-      setMsg(`${uEmail} is now ${ROLE_LABEL[newRole]}.`); refresh();
+      refresh();
       toast(uEmail + " is now " + ROLE_LABEL[newRole]);
     } catch (e) { setErr(e.message); refresh(); }
   };
+  // navigator.clipboard is undefined on a non-secure origin and can reject on permission —
+  // the old one-liner did `navigator.clipboard && …then(toast)` with no catch, so both cases
+  // looked like a dead button. Fall back to selecting the field so the user can copy manually.
+  const copyInvite = (link) => {
+    const fallback = () => {
+      const el = document.querySelector(".team-linkfield");
+      if (el) { el.focus(); el.select(); }
+      toast("Press " + (navigator.platform && /Mac/i.test(navigator.platform) ? "\u2318C" : "Ctrl+C") + " to copy the link", "error");
+    };
+    if (!navigator.clipboard) return fallback();
+    navigator.clipboard.writeText(link).then(() => toast("Invite link copied")).catch(fallback);
+  };
+
   const remove = async (uEmail) => {
     setErr(null); setMsg(null);
-    if (!window.confirm(`Remove ${uEmail} from your organisation? Their account is deleted; your organisation's data is unaffected.`)) return;
-    try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); toast(uEmail + " removed from your organisation"); }
+    // removing YOURSELF ends your own access — the generic wording read as housekeeping
+    const self = uEmail === me.user.email;
+    const ask = self
+      ? "Remove yourself from " + ((me.org && me.org.name) || "your organisation") + "? Your account is deleted and you are signed out immediately. Another Admin would have to invite you back. Your organisation's data is unaffected."
+      : "Remove " + uEmail + " from your organisation? Their account is deleted; your organisation's data is unaffected.";
+    if (!window.confirm(ask)) return;
+    try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } });
+      refresh(); toast(uEmail + " removed from your organisation");
+      if (self) window.location.assign("/"); }
     catch (e) { setErr(e.message); }
   };
   if (loadErr) return html`<${EmptyState} title="Couldn't load your team" body=${loadErr}
     action=${html`<button class="btn small primary" onClick=${refresh}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   return html`
-    <div style=${{ maxWidth: "800px" }}>
+    <div class="team-page">
       <h1 class="display-title">Team</h1>
       <p class="caption">One organisation, one dataset, one benchmark. Roles decide who can edit.</p>
-      <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s4) 0" }}>
+      ${/* TeamPage only mounts for admins (app.js route guard), so the old isAdmin branches
+            here were unreachable — including a read-only role chip no one could ever see. */ ""}
+      <div class="card team-card">
+        ${/* long emails and a fourth column overflowed the card below ~600px */ ""}
+        <div class="team-tablewrap">
         <table class="data">
-          <thead><tr><th>Member</th><th>Role</th><th>Joined</th>${isAdmin && html`<th><span class="sr-only">Actions</span></th>`}</tr></thead>
+          <thead><tr><th>Member</th><th>Role</th><th>Joined</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             ${data.users.map(u => html`
               <tr key=${u.email}><td><b>${u.display_name || u.email}</b><div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
-              <td>${isAdmin ? html`
-                <select class="ctl" style=${{ minWidth: "130px" }} value=${u.role}
+              <td><select class="ctl team-role" value=${u.role}
                   title=${ROLE_DESC[u.role]}
+                  aria-label=${"Role for " + (u.display_name || u.email)}
                   onChange=${e => setMemberRole(u.email, e.target.value)}>
                   <option value="admin">Admin</option>
                   <option value="contributor">Contributor</option>
                   <option value="viewer">Viewer</option>
-                </select>` :
-                html`<span class=${"chip " + (u.role === "admin" ? "accent" : "")} title=${ROLE_DESC[u.role]}>${ROLE_LABEL[u.role] || u.role}</span>`}</td>
+                </select></td>
               <td class="caption">${fmtDate(u.created_at + "Z")}</td>
-              ${isAdmin && html`<td style=${{ textAlign: "right" }}>
-                <button class="btn small quiet" onClick=${() => remove(u.email)}>Remove</button></td>`}</tr>`)}
+              ${/* three identically-labelled buttons read as one control to a screen reader */ ""}
+              <td class="team-actions">
+                <button class="btn small quiet team-remove" aria-label=${"Remove " + (u.display_name || u.email)}
+                  onClick=${() => remove(u.email)}>Remove</button></td></tr>`)}
           </tbody>
         </table>
-        ${msg && html`<div class="ok-text" role="status" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
-        ${inviteLink && html`<div class="row" style=${{ marginTop: "var(--s2)", gap: "var(--s2)" }}>
-          <input class="ctl" readonly value=${inviteLink} style=${{ flex: 1, maxWidth: "none" }} aria-label="Invite link"
-            onFocus=${e => e.target.select()} />
-          <button class="btn small" onClick=${() => { navigator.clipboard && navigator.clipboard.writeText(inviteLink).then(() => toast("Invite link copied")); }}>Copy link</button>
-        </div>`}
-        ${err && html`<div class="error-text" role="alert" style=${{ marginTop: "var(--s2)" }}>${err}</div>`}
-        <div class="caption" style=${{ marginTop: "var(--s3)" }}>
-          Your organisation always keeps at least one Admin — promote a colleague before stepping back.
         </div>
+        ${err && html`<div class="error-text" role="alert">${err}</div>`}
+        ${/* what the three roles actually mean. This was in a title attribute only — hover-only
+              on the one page whose own subtitle says "roles decide who can edit". */ ""}
+        <dl class="team-roles caption">
+          <div><dt>Admin</dt><dd>${ROLE_DESC.admin}</dd></div>
+          <div><dt>Contributor</dt><dd>${ROLE_DESC.contributor}</dd></div>
+          <div><dt>Viewer</dt><dd>${ROLE_DESC.viewer}</dd></div>
+        </dl>
+        <p class="caption team-note">Your organisation always keeps at least one Admin — promote a colleague before stepping back.</p>
       </div>
-      ${isAdmin && html`
-        <div class="card invite-form" style=${{ padding: "var(--s4)" }}>
+      ${html`
+        <div class="card invite-form team-card">
           <h2 class="section-title">Invite a colleague</h2>
-          <div class="row">
-            <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" aria-label="Colleague's email address"
+          <div class="row team-inviterow">
+            <input class="ctl team-invite-email" placeholder="colleague@yourorg.co.uk" aria-label="Colleague's email address"
               value=${email} onInput=${e => setEmail(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") invite(); }} />
-            <select class="ctl" value=${role} onChange=${e => setRole(e.target.value)}>
+            <select class="ctl team-invite-role" value=${role} aria-label="Role for the person you are inviting"
+              onChange=${e => setRole(e.target.value)}>
               <option value="contributor">Contributor — submits and edits data</option>
               <option value="viewer">Viewer — read-only</option>
             </select>
             <button class="btn primary" disabled=${inviting} onClick=${invite}>${inviting ? html`<${Spinner} />` : "Send invite"}</button>
           </div>
-          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Invites expire after 7 days. For another Admin, invite as Contributor and promote above. Joiners accept the Platform Terms only — your Data Contribution agreement covers the whole organisation.</div>
+          ${/* the result of sending an invite used to render in the MEMBERS card above — you
+                acted here and the confirmation, and the link you might want to copy, appeared
+                somewhere else on the page, possibly off-screen. It belongs with its action. */ ""}
+          ${inviteErr && html`<div class="error-text" role="alert">${inviteErr}</div>`}
+          ${msg && html`<div class="ok-text" role="status">${msg}</div>`}
+          ${inviteLink && html`<div class="row team-linkrow">
+            <input class="ctl team-linkfield" readonly value=${inviteLink} aria-label="Invite link"
+              onFocus=${e => e.target.select()} />
+            <button class="btn small" onClick=${() => copyInvite(inviteLink)}>Copy link</button>
+          </div>`}
+          <div class="caption team-note">Invites expire after ${data.invite_ttl_days || 7} days. For another Admin, invite as Contributor and promote above. Joiners accept the Platform Terms only — your Data Contribution agreement covers the whole organisation.</div>
           ${data.invites.length > 0 && html`
-            <h3 style=${{ fontSize: "var(--fs-label)", margin: "var(--s4) 0 var(--s2)" }}>Outstanding invites</h3>
+            <h3 class="team-subhead">Outstanding invites</h3>
             ${data.invites.map(i => html`
               <div key=${i.token} class="caption row spread">
                 <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${fmtDate(i.expires_at + "Z")}</span>

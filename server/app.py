@@ -1379,7 +1379,11 @@ async def team(request: Request):
     invites = [{"email": _iem.get(r["token"]), "role": r["role"], "expires_at": r["expires_at"],
                 "token": r["token"], "used": r["used_at"] is not None}
                for r in _irows]
-    return {"users": users, "invites": invites if user["role"] == "admin" else []}
+    # the Team page printed "Invites expire after 7 days" as a hardcoded string beside a
+    # sent-invite message that quoted the real value — two sources for one number, free to
+    # drift the moment INVITE_TTL_DAYS changes. Ship it.
+    return {"users": users, "invites": invites if user["role"] == "admin" else [],
+            "invite_ttl_days": auth_lib.INVITE_TTL_DAYS}
 
 
 ROLE_LABELS = {"admin": "Admin", "contributor": "Contributor", "viewer": "Viewer"}
