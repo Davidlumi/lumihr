@@ -1133,7 +1133,10 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   useEffect(() => { loadA(); }, []);
   const isEd = me.user.role === "admin" || me.user.role === "contributor";
   const isAdmin = me.user.role === "admin";
-  const SEC_IDS = ["notifications", "ai-insights", "profile", "defaults", "modelling", "terms"].concat(isAdmin ? ["sharing"] : []);
+  // SEC_IDS must be the DOM order of the cards — the observer walks it, and the last entry is
+  // what the end-of-page pin selects. A card missing from here never highlights in the rail.
+  const SEC_IDS = ["notifications", "ai-insights", "profile", "defaults", "modelling"]
+    .concat(isAdmin ? ["team", "sharing"] : []).concat(["terms"]);
   // rail scroll-spy — highlight the section nearest the top of the reading band
   useEffect(() => {
     if (!a) return;
@@ -1296,12 +1299,14 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
           ${railItem("ai-insights", "AI insights")}
           <div class="settings-rail-group">Organisation</div>
           ${railItem("profile", "Company profile")}
-          ${isAdmin ? railItem("team", "Team access") : null}
           ${railItem("defaults", "Default peer group")}
           ${railItem("modelling", "Modelling assumptions")}
-          <div class="settings-rail-group">Legal & sharing</div>
-          ${railItem("terms", "Terms & agreements")}
+          ${/* the two surfaces that GRANT sight of the data sit together — inside the
+                organisation, then outside it — with the agreement that governs both. */ ""}
+          <div class="settings-rail-group">${isAdmin ? "Access & legal" : "Legal"}</div>
+          ${isAdmin ? railItem("team", "Team access") : null}
           ${isAdmin ? railItem("sharing", "Sharing") : null}
+          ${railItem("terms", "Terms & agreements")}
         </nav>
 
         <div class="settings-stack">
@@ -1369,7 +1374,20 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
               ${msg && html`<div class="settings-saved" role="status" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}`,
             editable ? null : "View only")}
 
-          <div class="settings-group">Legal & sharing</div>
+          <div class="settings-group">${isAdmin ? "Access & legal" : "Legal"}</div>
+          ${/* DELEGATE CARD, not the console (the 2026-08-11 design review ruled that a full
+                CRUD table is "too heavy to sit inline among the calm settings cards", which is
+                why Sharing and Company profile are entry cards to their own routes). The team
+                table is the same shape — role selects, destructive verbs and an invite form —
+                so it stays on /team and Settings points at it. */ ""}
+          ${isAdmin ? card("team", "Team access", "Org-wide", false,
+            html`Who can reach your organisation's data, what each of them can do, and the invitations still outstanding.`,
+            html`<a class="btn small" href="#/team">Manage team access</a>`) : null}
+
+          ${isAdmin ? card("sharing", "Sharing", "Org-wide", false,
+            html`Read-only links for people outside your team — they show only what your team sees.`,
+            html`<a class="btn small" href="#/shares">Manage share links</a>`) : null}
+
           ${card("terms", "Terms & agreements", "Org-wide", false, null,
             html`
               ${me.org.data_terms && me.org.data_terms.accepted ? html`
@@ -1383,18 +1401,6 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
               </div>
               <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>`)}
 
-          ${/* DELEGATE CARD, not the console (the 2026-08-11 design review ruled that a full
-                CRUD table is "too heavy to sit inline among the calm settings cards", which is
-                why Sharing and Company profile are entry cards to their own routes). The team
-                table is the same shape — role selects, destructive verbs and an invite form —
-                so it stays on /team and Settings points at it. */ ""}
-          ${isAdmin ? card("team", "Team access", "Org-wide", false,
-            html`Who can reach your organisation's data, what each of them can do, and the invitations still outstanding.`,
-            html`<a class="btn small" href="#/team">Manage team access</a>`) : null}
-
-          ${isAdmin ? card("sharing", "Sharing", "Org-wide", false,
-            html`Read-only links for people outside your team — they show only what your team sees.`,
-            html`<a class="btn small" href="#/shares">Manage share links</a>`) : null}
         </div>
       </div>
       ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
