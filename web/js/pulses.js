@@ -271,8 +271,13 @@ window.PulseDetailPage = function ({ me, pid }) {
     : (drafts[q.id + "|"] != null && drafts[q.id + "|"] !== "");
   const answeredCount = (p.question_list || []).filter(isAnswered).length;
 
+  // 820px is a READING width — right for filling in the survey, far too narrow for a
+  // dashboard of metric cards, which is what this page becomes once the report is in. With
+  // the report showing, take the full content column so a pulse card is the same size as a
+  // benchmark card (David 2026-08-20).
   return html`
-    <div class="pulse-page" style=${{ maxWidth: "820px", margin: "0 auto" }}>
+    <div class=${"pulse-page" + (p.report ? " pulse-page-report" : "")}
+      style=${p.report ? { margin: "0 auto" } : { maxWidth: "820px", margin: "0 auto" }}>
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
       <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>

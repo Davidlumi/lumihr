@@ -2505,8 +2505,13 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   color: var(--ink-soft); background: var(--surface-sunk); border-radius: 999px; padding: 1px var(--s2); }
 .pulse-close.soon { color: var(--blue-deep); background: var(--blue-tint); }
 /* pulse report — narrative/key-findings panel + a polished print document */
-.pulse-narrative { background: var(--surface-sunk); border-radius: var(--radius-sm); padding: var(--s4); margin: var(--s3) 0 var(--s4); }
-.pulse-findings { margin-top: var(--s2); }
+/* The report's read sits ON the card, not in a filled slab. --surface-sunk (#F4F1EC) is
+   a warm grey meant for small inset panels; at the width of a full report header it read
+   as an off-brand block of colour rather than as the summary (David 2026-08-20). Type and
+   a hairline carry the hierarchy instead. */
+.pulse-narrative { background: none; padding: 0; margin: var(--s3) 0 0; }
+.pulse-narrative > p:first-child { font-size: var(--fs-subhead); line-height: 1.45; max-width: 68ch; }
+.pulse-findings { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--border); }
 .pulse-findings ol { margin: var(--s1) 0 0; padding-left: var(--s5); }
 .pulse-findings li { margin: 3px 0; font-size: var(--fs-label); }
 .pulse-pdf-head, .pulse-pdf-foot { display: none; }
@@ -2519,7 +2524,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
     padding-top: 6pt; margin-top: 16pt; }
   .pulse-report-doc .card { box-shadow: none; border: 0; margin: 0; padding: 0; }
   .pulse-report-doc .pulse-card { break-inside: avoid; page-break-inside: avoid; }
-  .pulse-narrative { break-inside: avoid; background: var(--surface-sunk) !important; }
+  .pulse-narrative { break-inside: avoid; }
 }
 
 /* org-wide insights-unlock moment — one-time, per-user, celebratory but on-brand */
@@ -5724,3 +5729,9 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
   .pulse-q-page .card { box-shadow: none; border: 0; padding: 0; }
   .pulse-q-page .pulse-onepager-read { margin-top: var(--s3); }
 }
+
+/* The report view is a dashboard, so it takes the full content column (1320px) like the
+   benchmark, not the 820px reading column the survey form needs. Two columns, same as
+   .bench-grid — which puts a pulse card at the same ~640px a benchmark card gets, and
+   renders the 620 canvas at its natural size instead of scaling it down. */
+.pulse-page-report { max-width: none; }
