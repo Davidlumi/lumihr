@@ -932,7 +932,12 @@ window.TeamPage = function ({ me }) {
           <thead><tr><th>Member</th><th>Role</th><th>Joined</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             ${data.users.map(u => html`
-              <tr key=${u.email}><td><b>${u.display_name || u.email}</b><div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
+              <tr key=${u.email} class=${u.disabled_at ? "team-off" : null}><td>
+                <b>${u.display_name || u.email}</b>
+                ${/* a deactivated colleague cannot sign in; the page used to render them as an
+                      ordinary member with no explanation */ ""}
+                ${u.disabled_at ? html`<span class="team-deact" title=${u.disabled_reason || "Deactivated by lumi support"}>deactivated</span>` : null}
+                <div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
               <td><select class="ctl team-role" value=${u.role}
                   title=${ROLE_DESC[u.role]}
                   aria-label=${"Role for " + (u.display_name || u.email)}

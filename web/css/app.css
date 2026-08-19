@@ -5640,3 +5640,8 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   .team-roles > div { grid-template-columns: 1fr; gap: 0; }
   .team-inviterow > * { flex: 1 1 100%; }
 }
+/* a deactivated member: still listed (they hold a seat) but visibly not an active account */
+.team-off td { opacity: .62; }
+.team-deact { display: inline-block; margin-left: var(--s2); padding: 1px 7px; border-radius: 999px;
+  font-size: var(--fs-micro); font-weight: 650; background: var(--unfavourable-tint);
+  color: var(--unfavourable-ink); cursor: help; }

@@ -1368,9 +1368,13 @@ async def team(request: Request):
     _urows = list(conn.execute("SELECT * FROM users WHERE org_id=? ORDER BY created_at",
                                (org["org_id"],)))
     _uid = identity.user_display_batch([r["user_id"] for r in _urows])
+    # deactivated accounts were already in this row set and simply not returned, so an org
+    # Admin reviewing access saw a deactivated colleague as an ordinary member and no reason
+    # why they could not sign in. Only the platform console showed it (admin.js).
     users = [{"email": (_uid.get(r["user_id"]) or {}).get("email"), "role": r["role"],
               "display_name": (_uid.get(r["user_id"]) or {}).get("display_name"),
-              "created_at": r["created_at"]}
+              "created_at": r["created_at"],
+              "disabled_at": r["disabled_at"], "disabled_reason": r["disabled_reason"]}
              for r in _urows]
     _irows = list(conn.execute(
         "SELECT * FROM invites WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now')",
