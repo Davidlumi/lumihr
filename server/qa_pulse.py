@@ -258,6 +258,10 @@ conn.execute("DELETE FROM questions WHERE id=?", (sp_q,)); conn.commit()
 pid3 = pulses.create_pulse(
     "qa-selfserve-fixture", "self-serve gate", question_ids=[QID],   # reuse a CORE question on purpose
     new_questions=[{"id": sp_q, "title": "SS", "text": "Self-serve fixture?", "type": "numeric"}],
+    # a close date is REQUIRED at review from 2026-08-19: a pulse without one never closes
+    # and never reports, and a PUT that omitted the field used to clear it silently. The
+    # fixture predates the rule and encoded the permissive behaviour.
+    closes_at="2099-12-31 23:59:59",
     owner_org_id=demo, created_by="qa-user", conn=conn)
 p3 = pulses.get_pulse(pid3, conn)
 check("org-authored pulse: owner recorded, launch_status building, status draft",
@@ -349,6 +353,7 @@ for fpid in (pid, pid2, pid3, pid4, pid5):
 conn.execute("DELETE FROM questions WHERE id IN (?,?,?)", (gqid, sp_q, fav_qid))
 for _qid in _q5clean:
     conn.execute("DELETE FROM questions WHERE id=?", (_qid,))
+conn.execute("DELETE FROM credit_ledger WHERE org_id='qa-pulse-locked'")  # credit_ledger has an FK to orgs (David 2026-08-19) — clear it or this DELETE fails
 conn.execute("DELETE FROM orgs WHERE org_id='qa-pulse-locked'")
 conn.commit()
 appmod.load_questions.cache_clear()

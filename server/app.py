@@ -74,6 +74,7 @@ import strategy_align
 import strategy_diag
 import pulses as pulses_mod
 import payments as payments_mod
+import credits as credits_mod
 import releases
 import retrieval
 import guide
@@ -125,7 +126,10 @@ TILE_MIN_POSITIONED = int(os.environ.get("LUMI_TILE_MIN_POSITIONED", "1"))
 # Self-service pulse launch fee (2026-06-22): the DEFAULT fee a member pays to
 # launch their own pulse to the community, in whole GBP (staff can override per
 # pulse at approval). Stored/charged in pence. David-tunable.
-PULSE_LAUNCH_FEE_PENCE = int(os.environ.get("LUMI_PULSE_LAUNCH_FEE_GBP", "750")) * 100
+# Retired 2026-08-19: credits replaced the per-pulse launch fee (David). Kept at 0 so
+# historical pulse_launch_orders still read back, and so any surface that has not been
+# migrated shows "no charge" rather than a price nobody is charged.
+PULSE_LAUNCH_FEE_PENCE = 0
 # Hero verdict (2026-06-13, David): the headline reads where the centre of
 # gravity sits — net lean = (above-below)/pool. The verdict is "on market"
 # unless that net lean clears this threshold either way. ONE value drives both
@@ -1318,9 +1322,11 @@ async def me(request: Request):
         # the market band the engine uses (LUMI_MARKET_BAND) so the client colours
         # cards on the SAME line as the tiles + signals — single source of truth.
         "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH],
-                   # the pulse launch fee, so the price is visible BEFORE a member
-                   # builds a survey (it used to appear only after review approval)
-                   "pulse_launch_fee_pence": PULSE_LAUNCH_FEE_PENCE},
+                   # what launching costs, visible BEFORE a member builds a survey.
+                   # Credits replaced the per-pulse fee (David 2026-08-19) — this used to
+                   # publish pulse_launch_fee_pence, which left /api/me saying "£750" while
+                   # /api/org/pulses said "1 credit" for the same action.
+                   "pulse_launch_credits": credits_mod.LAUNCH_COST},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -5098,6 +5104,9 @@ def _insert_member_org(conn, org_id, firmographics=None):
     cols.update(firmo)
     conn.execute("INSERT INTO orgs(%s) VALUES (%s)" % (
         ",".join(cols), ",".join("?" * len(cols))), list(cols.values()))
+    # the joining credit: one pulse included (David 2026-08-19). Idempotent, and inside the
+    # caller's transaction so an organisation can never exist without its ledger opening line.
+    credits_mod.grant_signup(org_id, conn)
 
 
 def profile_choices():
@@ -7762,10 +7771,12 @@ async def admin_orgs(request: Request):
         "SELECT o.*, (SELECT COUNT(*) FROM users u WHERE u.org_id=o.org_id) AS n_users "
         "FROM orgs o").fetchall()
     names = identity.org_display_batch([r["org_id"] for r in rows])
+    creds = credits_mod.balances_batch([r["org_id"] for r in rows], conn)
     out = []
     for r in rows:
         o = dict(r)
         out.append({
+            "credits": creds.get(o["org_id"], 0),
             "org_id": o["org_id"], "name": names.get(o["org_id"]), "industry": o["industry"],
             "fte_band": o["fte_band"], "classified": bool(o["classified"]),
             "source": o["source"], "submission_complete": bool(o["submission_complete"]),
@@ -7956,29 +7967,70 @@ def _org_pulse_detail(conn, p):
     d["question_list"] = qlist
     d["payments_enabled"] = payments_mod.is_configured()
     d["payments_mode"] = payments_mod.mode()
-    d["default_fee_pence"] = PULSE_LAUNCH_FEE_PENCE
+    d["launch_cost_credits"] = credits_mod.LAUNCH_COST
     return d
 
 
+MAX_PULSE_QUESTIONS = 25          # a pulse people finish, not a survey they abandon
+MAX_CLOSE_MONTHS = 12
+
+
 def _parse_pulse_body(body):
+    if not isinstance(body, dict):
+        raise HTTPException(400, "Send the pulse as a JSON object.")
+    # TYPE the fields before touching them. A number in `name`, a string in
+    # `new_questions` or `question_ids`, and a scalar in `options` all used to reach code
+    # that assumed otherwise: some 500'd with "please try again" (advice that can never
+    # work), and a string in `options` was ITERATED — "Yes/No" became six options, one per
+    # character, stored silently. Agent QA findings, 2026-08-19.
+    for field in ("name", "description"):
+        if field in body and body[field] is not None and not isinstance(body[field], str):
+            raise HTTPException(400, "%s must be text." % field.capitalize())
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Your pulse needs a name.")
     if len(name) > 120:
-        raise HTTPException(400, "Keep the survey name under 120 characters.")
+        raise HTTPException(400, "Keep the pulse name under 120 characters.")
     description = (body.get("description") or "").strip()
     if len(description) > 280:
         raise HTTPException(400, "Keep the description under 280 characters.")
     qids = body.get("question_ids") or []
     new_qs = body.get("new_questions") or []
+    if not isinstance(qids, list):
+        raise HTTPException(400, "question_ids must be a list of metric ids.")
+    if not isinstance(new_qs, list):
+        raise HTTPException(400, "new_questions must be a list of questions.")
+    for nq in new_qs:
+        if not isinstance(nq, dict):
+            raise HTTPException(400, "Each question must be an object with a type and text.")
+        opts = nq.get("options")
+        if opts is not None and not isinstance(opts, list):
+            raise HTTPException(400, "“%s”: answer options must be a list, like "
+                                     "[\"Yes\", \"No\"]." % str(nq.get("text") or "")[:60])
+        for o in (opts or []):
+            if not isinstance(o, (str, dict)):
+                raise HTTPException(400, "“%s”: each answer option must be text."
+                                         % str(nq.get("text") or "")[:60])
+    if len(qids) + len(new_qs) > MAX_PULSE_QUESTIONS:
+        raise HTTPException(400, "A pulse can have up to %d questions — you have %d. Shorter "
+                                 "pulses get far more responses, and the report needs them."
+                                 % (MAX_PULSE_QUESTIONS, len(qids) + len(new_qs)))
     if not qids and not new_qs:
-        raise HTTPException(400, "Add at least one question.")
+        # On PUT this fires when the caller sent a partial edit — a rename with no
+        # questions. The old text ("Add at least one question.") said the opposite of the
+        # truth on a draft that already had six, and gave no clue that an edit must resend
+        # the whole set (agent QA finding, 2026-08-19).
+        raise HTTPException(400, "Send the pulse's full question list — an edit replaces "
+                                 "every question, so a change to just the name still needs "
+                                 "the questions with it.")
     # the full new-question validation (types, options, lengths) lives in
     # pulses._assemble_questions and runs at create/update — surface its message
     try:
         pulses_mod.validate_new_questions(new_qs)
     except ValueError as e:
         raise HTTPException(400, str(e))
+    if body.get("closes_at") is not None and not isinstance(body.get("closes_at"), str):
+        raise HTTPException(400, "Close date must be text like 2026-10-31.")
     closes_at = (body.get("closes_at") or "").strip() or None
     if closes_at is not None:
         parsed, date_only = None, False
@@ -7995,6 +8047,9 @@ def _parse_pulse_body(body):
             parsed = parsed.replace(hour=23, minute=59, second=59)   # a date closes at end of day
         if parsed <= datetime.utcnow():
             raise HTTPException(400, "The close date needs to be in the future.")
+        if parsed > datetime.utcnow() + timedelta(days=31 * MAX_CLOSE_MONTHS):
+            raise HTTPException(400, "Close the pulse within %d months — a survey that runs "
+                                     "for years never reports." % MAX_CLOSE_MONTHS)
         closes_at = parsed.strftime("%Y-%m-%d %H:%M:%S")   # store ISO, never free text
     return name, description, qids, new_qs, closes_at
 
@@ -8002,17 +8057,22 @@ def _parse_pulse_body(body):
 @app.get("/api/org/pulses")
 async def org_pulses_list(request: Request):
     user, org = require_admin(request)
-    return {"pulses": pulses_mod.org_pulses(org["org_id"], get_conn()),
+    conn = get_conn()
+    return {"pulses": pulses_mod.org_pulses(org["org_id"], conn),
             "payments_enabled": payments_mod.is_configured(),
             "payments_mode": payments_mod.mode(),
-            "default_fee_pence": PULSE_LAUNCH_FEE_PENCE}
+            "credits": credits_mod.summary(org["org_id"], conn),
+            "launch_cost": credits_mod.LAUNCH_COST}
 
 
 @app.get("/api/org/pulses/{pid}")
 async def org_pulse_detail(pid: str, request: Request):
     user, org = require_admin(request)
     conn = get_conn()
-    return _org_pulse_detail(conn, _owned_pulse(conn, pid, org))
+    d = _org_pulse_detail(conn, _owned_pulse(conn, pid, org))
+    d["credits"] = credits_mod.summary(org["org_id"], conn)
+    d["launch_cost"] = credits_mod.LAUNCH_COST
+    return d
 
 
 @app.post("/api/org/pulses")
@@ -8031,8 +8091,17 @@ async def org_pulse_create(request: Request):
 async def org_pulse_update(pid: str, request: Request):
     user, org = require_admin(request)
     conn = get_conn()
-    _owned_pulse(conn, pid, org)
-    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await _json(request))
+    existing = _owned_pulse(conn, pid, org)
+    body = await _json(request)
+    name, desc, qids, new_qs, closes_at = _parse_pulse_body(body)
+    # An edit replaces the question set — that is the contract. But a field the caller did
+    # not MENTION was being erased too: a PUT of name + questions silently wiped the
+    # description and the close date, and the member never found out (agent QA finding,
+    # 2026-08-19). Absent means unchanged; present-but-empty still clears.
+    if "description" not in body:
+        desc = existing["description"] or ""
+    if "closes_at" not in body:
+        closes_at = existing["closes_at"]
     try:
         pulses_mod.update_pulse_draft(pid, org["org_id"], name, desc, qids, new_qs, closes_at, conn)
     except (ValueError, KeyError) as e:
@@ -8061,7 +8130,31 @@ async def org_pulse_submit_review(pid: str, request: Request):
         pulses_mod.submit_for_review(pid, org["org_id"], conn)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return {"ok": True}
+    # echo the state and what happens next — a bare {"ok": true} left the caller having to
+    # re-GET to discover it had moved at all (agent QA finding, 2026-08-19)
+    return {"ok": True, "launch_status": "in_review",
+            "message": "Sent to lumi for review — we usually come back within a couple of "
+                       "working days. Your draft is locked while we look at it."}
+
+
+@app.post("/api/org/pulses/{pid}/withdraw")
+async def org_pulse_withdraw(pid: str, request: Request):
+    """Take a pulse back out of review, into your own hands again.
+
+    Submitting used to be a one-way door: a typo spotted thirty seconds later, or a pulse
+    sent by mistake, was stuck in the member's list for good with no self-service way out
+    (agent QA finding, 2026-08-19). Only from in_review — once staff have approved it there
+    is a decision to respect, and once it is live there are respondents."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    p = _owned_pulse(conn, pid, org)
+    if p["launch_status"] != "in_review":
+        raise HTTPException(400, "Only a pulse that's with lumi for review can be withdrawn.")
+    conn.execute("UPDATE pulses SET launch_status='building', review_notes=NULL "
+                 "WHERE pulse_id=?", (pid,))
+    conn.commit()
+    return {"ok": True, "launch_status": "building",
+            "message": "Withdrawn — it's your draft again. Send it back whenever you're ready."}
 
 
 @app.post("/api/org/pulses/{pid}/checkout")
@@ -8078,12 +8171,19 @@ async def org_pulse_checkout(pid: str, request: Request):
     p = _owned_pulse(conn, pid, org)
     if p["launch_status"] != "approved":
         raise HTTPException(400, "This pulse isn't approved for launch yet.")
-    # explicit 0 = staff-waived fee; only an UNSET fee falls back to the default
-    fee = p["launch_fee_pence"] if p["launch_fee_pence"] is not None else PULSE_LAUNCH_FEE_PENCE
-    oid = pulses_mod.create_launch_order(pid, org["org_id"], fee, created_by=user["user_id"], conn=conn)
-    return {"ok": True, "mode": "invoice", "order_id": oid, "amount_pence": fee,
-            "message": "Launch requested — lumi will invoice you, and your pulse opens "
-                       "to the community as soon as it's confirmed."}
+    # Credits replaced the per-pulse launch fee (David 2026-08-19). Checked here so the
+    # member is told BEFORE they commit, and again at confirm-launch because two pulses can
+    # be requested against one credit.
+    bal = credits_mod.balance(org["org_id"], conn)
+    if bal < credits_mod.LAUNCH_COST:
+        raise HTTPException(402, "You have no pulse credits left. Contact lumi to buy more "
+                                 "and we'll invoice you — your draft stays exactly as it is.")
+    # the order row is the launch-request record; it costs nothing now that credits pay.
+    oid = pulses_mod.create_launch_order(pid, org["org_id"], 0, created_by=user["user_id"], conn=conn)
+    return {"ok": True, "mode": "credit", "order_id": oid, "amount_pence": 0,
+            "credits_balance": bal, "credits_after": bal - credits_mod.LAUNCH_COST,
+            "message": "Launch requested — your pulse opens to the community as soon as "
+                       "lumi confirms it, and one credit is used when it does."}
 
 
 # ----- staff: review + confirm self-service launches -------------------------
@@ -8092,7 +8192,7 @@ async def admin_pulse_reviews(request: Request):
     require_platform_admin(request)
     return {"pulses": pulses_mod.review_queue(get_conn()),
             "payments_mode": payments_mod.mode(),
-            "default_fee_pence": PULSE_LAUNCH_FEE_PENCE}
+            "launch_cost_credits": credits_mod.LAUNCH_COST}
 
 
 @app.post("/api/admin/pulses/{pid}/review")
@@ -8101,22 +8201,15 @@ async def admin_pulse_review(pid: str, request: Request):
     body = await _json(request)
     decision = body.get("decision")
     notes = (body.get("notes") or "").strip()
-    fee = body.get("fee_pence")
-    if fee in (None, ""):
-        fee = PULSE_LAUNCH_FEE_PENCE if decision == "approve" else None
-    elif decision == "approve":
-        try:
-            fee = int(fee)
-        except (TypeError, ValueError):
-            raise HTTPException(400, "fee_pence must be a whole number of pence")
-        if fee < 0:
-            raise HTTPException(400, "fee_pence cannot be negative")
+    # No fee to set any more — a pulse costs the member one credit, and approving is a
+    # quality decision, not a pricing one (David 2026-08-19). fee_pence in the body is
+    # accepted and ignored so an older client cannot 400 here.
+    fee = 0 if decision == "approve" else None
     try:
         pulses_mod.review_pulse(pid, decision, staff["user_id"], notes=notes, fee_pence=fee, conn=get_conn())
     except ValueError as e:
         raise HTTPException(400, str(e))
-    _audit(staff, "pulse.review", "pulse", pid,
-           {"decision": decision, "fee_pence": fee if decision == "approve" else None})
+    _audit(staff, "pulse.review", "pulse", pid, {"decision": decision})
     return {"ok": True}
 
 
@@ -8133,16 +8226,26 @@ async def admin_pulse_confirm_launch(pid: str, request: Request):
         raise HTTPException(404, "Unknown pulse")
     if not p["owner_org_id"] or p["launch_status"] not in ("approved", "paid"):
         raise HTTPException(400, "Only an approved self-service pulse can be confirmed.")
-    # explicit 0 = staff-waived fee; only an UNSET fee falls back to the default
-    fee = p["launch_fee_pence"] if p["launch_fee_pence"] is not None else PULSE_LAUNCH_FEE_PENCE
+    # Credits replaced the fee, so a confirmed launch costs one credit, not an invoice.
+    # Spent HERE — at the moment the pulse actually opens — and never refunded (David
+    # 2026-08-19), so nothing is lost to an abandoned draft or a rejected review.
+    try:
+        credits_mod.spend_for_launch(p["owner_org_id"], pid, conn,
+                                     actor_user_id=staff["user_id"])
+    except credits_mod.InsufficientCredits as e:
+        raise HTTPException(402, "This organisation has %d pulse credits — launching needs "
+                                 "%d. Grant credits on their organisation page first."
+                                 % (e.balance, e.needed))
     o = pulses_mod.latest_order(pid, conn)
     oid = (o["order_id"] if (o and o["status"] != "paid")
-           else pulses_mod.create_launch_order(pid, p["owner_org_id"], fee, created_by=staff["user_id"], conn=conn))
-    pulses_mod.mark_order_paid(oid, payment_intent="staff-confirmed", conn=conn)
-    # the £-consequential staff action: confirming the invoice as settled.
+           else pulses_mod.create_launch_order(pid, p["owner_org_id"], 0, created_by=staff["user_id"], conn=conn))
+    pulses_mod.mark_order_paid(oid, payment_intent="credit", conn=conn)
+    # the consequential staff action: spending the member's credit and opening the pulse.
     _audit(staff, "pulse.confirm_launch", "pulse", pid,
-           {"order_id": oid, "fee_pence": fee})
-    return {"ok": True, "pulse_id": pid}
+           {"order_id": oid, "paid_with": "credit",
+            "credits_after": credits_mod.balance(p["owner_org_id"], conn)})
+    return {"ok": True, "pulse_id": pid,
+            "credits_after": credits_mod.balance(p["owner_org_id"], conn)}
 
 
 # ----- module 4: create metric (author -> backlog -> publish live) -----------
@@ -8684,6 +8787,9 @@ async def admin_org_detail(org_id: str, request: Request):
             "deactivated_reason": o["deactivated_reason"],
             "lifecycle": _org_lifecycle(conn, o),
         },
+        "credits": credits_mod.summary(org_id, conn),
+        "credit_ledger": credits_mod.ledger(org_id, conn, limit=50),
+        "launch_cost": credits_mod.LAUNCH_COST,
         "users": users, "terms": terms, "counts": counts,
         "strategy": dict(strat) if strat else None,
         "invites": invites,
@@ -8882,6 +8988,58 @@ async def admin_config(request: Request):
 
 
 # ----- billing: the pulse-launch order ledger ---------------------------------
+# ----- pulse credits: the backoffice control (David 2026-08-19) ---------------
+@app.get("/api/admin/orgs/{org_id}/credits")
+async def admin_org_credits(org_id: str, request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    return {"org_id": org_id,
+            "summary": credits_mod.summary(org_id, conn),
+            "ledger": credits_mod.ledger(org_id, conn),
+            "launch_cost": credits_mod.LAUNCH_COST}
+
+
+@app.post("/api/admin/orgs/{org_id}/credits")
+async def admin_org_credits_adjust(org_id: str, request: Request):
+    """Grant or deduct, always with a reason. There is no 'set the balance to N' — a
+    balance is the sum of its movements, so overwriting it would erase the answer to
+    'why does this organisation have this many?'."""
+    staff = require_platform_admin(request)
+    body = await _json(request)
+    try:
+        delta = int(body.get("delta"))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "How many credits? Give a whole number — negative to deduct.")
+    if delta == 0:
+        raise HTTPException(400, "Nothing to record — use a positive or negative number.")
+    if abs(delta) > 1000:
+        raise HTTPException(400, "That looks like a slip — 1000 credits is the single-entry limit.")
+    reason = (body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(400, "Add a reason — it's what makes the ledger worth having.")
+    if len(reason) > 200:
+        raise HTTPException(400, "Keep the reason under 200 characters.")
+    if not conn_has_org(org_id):
+        raise HTTPException(404, "Unknown organisation")
+    conn = get_conn()
+    kind = "purchase" if delta > 0 and body.get("kind") == "purchase" else "adjustment"
+    try:
+        credits_mod.adjust(org_id, delta, reason, staff["user_id"], conn, kind=kind)
+    except credits_mod.InsufficientCredits as e:
+        raise HTTPException(400, "They only have %d credit(s) — you can't deduct %d."
+                                 % (e.balance, e.needed))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    conn.commit()
+    _audit(staff, "credits.adjust", "org", org_id, {"delta": delta, "reason": reason, "kind": kind})
+    return {"ok": True, "summary": credits_mod.summary(org_id, conn),
+            "ledger": credits_mod.ledger(org_id, conn)}
+
+
+def conn_has_org(org_id):
+    return get_conn().execute("SELECT 1 FROM orgs WHERE org_id=?", (org_id,)).fetchone() is not None
+
+
 @app.get("/api/admin/orders")
 async def admin_orders(request: Request):
     require_platform_admin(request)

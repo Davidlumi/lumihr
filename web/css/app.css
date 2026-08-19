@@ -5655,3 +5655,26 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .team-state-on { background: var(--favourable-tint); color: var(--favourable-ink); }
 .team-state-off { background: var(--unfavourable-tint); color: var(--unfavourable-ink); cursor: help; }
 .team-state-pending { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+
+/* ===== Pulse credits (David 2026-08-19) =====================================
+   One credit launches one pulse. The backoffice panel and its ledger, plus the
+   member-side balance chip and the zero-credit wall. Deliberately quiet: a
+   credit balance is an operational fact, not a headline. */
+.credit-panel { padding: var(--s4); margin-bottom: var(--s3); }
+.credit-balance { display: flex; align-items: baseline; gap: var(--s2); }
+.credit-balance .num { font-size: var(--fs-metric); line-height: 1; }
+.credit-balance .credit-zero { color: var(--unfavourable-ink); }
+.credit-meta { margin-top: var(--s1); }
+.credit-form { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: flex-end; margin-top: var(--s3); }
+.credit-field { display: flex; flex-direction: column; gap: 2px; }
+.credit-field.grow { flex: 1 1 18rem; min-width: 0; }
+.credit-field .input { min-width: 0; }
+.credit-hint { margin-top: var(--s2); }
+.credit-ledger .credit-up { color: var(--favourable-ink); }
+.credit-ledger .credit-down { color: var(--unfavourable-ink); }
+td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
+
+/* member side */
+.pulse-head-stat.pulse-credits .num { color: var(--blue); }
+.pulse-head-stat.pulse-credits.none .num { color: var(--unfavourable-ink); }
+.pulse-credit-wall { margin: var(--s3) 0 var(--s2); }

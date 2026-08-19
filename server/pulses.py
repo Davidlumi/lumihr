@@ -29,6 +29,7 @@ console remains unbuilt and flagged (DECISIONS.md D2).
 """
 import json
 import re
+import unicodedata
 import uuid
 from datetime import datetime
 
@@ -49,19 +50,70 @@ def _now():
 PULSE_NEW_TYPES = ("yes_no", "single_select", "multi_select", "numeric")
 
 
+# What a number on an authored question MEANS. Without one, a pulse asking "by what
+# percentage does headcount rise?" reported a cohort median of "4.8" — 4.8 what? The engine
+# already formats by unit_type (_fmt_num); authored questions just never set one (agent QA
+# finding, 2026-08-19).
+#
+# TWO CALLERS, one contract. The builder UI sends the full triple it has always sent
+# (unit_type="currency", unit="GBP"); an API author sends a friendly unit ("%", "days") and
+# nothing else. Whitelisting only the friendly words would have rejected the builder's own
+# "GBP" and every custom label it offers — so unit_type is trusted when given and INFERRED
+# when it is not, and the unit string itself is free text with a length bound.
+PULSE_UNIT_TYPES = ("percentage", "currency", "none")
+
+
+def _infer_unit_type(unit):
+    u = (unit or "").strip().lower()
+    if u in ("%", "percent", "percentage", "pct"):
+        return "percentage"
+    if u in ("£", "gbp", "gbp£", "pounds"):
+        return "currency"
+    return "none"
+
+
 def validate_new_questions(new_questions):
     """Guardrails on authored pulse questions — shared by the API body parse and
     the assembly step so a broken survey (one option, a delimiter-breaking label,
     duplicates, an over-long question) can never reach review or launch. Mirrors
     the core metric validator. Raises ValueError with a member-facing message."""
+    seen_text = set()
     for nq in (new_questions or []):
         if nq.get("type") not in PULSE_NEW_TYPES:
-            raise ValueError("unsupported question type: %s" % nq.get("type"))
+            raise ValueError("“%s” isn't a question type we support. Use one of: %s."
+                             % (nq.get("type"), ", ".join(PULSE_NEW_TYPES)))
         text = (nq.get("text") or "").strip()
         if not text:
-            raise ValueError("every question needs text")
+            raise ValueError("Every question needs some text.")
         if len(text) > 200:
-            raise ValueError("keep each question under 200 characters")
+            raise ValueError("Keep each question to 200 characters or fewer.")
+        # the same question twice splits its own results across two ids and shows
+        # respondents a duplicate — it quietly damages the data the member paid for
+        if text.lower() in seen_text:
+            raise ValueError("“%s” appears twice — every question in a pulse must be "
+                             "different." % text[:60])
+        seen_text.add(text.lower())
+        if nq["type"] == "numeric":
+            u = nq.get("unit")
+            if isinstance(u, dict):
+                u = u.get("symbol") or u.get("display_name") or ""   # the builder's block shape
+            if u is not None and not isinstance(u, str):
+                raise ValueError("“%s”: the unit must be text, like \"%%\" or \"days\"."
+                                 % text[:60])
+            if len(((u or "").strip())) > 16:
+                raise ValueError("“%s”: keep the unit to 16 characters or fewer." % text[:60])
+            ut = (nq.get("unit_type") or "").strip()
+            if ut and ut not in PULSE_UNIT_TYPES:
+                raise ValueError("“%s”: %r isn't a unit type. Use one of: %s."
+                                 % (text[:60], ut, ", ".join(PULSE_UNIT_TYPES)))
+        if nq["type"] == "numeric" and (nq.get("options") or []):
+            # numeric renders as a number box, so options ride along invisibly. Every
+            # other type validates its options strictly; this one used to accept and
+            # store whatever it was given (agent QA finding, 2026-08-19).
+            raise ValueError("“%s” asks for a number, so it can't have answer options — "
+                             "remove them, or change the type." % text[:60])
+        if nq["type"] == "yes_no" and not (nq.get("options") or []):
+            nq["options"] = ["Yes", "No"]        # they are Yes and No by definition
         if nq["type"] in ("yes_no", "single_select", "multi_select"):
             # options may arrive as dicts ({code,label}, the builder UI's shape) OR bare
             # strings (API authors) — both are valid input; a string must never 500
@@ -70,18 +122,32 @@ def validate_new_questions(new_questions):
             labels = [((o.get("label") or "") if isinstance(o, dict) else
                        (o if isinstance(o, str) else "")).strip()
                       for o in (nq.get("options") or [])]
+            given = len(nq.get("options") or [])
             labels = [l for l in labels if l]
+            # a blank option used to be silently dropped and then reported as "needs at
+            # least two options", which sent the member off to ADD one instead of filling
+            # in the empty one they had already typed
+            if given > len(labels):
+                raise ValueError("“%s” has %d blank answer option%s — fill %s in or remove "
+                                 "%s." % (text[:60], given - len(labels),
+                                          "" if given - len(labels) == 1 else "s",
+                                          "it" if given - len(labels) == 1 else "them",
+                                          "it" if given - len(labels) == 1 else "them"))
             if len(labels) < 2:
-                raise ValueError("“%s” needs at least two answer options" % text[:40])
+                raise ValueError("“%s” needs at least two answer options." % text[:60])
             if nq["type"] == "yes_no" and len(labels) != 2:
-                raise ValueError("a Yes/No question needs exactly two options")
+                raise ValueError("“%s” is a Yes/No question, so it needs exactly two "
+                                 "options." % text[:60])
             for l in labels:
                 if ";" in l or "," in l:
-                    raise ValueError("answer options can't contain ';' or ',' (delimiter-safe storage)")
+                    raise ValueError("“%s”: answer options can't contain a semicolon or a "
+                                     "comma — they separate stored answers." % text[:60])
                 if len(l) > 80:
-                    raise ValueError("keep each answer option under 80 characters")
+                    raise ValueError("“%s”: keep each answer option to 80 characters or fewer."
+                                     % text[:60])
             if len({l.lower() for l in labels}) != len(labels):
-                raise ValueError("answer options must be distinct")
+                raise ValueError("“%s” has the same answer option twice — each one must be "
+                                 "different." % text[:60])
 
 
 def _norm_options(opts):
@@ -99,7 +165,9 @@ def _norm_options(opts):
             continue   # non-option garbage (validation already guaranteed >= 2 real labels)
         code = (o.get("code") or "").strip()
         if not code:
-            code = re.sub(r"[^A-Z0-9]+", "_", label.upper()).strip("_") or ("OPT%d" % i)
+            folded = unicodedata.normalize("NFKD", label.upper())
+            folded = "".join(c for c in folded if not unicodedata.combining(c))
+            code = re.sub(r"[^A-Z0-9]+", "_", folded).strip("_") or ("OPT%d" % i)
         base, k = code, 2
         while code in seen:
             code, k = "%s_%d" % (base, k), k + 1
@@ -109,6 +177,18 @@ def _norm_options(opts):
         out.append({**o, "code": code, "label": label,
                     "order": o.get("order", i + 1), "is_na": bool(o.get("is_na"))})
     return out
+
+
+def _u(nq):
+    """(unit, display, unit_type). Trusts an explicit unit_type (the builder always sends
+    one); infers it from the unit string for an API author who sent only "%" or "£"."""
+    u = nq.get("unit")
+    if isinstance(u, dict):
+        u = u.get("symbol") or u.get("display_name") or ""
+    u = (u or "").strip() or None
+    ut = (nq.get("unit_type") or "").strip() or _infer_unit_type(u)
+    disp = (nq.get("unit_display_name") or "").strip() or u
+    return (u, disp, ut)
 
 
 def _assemble_questions(question_ids, new_questions, conn):
@@ -130,9 +210,9 @@ def _assemble_questions(question_ids, new_questions, conn):
             "default_chart_type": "quartile_band" if nq["type"] == "numeric" else "bar",
             "data_display_type": "mean" if nq["type"] == "numeric" else "percentage_distribution",
             "polarity": nq.get("polarity") or "neutral",
-            "unit": nq.get("unit"), "unit_display_name": nq.get("unit_display_name"),
-            "unit_type": nq.get("unit_type") or "none",
-            "currency_code": "GBP" if nq.get("unit_type") == "currency" else None,
+            "unit": _u(nq)[0], "unit_display_name": _u(nq)[1],
+            "unit_type": _u(nq)[2],
+            "currency_code": "GBP" if _u(nq)[2] == "currency" else None,
             "matrix_json": j(nq["matrix"]) if nq.get("matrix") else None,
             "matrix_rows_json": j(nq["matrix_rows"]) if nq.get("matrix_rows") else None,
             "lumi_tier": "Pulse",
@@ -248,6 +328,20 @@ def _require_owner(p, org_id):
         raise ValueError("This pulse belongs to another organisation.")
 
 
+_STATE_WORDS = {
+    "building": "still a draft",
+    "in_review": "with lumi for review",
+    "changes_requested": "waiting on your changes",
+    "approved": "approved and ready to launch",
+    "paid": "live to the community",
+    "rejected": "not approved",
+}
+
+
+def _state_words(ls):
+    return _STATE_WORDS.get(ls, ls or "in an unknown state")
+
+
 def update_pulse_draft(pulse_id, org_id, name, description, question_ids,
                        new_questions=None, closes_at=None, conn=None):
     """Edit an org-authored draft while it is still EDITABLE (building or
@@ -258,7 +352,8 @@ def update_pulse_draft(pulse_id, org_id, name, description, question_ids,
     p = get_pulse(pulse_id, conn)
     _require_owner(p, org_id)
     if p["launch_status"] not in _EDITABLE:
-        raise ValueError("This pulse can no longer be edited (it is %s)." % p["launch_status"])
+        raise ValueError("You can't edit this pulse — it's %s. Ask lumi to send it back "
+                         "if you need to change something." % _state_words(p["launch_status"]))
     qids = _assemble_questions(question_ids, new_questions, conn)
     conn.execute("UPDATE pulses SET name=?, description=?, closes_at=?, question_ids_json=? WHERE pulse_id=?",
                  (name, description, closes_at, j(qids), pulse_id))
@@ -274,7 +369,8 @@ def discard_pulse(pulse_id, org_id, conn=None):
     p = get_pulse(pulse_id, conn)
     _require_owner(p, org_id)
     if p["launch_status"] not in _EDITABLE:
-        raise ValueError("Only a draft that hasn't launched can be discarded.")
+        raise ValueError("You can't discard this pulse — it's %s. Only your own drafts "
+                         "can be discarded." % _state_words(p["launch_status"]))
     conn.execute("DELETE FROM pulse_responses WHERE pulse_id=?", (pulse_id,))
     conn.execute("DELETE FROM pulse_participants WHERE pulse_id=?", (pulse_id,))
     conn.execute("DELETE FROM pulse_launch_orders WHERE pulse_id=?", (pulse_id,))
@@ -288,9 +384,17 @@ def submit_for_review(pulse_id, org_id, conn=None):
     p = get_pulse(pulse_id, conn)
     _require_owner(p, org_id)
     if p["launch_status"] not in _EDITABLE:
-        raise ValueError("This pulse isn't ready to submit (it is %s)." % p["launch_status"])
+        raise ValueError("This pulse is already %s, so there's nothing to send."
+                         % _state_words(p["launch_status"]))
     if not uj(p["question_ids_json"], []):
-        raise ValueError("Add at least one question before submitting for review.")
+        raise ValueError("Add at least one question before sending this for review.")
+    # A pulse with no close date never closes and never reports. Create-time validation
+    # rejected a date in the PAST but never required the field, and a PUT that omitted it
+    # used to clear it — so a pulse could reach review with nothing to stop it running for
+    # ever (agent QA finding, 2026-08-19).
+    if not (p["closes_at"] or "").strip():
+        raise ValueError("Set a close date before sending this for review — a pulse with no "
+                         "closing date never produces a report.")
     conn.execute("UPDATE pulses SET launch_status='in_review', review_notes=NULL WHERE pulse_id=?", (pulse_id,))
     conn.commit()
 
@@ -457,8 +561,21 @@ def save_response(pulse_id, org_id, qid, row_id, value, conn=None):
     if not conn.execute("SELECT 1 FROM pulse_participants WHERE pulse_id=? AND org_id=?",
                         (pulse_id, org_id)).fetchone():
         raise ValueError("Join the pulse before answering.")
-    if qid not in pulse_questions(p):
+    qs_now = pulse_questions(p)
+    if qid not in qs_now:
         raise ValueError("That question isn't part of this pulse.")
+    # "None of these" is exclusive. The builder UI enforces that when you tick boxes, but
+    # the enforcement was CLIENT-SIDE ONLY — the API happily stored "None of these" next to
+    # six other options, and the report then showed 64% saying they pay nothing while also
+    # paying premiums. Found by seeding a cohort through the API, 2026-08-19.
+    q_now = qs_now[qid]
+    if getattr(q_now, "type", None) == "multi_select" and value:
+        picked = [t.strip() for t in str(value).split(";") if t.strip()]
+        nones = {(o.get("label") or "") for o in (getattr(q_now, "options", None) or [])
+                 if (o.get("label") or "").strip().lower().startswith("none")}
+        if len(picked) > 1 and nones.intersection(picked):
+            raise ValueError("“%s” can't be chosen alongside another answer — it means none "
+                             "of them apply." % sorted(nones.intersection(picked))[0])
     if value in (None, ""):
         conn.execute("DELETE FROM pulse_responses WHERE pulse_id=? AND org_id=? AND question_id=? AND matrix_row_id=?",
                      (pulse_id, org_id, qid, row_id or ""))
@@ -568,8 +685,8 @@ def pulse_narrative_deterministic(report):
     if shown == 0:
         summary += "Every question is still below the 5-organisation floor, so no figures are shown yet."
         return {"summary": summary, "key_findings": [], "_fallback": True}
-    summary += ("Results below are the whole-cohort view across %d question%s%s, each held to the same "
-                "5-organisation suppression as the core benchmark." %
+    summary += ("Results below are the whole cohort across %d question%s%s. As on the core "
+                "benchmark, nothing is shown where fewer than 5 organisations answered." %
                 (shown, "" if shown == 1 else "s",
                  "" if shown == total else " of %d" % total))
     findings = []
@@ -578,12 +695,15 @@ def pulse_narrative_deterministic(report):
         opts = blk.get("options") or []
         if opts:
             top = max(opts, key=lambda o: o.get("pct", 0))
-            findings.append("On “%s”, %s of the cohort chose “%s” (%s%%, n=%s)." %
-                            (q["title"], _pct_word(top.get("pct", 0)), top.get("label", ""),
-                             top.get("pct", 0), blk.get("n", n)))
+            # the question leads, then the answer — the old form opened every finding with
+            # "On “<the whole question>”, …", which read as five near-identical sentences
+            findings.append("%s — %s of the cohort answered “%s” (%s%%, n=%s)." %
+                            (q["title"].rstrip("?") + "?", _pct_word(top.get("pct", 0)),
+                             top.get("label", ""), top.get("pct", 0), blk.get("n", n)))
         elif blk.get("p50") is not None:
-            findings.append("On “%s”, the cohort median is %s (n=%s)." %
-                            (q["title"], _fmt_num(blk["p50"], q.get("unit")), blk.get("n", n)))
+            findings.append("%s — the cohort median is %s (n=%s)." %
+                            (q["title"].rstrip("?") + "?",
+                             _fmt_num(blk["p50"], q.get("unit")), blk.get("n", n)))
     return {"summary": summary, "key_findings": findings[:5],
             "_fallback": True}
 

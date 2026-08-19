@@ -527,7 +527,9 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
         else noneOpts.forEach(n => next.delete(n));
         next.add(label);
       }
-      save(q, "", Array.from(next).join("; "));
+      // ";" with no space is the bank's stored separator — every split site strips, so
+      // "; " counted correctly, but it made these the only rows an exact-match query missed
+      save(q, "", Array.from(next).join(";"));
     };
     return html`<div>
       ${q.options.map(o => html`

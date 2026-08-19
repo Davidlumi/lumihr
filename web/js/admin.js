@@ -83,7 +83,7 @@ function AdminOrgsTab() {
       <table class="data admin-table">
         <thead><tr>
           <th>Organisation</th><th>Lifecycle</th><th>Industry</th><th>Size</th><th>Source</th>
-          <th class="num">Users</th><th>Profile</th><th>Submitted</th><th>Insights</th>
+          <th class="num">Users</th><th class="num">Credits</th><th>Profile</th><th>Submitted</th><th>Insights</th>
         </tr></thead>
         <tbody>
           ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer", opacity: o.deactivated ? 0.55 : 1 }} onClick=${() => setSelected(o.org_id)}>
@@ -93,6 +93,7 @@ function AdminOrgsTab() {
             <td>${o.fte_band || "—"}</td>
             <td><span class="admin-pill">${o.source}</span></td>
             <td class="num">${o.n_users}</td>
+            <td class=${"num" + (o.credits ? "" : " credit-zero")} title=${o.credits ? "" : "No credits — can draft a pulse but not launch it"}>${o.credits}</td>
             <td>${o.classified ? "✓" : "—"}</td>
             <td>${o.submission_complete ? "✓" : "—"}</td>
             <td>${o.unlocked ? html`<span class="admin-yes">Unlocked</span>` : html`<span class="caption">Locked</span>`}</td>
@@ -314,6 +315,9 @@ function AdminOrgDetail({ orgId, onBack }) {
       </table>`}
       <${AdminOrgInvitePanel} orgId=${orgId} orgName=${o.name} invites=${d.invites || []} onChanged=${load} />
 
+      <${AdminOrgCreditsPanel} orgId=${orgId} orgName=${o.name} credits=${d.credits}
+        ledger=${d.credit_ledger} launchCost=${d.launch_cost} onChanged=${load} />
+
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Terms acceptances</b> <span class="caption">${d.terms.length} · the DPA evidence trail</span></div>
       ${!d.terms.length ? html`<div class="caption">None recorded.</div>` :
       html`<table class="data admin-table">
@@ -326,6 +330,80 @@ function AdminOrgDetail({ orgId, onBack }) {
         </tr>`)}</tbody>
       </table>`}
     </div>`;
+}
+
+/* Pulse credits (David 2026-08-19). One credit launches one pulse; every org joins
+   with one. There is deliberately NO "set balance to N" — a balance is the sum of its
+   movements, and overwriting it would erase the answer to "why do they have this many?",
+   which is the question this panel exists to answer when an invoice is disputed. */
+function AdminOrgCreditsPanel({ orgId, orgName, credits, ledger, launchCost, onChanged }) {
+  const [delta, setDelta] = useState("1");
+  const [reason, setReason] = useState("");
+  const [kind, setKind] = useState("purchase");
+  const [busy, setBusy] = useState(false);
+  const bal = (credits && credits.balance) || 0;
+  const n = parseInt(delta, 10);
+  const valid = !isNaN(n) && n !== 0 && reason.trim().length > 0;
+
+  const submit = async () => {
+    if (!valid || busy) return;
+    const verb = n > 0 ? "Add " + n : "Deduct " + Math.abs(n);
+    if (!window.confirm(verb + " credit" + (Math.abs(n) === 1 ? "" : "s") + " for " + (orgName || "this organisation") +
+        "?\n\nBalance " + bal + " → " + (bal + n) + "\nReason: " + reason.trim())) return;
+    setBusy(true);
+    try {
+      await api("/api/admin/orgs/" + orgId + "/credits",
+        { method: "POST", body: { delta: n, reason: reason.trim(), kind: n > 0 ? kind : "adjustment" } });
+      toast(n > 0 ? "Credits added." : "Credits deducted.");
+      setReason(""); setDelta("1");
+      onChanged();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const KIND_LABEL = { signup_grant: "joining credit", purchase: "purchase", adjustment: "adjustment", pulse_launch: "pulse launched" };
+  return html`
+    <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Pulse credits</b>
+      <span class="caption">${launchCost || 1} credit launches one pulse</span></div>
+
+    <div class="card credit-panel">
+      <div class="credit-balance">
+        <b class=${"num" + (bal ? "" : " credit-zero")}>${bal}</b>
+        <span class="caption">available${bal ? "" : " — they can draft, but not launch"}</span>
+      </div>
+      <div class="credit-meta caption">
+        ${(credits && credits.granted) || 0} granted · ${(credits && credits.spent) || 0} spent
+      </div>
+      <div class="credit-form">
+        <label class="credit-field"><span class="caption">Credits</span>
+          <input class="input" type="number" step="1" value=${delta} style=${{ width: "5.5rem" }}
+            onInput=${e => setDelta(e.target.value)} aria-label="Number of credits, negative to deduct" /></label>
+        ${n > 0 ? html`<label class="credit-field"><span class="caption">Kind</span>
+          <select class="input" value=${kind} onChange=${e => setKind(e.target.value)}>
+            <option value="purchase">Purchase (invoiced)</option>
+            <option value="adjustment">Goodwill / correction</option>
+          </select></label>` : null}
+        <label class="credit-field grow"><span class="caption">Reason</span>
+          <input class="input" value=${reason} maxlength="200" placeholder=${n < 0 ? "e.g. duplicate grant, corrected" : "e.g. invoice INV-1042, 5 credits"}
+            onInput=${e => setReason(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") submit(); }} /></label>
+        <button class="btn primary" disabled=${!valid || busy} onClick=${submit}>
+          ${busy ? html`<${Spinner} />` : (isNaN(n) || n >= 0 ? "Add credits" : "Deduct")}</button>
+      </div>
+      <div class="caption credit-hint">A reason is required — it is what the ledger is for.</div>
+    </div>
+
+    ${!(ledger || []).length ? html`<div class="caption">No movements yet.</div>` : html`
+      <table class="data admin-table credit-ledger">
+        <thead><tr><th>When</th><th>Movement</th><th class="num">Change</th><th class="num">Balance</th><th>Reason</th></tr></thead>
+        <tbody>${ledger.map(e => html`<tr key=${e.entry_id}>
+          <td class="caption">${(e.created_at || "").slice(0, 16)}</td>
+          <td><span class="admin-pill">${KIND_LABEL[e.kind] || e.kind}</span></td>
+          <td class=${"num " + (e.delta > 0 ? "credit-up" : "credit-down")}>${e.delta > 0 ? "+" : ""}${e.delta}</td>
+          <td class="num">${e.balance_after}</td>
+          <td class="caption">${e.reason || "—"}</td>
+        </tr>`)}</tbody>
+      </table>`}
+`;
 }
 
 /* Invite members into any org (staff may mint the founding Admin — the tenant
@@ -728,27 +806,21 @@ function AdminPulseReviewsTab() {
   useEffect(() => { load(); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load reviews" body=${err} />`;
   if (!data) return adminSpinner;
-  const defGbp = Math.round((data.default_fee_pence || 75000) / 100);
   const setA = (pid, patch) => setAct(a => ({ ...a, [pid]: { ...(a[pid] || {}), ...patch } }));
   const clearA = (pid) => setAct(s => { const n = { ...s }; delete n[pid]; return n; });
   const decide = async (pid, decision) => {
     const a = act[pid] || {};
+    // Approving is a quality decision, not a pricing one — the member pays with a credit
+    // when they request the launch (David 2026-08-19).
     const body = { decision, notes: a.notes || "" };
-    if (decision === "approve") {
-      const _fee = parseFloat(a.feeGbp != null ? a.feeGbp : defGbp);
-      // a cleared fee field parsed to NaN and shipped fee_pence: null (P3 sweep 2026-08-13)
-      if (!isFinite(_fee)) { toast("Enter a launch fee before approving.", "error"); return; }
-      body.fee_pence = Math.max(0, Math.round(_fee * 100));
-    }
     try { await api("/api/admin/pulses/" + pid + "/review", { method: "POST", body }); toast("Done."); clearA(pid); load(); }
     catch (e) { toast(e.message, "error"); }
   };
   const confirmLaunch = async (pid) => {
-    if (!window.confirm("Confirm this launch WITHOUT a card payment (invoiced / manual)? It opens the pulse to the whole community.")) return;
+    if (!window.confirm("Confirm this launch? It spends one of the author's pulse credits and opens the pulse to the whole community.")) return;
     try { await api("/api/admin/pulses/" + pid + "/confirm-launch", { method: "POST", body: {} }); toast("Launched."); load(); }
     catch (e) { toast(e.message, "error"); }
   };
-  const fee = (p) => "£" + ((p.launch_fee_pence || 0) / 100).toLocaleString("en-GB");
   const queue = data.pulses || [];
   const waiting = queue.filter(p => p.launch_status === "in_review");
   const rest = queue.filter(p => p.launch_status !== "in_review");
@@ -771,24 +843,21 @@ function AdminPulseReviewsTab() {
             <textarea class="ctl" rows=${2} placeholder="Note to the author (required to request changes or reject)…"
               value=${a.notes || ""} onInput=${e => setA(p.pulse_id, { notes: e.target.value })}></textarea>
             <div class="admin-actions" style=${{ marginTop: "var(--s2)", alignItems: "center", flexWrap: "wrap" }}>
-              <label class="caption" style=${{ display: "flex", alignItems: "center", gap: "var(--s1)", margin: 0 }}>Launch fee £
-                <input class="ctl" style=${{ width: "90px" }} type="number" min="0"
-                  value=${a.feeGbp != null ? a.feeGbp : defGbp} onInput=${e => setA(p.pulse_id, { feeGbp: e.target.value })} /></label>
               <button class="btn small primary" onClick=${() => decide(p.pulse_id, "approve")}>Approve</button>
               <button class="btn small" onClick=${needNote(() => decide(p.pulse_id, "changes"))}>Request changes</button>
               <button class="btn small quiet" onClick=${needNote(() => decide(p.pulse_id, "reject"))}>Reject</button>
             </div>
           </div>` : p.launch_status === "approved" ? html`
           <div class="admin-actions" style=${{ marginTop: "var(--s3)", alignItems: "center" }}>
-            <span class="caption">Approved · ${fee(p)} fee · awaiting payment</span>
-            <button class="btn small" onClick=${() => confirmLaunch(p.pulse_id)}>Confirm launch (no card)</button>
+            <span class="caption">Approved · the author has requested launch</span>
+            <button class="btn small" onClick=${() => confirmLaunch(p.pulse_id)}>Confirm launch (1 credit)</button>
           </div>` : p.launch_status === "paid" ? html`
-          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Live · ${p.n_submitted} response${p.n_submitted === 1 ? "" : "s"} · ${fee(p)} fee</div>` : ""}
+          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Live · ${p.n_submitted} response${p.n_submitted === 1 ? "" : "s"}</div>` : ""}
       </div>`;
   };
   return html`
     <div>
-      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>All payments by invoice — approve, invoice the author, then <b>Confirm launch</b> opens the pulse.</div>
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>Approve on quality, then <b>Confirm launch</b> spends one of the author's credits and opens the pulse. Sell credits from the organisation's page.</div>
       <div class="admin-toolbar"><b>Awaiting review</b> <span class="caption">${waiting.length}</span></div>
       ${waiting.length ? waiting.map(Card) : html`<${EmptyState} icon="list-checks" title="Nothing to review"
         body="Member-built pulses awaiting approval appear here." />`}

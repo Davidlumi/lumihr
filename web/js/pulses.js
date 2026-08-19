@@ -112,12 +112,20 @@ window.PulsesPage = function ({ me, tab }) {
     const ls = p.launch_status;
     const tone = ls === "paid" ? "pulse-chip" : "chip-neutral";   // one-blue: workflow states read neutral, the label + nextStep carry the meaning (David 2026-08-11)
     const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
-      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "ready to launch"   // was "awaiting invoice" (review QW6)
+      : ls === "changes_requested" ? "changes requested"
+      : ls === "approved" ? (((org && org.credits && org.credits.balance) || 0) < ((org && org.launch_cost) || 1)
+          ? "needs a credit" : "ready to launch")   // was "awaiting invoice" (review QW6)
       : ls === "rejected" ? "declined" : "draft";
     return html`<span class="chip ${tone}">${label}</span>`;
   };
+  // "ready to launch" is a lie when the balance is 0 — the row used to invite an action
+  // the member could not take, and only the wall on the detail page said why.
+  const credBal = (org && org.credits && org.credits.balance) || 0;
+  const credCost = (org && org.launch_cost) || 1;
   const nextStep = (p) => p.launch_status === "changes_requested" ? "Address lumi's notes"
-    : p.launch_status === "approved" ? "Request your launch" : null;
+    : p.launch_status === "approved"
+      ? (credBal < credCost ? "Needs a credit — contact lumi" : "Request your launch")
+      : null;
 
   const exploreView = () => {
     const open = [...data.pulses.filter(p => p.accepting)].sort((a, b) => (a.closes_at || "z") < (b.closes_at || "z") ? -1 : 1);
@@ -141,13 +149,13 @@ window.PulsesPage = function ({ me, tab }) {
     <article key=${p.pulse_id} class="card pulse-srow" role="button" tabindex="0" aria-label=${p.name + " — " + (p.launch_status || "draft")}
       onClick=${() => nav("/run-a-pulse/" + p.pulse_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/run-a-pulse/" + p.pulse_id); } }}>
       <div class="row spread"><b>${p.name}</b>${runChip(p)}</div>
-      <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
+      <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}</div>
       ${nextStep(p) ? html`<div class="pulse-action"><${Icon} name="info" size=${11} /> ${nextStep(p)}</div>` : null}</article>`;
 
   const howSteps = html`<div class="pulse-how">
     <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
     <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
-    <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? "from " + fmtFee(me.config.pulse_launch_fee_pence) + " (ex VAT), at approval" : "Pay once"} · opens to all members</span></div></div>
+    <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">One credit · opens to all members</span></div></div>
   </div>`;
 
   const runView = () => {
@@ -175,7 +183,7 @@ window.PulsesPage = function ({ me, tab }) {
         </div>
         <div class="pulse-grid">${pulses.map(orgRow)}</div>
         <div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} />
-          <span>Build → we review → you confirm the launch fee → it opens to the community.${!org.payments_enabled ? " A lumi admin confirms the launch." : ""}</span></div>`}`;
+          <span>Build → we review → you request the launch → it opens to the community. Launching uses one credit.</span></div>`}`;
   };
 
   const taken = !isAdmin && data ? data.pulses.filter(p => p.participated).length : 0;
@@ -189,6 +197,9 @@ window.PulsesPage = function ({ me, tab }) {
             : "Short, timely community deep-dives on reward — take part free to unlock each report."}</p>
         </div>
         ${!isAdmin && taken ? html`<div class="pulse-head-stat"><b class="num">${taken}</b><span class="caption">pulse${taken === 1 ? "" : "s"} taken</span></div>` : null}
+        ${isRun && org && org.credits ? html`<div class=${"pulse-head-stat pulse-credits" + (org.credits.balance ? "" : " none")}
+            title=${org.credits.balance ? "One credit launches one pulse" : "Contact lumi to add credits"}>
+          <b class="num">${org.credits.balance}</b><span class="caption">credit${org.credits.balance === 1 ? "" : "s"}</span></div>` : null}
       </div>
       ${isAdmin ? html`<div class="pulse-tabs" role="group" aria-label="Pulse views">
         <a href="#/pulse" class=${"pulse-tab" + (!isRun ? " on" : "")} aria-current=${!isRun ? "page" : undefined}>Explore</a>
@@ -376,7 +387,7 @@ function PulseReport({ report, pid, me }) {
       <div class="pulse-pdf-head" aria-hidden="true"><span class="logo">lumi<span>.</span></span> · Pulse report</div>
       <div class="card">
         <div class="qsec-head row spread">
-          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · ${report.floor}+ suppression · all participants, one view${genDate ? " · " + genDate : ""}</span></div>
+          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · every answer counted, nothing shown below ${report.floor} organisations${genDate ? " · " + genDate : ""}</span></div>
           <div class="row no-print" style=${{ gap: "var(--s2)" }}>
             <button class="btn small" onClick=${() => downloadPulseCsv(report)}><${Icon} name="download" size=${13} /> CSV</button>
             <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Print / save as PDF</button>
@@ -441,7 +452,7 @@ function PulseQuestionBlock({ q, pid, me }) {
                         search carries this one exception by name. */ ""}${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td>
                   <td class="num" style=${{ color: r.you != null && r.you !== "" ? "var(--blue-deep)" : "var(--ink-faint)", fontWeight: 600 }}>${r.you != null && r.you !== "" ? fmtValue(parseFloat(r.you), q.unit) : "—"}</td></tr>`)}
               </tbody></table></div>`}
-          <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}${q.you != null && q.you !== "" && q.type !== "matrix" ? " · your answer marked" : ""}</div>
+          <div class="caption num" style=${{ marginTop: "var(--s1)" }}>${blk.n} organisation${blk.n === 1 ? "" : "s"} answered${q.you != null && q.you !== "" && q.type !== "matrix" ? " · your answer marked" : ""}</div>
           ${me.features && me.features.pulse_ai && html`
             <div style=${{ marginTop: "var(--s2)" }}>
               ${!com ? html`<button class="btn small" onClick=${askAI}><${Icon} name="sparkle" size=${12} /> Commentary</button>` :
@@ -454,17 +465,20 @@ function PulseQuestionBlock({ q, pid, me }) {
     </div>`;
 }
 
-/* ========== SELF-SERVICE PULSE BUILDER + PAID LAUNCH (2026-06-22) ============
+/* ========== SELF-SERVICE PULSE BUILDER + CREDIT LAUNCH (2026-06-22) ==========
    An org Admin designs their own survey, submits it for lumi review, and once
-   approved pays a one-off launch fee that opens it to the whole community.
+   approved spends ONE CREDIT to open it to the whole community. Credits replaced
+   the per-pulse launch fee on 2026-08-19 (David): every organisation joins with
+   one, so the first pulse is free, and more are bought by contacting lumi and
+   invoiced offline. The credit is spent when the pulse actually opens, never on
+   a draft, and is not refunded.
    Same engine, same firewall, same give-to-get 5+-org report as every pulse. */
 
 const PULSE_BUILD_TYPES = ["yes_no", "single_select", "multi_select", "numeric"];
 const TYPE_LABEL = { yes_no: "Yes / No", single_select: "Pick one", multi_select: "Pick many", numeric: "A number" };
-const fmtFee = (pence) => "£" + ((pence || 0) / 100).toLocaleString("en-GB");
 const LAUNCH_STEPS = [
   { key: "building", label: "Build" }, { key: "in_review", label: "lumi review" },
-  { key: "approved", label: "Invoice" }, { key: "paid", label: "Live" },
+  { key: "approved", label: "Launch" }, { key: "paid", label: "Live" },
 ];
 function launchStepIndex(ls) {
   return { building: 0, changes_requested: 0, in_review: 1, approved: 2, paid: 3 }[ls] || 0;
@@ -742,13 +756,15 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
 function PulseLaunchPanel({ detail, pid, onChange }) {
   const ls = detail.launch_status;
   const [paying, setPaying] = useState(false);
+  const bal = (detail.credits && detail.credits.balance) || 0;
+  const cost = detail.launch_cost || 1;
   const pay = async () => {
     if (paying) return;
-    if (!window.confirm("Request the launch? lumi will invoice your organisation for the launch fee and open the pulse to the community once it's settled.")) return;
+    if (!window.confirm("Request the launch? This uses " + cost + " of your " + bal + " pulse credit" + (bal === 1 ? "" : "s") + ", and lumi opens it to the community on confirmation.")) return;
     setPaying(true);
     try {
       const r = await api("/api/org/pulses/" + pid + "/checkout", { method: "POST", body: {} });
-      toast(r.message || "Launch requested — lumi will invoice you and confirm shortly.", "info");
+      toast(r.message || "Launch requested — lumi will confirm shortly.", "info");
       onChange();
     } catch (e) { toast(e.message, "error"); }
     setPaying(false);
@@ -766,15 +782,25 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       <p class="caption" style=${{ margin: "var(--s1) auto 0", maxWidth: "44ch" }}>Review usually takes a couple of working days — we'll let you know when it's approved.</p>
     </div>
     ${QList()}`;
+  if (ls === "approved" && bal < cost) return html`
+    <div class="card pulse-launch" style=${{ marginTop: "var(--s3)" }}>
+      <div class="pulse-empty-ico"><${Icon} name="info" size=${24} /></div>
+      <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — you need a credit to launch</b>
+      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "42ch" }}>Your pulse is ready and stays exactly as it is. Launching takes ${cost} credit and you have none left.</p>
+      <div class="pulse-credit-wall">
+        <a class="btn primary" href=${"mailto:hello@lumihr.co.uk?subject=" + encodeURIComponent("More pulse credits — " + (detail.name || "pulse"))}>Contact lumi for credits</a>
+      </div>
+      <div class="caption">We'll invoice you and add them to your account.</div>
+    </div>
+    ${QList()}`;
   if (ls === "approved") return html`
     <div class="card pulse-launch" style=${{ marginTop: "var(--s3)" }}>
       <div class="pulse-empty-ico"><${Icon} name="check" size=${24} /></div>
       <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
-      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your pulse opens to the whole community on confirmation.</p>
-      <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
-      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced</div>
+      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Your pulse opens to the whole community as soon as lumi confirms it.</p>
+      <div class="pulse-fee">${cost} credit</div>
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>${bal} available${bal - cost === 0 ? " · your last one" : ""}</div>
       <button class="btn primary" disabled=${paying} onClick=${pay}>${paying ? html`<${Spinner} />` : "Request launch"}</button>
-      
     </div>
     ${QList()}`;
   if (ls === "paid") return html`
