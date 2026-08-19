@@ -571,7 +571,11 @@ function App() {
             count=${me.contribution && !me.contribution.insights_unlocked && me.contribution.core_pct != null
               ? Math.round(me.contribution.core_pct) + "%" : null} />
           <${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />
-          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
+          ${/* Team left the rail (2026-08-19, David: "move the team section to settings"). The
+                ROUTE stays — the table is a full CRUD console and the 2026-08-11 review keeps
+                those on their own routes — it is reached from Settings > Team access, and from
+                the Overview empty state's "Invite your team". Administration does not need a
+                permanent seat beside the daily surfaces. */ ""}
           <${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />
         </div>
         ${me.user.platform_admin && html`
@@ -1388,7 +1392,7 @@ const NAV_INDEX = [
   { label: "Board packs", route: "/boardpack", group: "Pages", kw: "board report export pdf pack briefing" },
   { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
   { label: "Reward strategy & plan", route: "/strategy", group: "Pages", kw: "objective market stance intent capture gaps plan actions roi levers document report pdf" },
-  { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
+  { label: "Team access", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues permissions access revoke remove admin contributor viewer who can see" },
   { label: "Settings", route: "/settings", group: "Pages", kw: "assumptions sharing notifications account" },
   { label: "Company profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
   { label: "How lumi works", route: "/how-lumi-works", group: "Help", kw: "help methodology co-op legal" },
