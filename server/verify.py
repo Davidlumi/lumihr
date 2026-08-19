@@ -409,6 +409,7 @@ def _cleanup():
             conn.execute("DELETE FROM %s WHERE org_id=?" % tbl, (oid,))
         conn.execute("DELETE FROM sessions WHERE user_id IN (SELECT user_id FROM users WHERE org_id=?)", (oid,))
         conn.execute("DELETE FROM users WHERE org_id=?", (oid,))
+        conn.execute("DELETE FROM credit_ledger WHERE org_id=?", (oid,))  # credit_ledger has an FK to orgs (David 2026-08-19) — clear it or this DELETE fails
         conn.execute("DELETE FROM orgs WHERE org_id=?", (oid,))
     # drop drafts created on the demo org during validation checks
     # P3: loud, not silent. The recorded defect was that an unresolvable demo org

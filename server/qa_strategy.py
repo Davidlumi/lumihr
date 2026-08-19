@@ -570,6 +570,10 @@ def _cleanup(probe_ids):
         conn.execute("DELETE FROM org_strategy WHERE org_id=?", (oid,))
         conn.execute("DELETE FROM sessions WHERE user_id IN (SELECT user_id FROM users WHERE org_id=?)", (oid,))
         conn.execute("DELETE FROM users WHERE org_id=?", (oid,))
+        # every real org now opens a credit ledger at creation (David 2026-08-19), and
+        # credit_ledger.org_id is a foreign key — without this the DELETE below fails and
+        # the probe orgs leak, which is exactly what this cleanup exists to prevent
+        conn.execute("DELETE FROM credit_ledger WHERE org_id=?", (oid,))
         conn.execute("DELETE FROM orgs WHERE org_id=?", (oid,))
     conn.commit()
     for oid in probe_ids:

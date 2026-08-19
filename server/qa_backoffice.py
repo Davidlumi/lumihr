@@ -441,6 +441,7 @@ try:
                   loc is not None and hashlib.sha256(loc["token"].encode()).hexdigest()[:12] == dig)
             # S3: remove the manufactured orphan; the net must read clean again
             raw.execute("DELETE FROM invites WHERE org_id=?", (ORPH,))
+            raw.execute("DELETE FROM credit_ledger WHERE org_id=?", (ORPH,))  # credit_ledger has an FK to orgs (David 2026-08-19) — clear it or this DELETE fails
             raw.execute("DELETE FROM orgs WHERE org_id=?", (ORPH,))
             raw.commit()
             rec2 = subprocess.run([sys.executable, "identity_recon.py"], cwd=SRV_DIR,

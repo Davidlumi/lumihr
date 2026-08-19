@@ -50,7 +50,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DB = os.environ.get("LUMI_DB") or os.path.join(ROOT, "lumi.db")
 GRACE_DAYS = 30
-RETAINED_TABLES = ("pulse_launch_orders", "admin_audit_log")   # stated, never quiet
+# stated, never quiet. credit_ledger joins them 2026-08-19: credits replaced the
+# per-pulse launch fee, so the ledger — not pulse_launch_orders — is now the record of
+# what a member was invoiced for, and it is retained on exactly the same footing.
+RETAINED_TABLES = ("pulse_launch_orders", "credit_ledger", "admin_audit_log")
 
 
 def conn_rw():

@@ -201,6 +201,7 @@ conn.execute("DELETE FROM core_changelog WHERE release_id=? OR (lane='emergency'
 conn.execute("UPDATE core_releases SET status='current' WHERE release_id=?", (prev_current,))
 conn.execute("UPDATE questions SET release_entered=? WHERE release_entered=?", (prev_current, TEST_REL))
 conn.execute("DELETE FROM core_backlog WHERE source_ref='qa-fixture-1'")
+conn.execute("DELETE FROM credit_ledger WHERE org_id='qa-sticky-org'")  # credit_ledger has an FK to orgs (David 2026-08-19) — clear it or this DELETE fails
 conn.execute("DELETE FROM orgs WHERE org_id='qa-sticky-org'")
 conn.commit()
 appmod.load_questions.cache_clear()

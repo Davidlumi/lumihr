@@ -289,6 +289,18 @@ CREATE TABLE IF NOT EXISTS signal_state (
 
 -- One row per detected org-level change. Two consumers: the in-app inbox
 -- (every user) and the email digest (opted-in users).
+CREATE TABLE IF NOT EXISTS credit_ledger (
+    entry_id      TEXT PRIMARY KEY,
+    org_id        TEXT NOT NULL REFERENCES orgs(org_id),
+    delta         INTEGER NOT NULL,          -- + granted, - spent. Never 0.
+    kind          TEXT NOT NULL,             -- signup_grant | purchase | adjustment | pulse_launch
+    reason        TEXT NOT NULL DEFAULT '',
+    pulse_id      TEXT,                      -- set on a pulse_launch spend
+    actor_user_id TEXT,                      -- the staff user who granted; null for automatic
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ix_credit_ledger_org ON credit_ledger(org_id, created_at);
+
 CREATE TABLE IF NOT EXISTS notification_events (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     org_id       TEXT NOT NULL REFERENCES orgs(org_id),
