@@ -1834,22 +1834,49 @@ async def pulse_commentary(pid: str, request: Request):
         "metric": entry["title"], "definition": q.definition or "",
         "cut_label": "the %s pulse cohort" % p["name"],
         "n": blk.get("n"), "n_real": blk.get("n_real", 0), "suppressed": bool(blk.get("suppressed")),
-        "polarity": q.polarity, "you": mine and mine[0], "percentile": None,
-        "stance": None,
+        # the generator reads "direction", not "polarity". Sending only polarity meant every
+        # pulse question missed the prevalence framing and fell through to generic filler
+        # ("The figures place you against the field"). A pulse question is a structural
+        # choice with no better/worse direction, so neutral is the right frame.
+        "direction": q.polarity or "neutral", "polarity": q.polarity,
+        "you": mine and mine[0], "percentile": None, "stance": None,
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
     }
     if blk.get("p50") is not None:
         payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
         payload["peer_p25_display"] = pos.fmt_value(blk["p25"], q.unit_block()) if blk.get("p25") is not None else None
         payload["peer_p75_display"] = pos.fmt_value(blk["p75"], q.unit_block()) if blk.get("p75") is not None else None
+        # place the member IN the cohort rather than printing their number beside a median.
+        # Without this the numeric commentary said "You answered 4.1" and stopped, leaving
+        # unanswered the one question the reader actually has.
+        vals = sorted(v for v in (blk.get("_values") or []) if isinstance(v, (int, float)))
+        try:
+            mine_num = float(mine[0]) if mine and mine[0] not in (None, "") else None
+        except (TypeError, ValueError):
+            mine_num = None
+        if mine_num is not None and vals:
+            payload["percentile"] = round(100.0 * sum(1 for v in vals if v <= mine_num) / len(vals))
     if blk.get("options"):
         top = max(blk["options"], key=lambda o: o.get("pct") or 0)
         payload["most_common"] = "\u201c%s\u201d" % top["label"]
         payload["most_common_share"] = top.get("pct")
         if mine and mine[0]:
-            m = next((o for o in blk["options"] if o["label"] == mine[0]), None)
-            payload["your_answer_peer_share"] = m and m.get("pct")
-            payload["you"] = "\u201c%s\u201d" % mine[0]
+            picked = [t.strip() for t in str(mine[0]).split(";") if t.strip()]
+            if len(picked) > 1:
+                # a multi-select answer is a SET. Reading back the raw "A;B" string was
+                # both ugly and uncomparable; name what they chose and, more usefully,
+                # the common practice they did NOT choose.
+                payload["you"] = ", ".join("\u201c%s\u201d" % t for t in picked)
+                missing = [o for o in blk["options"] if o["label"] not in picked
+                           and not str(o["label"]).lower().startswith("none")]
+                if missing:
+                    gap = max(missing, key=lambda o: o.get("pct") or 0)
+                    payload["most_common_not_chosen"] = "\u201c%s\u201d" % gap["label"]
+                    payload["most_common_not_chosen_share"] = gap.get("pct")
+            else:
+                m = next((o for o in blk["options"] if o["label"] == picked[0]), None)
+                payload["your_answer_peer_share"] = m and m.get("pct")
+                payload["you"] = "\u201c%s\u201d" % picked[0]
     _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     return {"parts": res["parts"], "source": res["source"], "cached": False,

@@ -1350,10 +1350,35 @@ def _deterministic_commentary(payload):
         elif mc is not None:
             compare = ("You answered %s. Across the %s organisations in %s, the most common answer is %s (%s%%)."
                        % (you, n, cutl, mc, mcs))
+        elif mc is None and pctl is not None:
+            # numeric, no options: a bare "you answered 4.1" next to a median leaves the
+            # reader to do the placing. Say where they actually sit (2026-08-19).
+            compare = ("You answered %s. That places you at or above about %d in 10 of the %s "
+                       "organisations in %s (P%d)." % (you, round(pctl / 10.0), n, cutl, round(pctl)))
+            if median:
+                compare += (" The cohort median is %s — shown to place you in the range, not as a "
+                            "target." % median)
         else:
             compare = "You answered %s (%s, n=%s)." % (you, cutl, n)
             if median:
                 compare += " For context, the peer median sits at %s — shown only to place you in the range, not as a target." % median
+        # a multi-select answer is a set, so "the most common answer" is a weak comparison;
+        # the practice most of the cohort uses and they don't is the actionable one.
+        gap, gap_share = payload.get("most_common_not_chosen"), payload.get("most_common_not_chosen_share")
+        _norm = lambda t: str(t or "").strip("“”\"' ").lower()
+        if gap and gap_share is not None:
+            if _norm(gap) == _norm(mc):
+                # the cohort's most common answer IS the one they skipped — say it once,
+                # as the gap, which is the half that tells them something
+                compare = compare.replace(
+                    "The most common answer is %s (%s%%)." % (mc, mcs),
+                    "The most widely used option you haven't selected is %s (%s%%)." % (gap, gap_share))
+                compare = compare.replace(
+                    "the most common answer is %s (%s%%)." % (mc, mcs),
+                    "the most widely used option you haven't selected is %s (%s%%)." % (gap, gap_share))
+            else:
+                compare += (" The most widely used option you haven't selected is %s (%s%%)."
+                            % (gap, gap_share))
         implications = (("This measure has no inherently better or worse direction, so being with the majority "
                          "mainly tells you your approach is conventional for organisations like yours — a "
                          "structural choice to weigh, not a competitive gap.") if same_as_most else

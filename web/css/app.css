@@ -5678,3 +5678,38 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 .pulse-head-stat.pulse-credits .num { color: var(--blue); }
 .pulse-head-stat.pulse-credits.none .num { color: var(--unfavourable-ink); }
 .pulse-credit-wall { margin: var(--s3) 0 var(--s2); }
+
+/* ===== Pulse report: definition between questions (David 2026-08-19) ==========
+   Every question sat in one card separated by a single --chart-grid hairline, so
+   at six or seven questions the charts melded into one continuous stripe with no
+   edge to tell you where an answer stopped and the next question began. A firmer
+   rule, real vertical rhythm, and a number that gives the eye a fixed left edge. */
+.pulse-report-doc .q-block { padding: var(--s5) 0 var(--s4); border-bottom: 0; }
+.pulse-report-doc .q-block + .q-block { border-top: 1px solid var(--border); }
+.pulse-report-doc .q-block:first-of-type { padding-top: var(--s3); }
+
+.prq-head { display: flex; align-items: baseline; gap: var(--s3); margin-bottom: var(--s3); }
+.prq-num {
+  flex: none; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .06em;
+  color: var(--blue); font-variant-numeric: tabular-nums; padding-top: 2px;
+}
+.prq-of { color: var(--ink-faint); font-weight: 400; }
+.prq-title {
+  margin: 0; font-size: var(--fs-card-title); font-weight: 600; line-height: 1.35;
+  letter-spacing: -.005em; text-wrap: balance;
+}
+/* the chart and its footnote hang off the same left edge as the title */
+.pulse-report-doc .q-block > div:not(.prq-head) { padding-left: calc(var(--s3) + 2.1rem); }
+@media (max-width: 700px) {
+  .pulse-report-doc .q-block > div:not(.prq-head) { padding-left: 0; }
+}
+@media print {
+  .pulse-report-doc .q-block + .q-block { border-top: 1px solid #ccc; }
+}
+
+/* Pulse commentary: the comparison leads, the caveats recede — they are identical on
+   every question, so at full weight a seven-question report reads the same paragraph
+   seven times. */
+.pcom-compare { margin: 0 0 var(--s2); font-weight: 500; }
+.pcom-implications { margin: 0 0 var(--s2); }
+.pcom-considerations { margin: 0; color: var(--ink-soft); font-size: var(--fs-caption); }
