@@ -3398,7 +3398,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                   centerWord=${chip} size=${216} stroke=${20} />
               </div>
               <div class="arc-caption num">
-                ${indicative ? html`<span class="arc-lean">indicative read</span>
+                ${/* the flag was raised and never explained — the reader is told to trust this
+                      less without being told why. */ ""}
+                ${indicative ? html`<span class="arc-lean" title=${"Fewer positioned metrics here than " + name + " normally carries, so this reads as a direction rather than a firm position."}>indicative read</span>
                   <span class="arc-caption-sep" aria-hidden="true">—</span>` : null}
                 <span><i class="arc-leg-dot di-fill-below" aria-hidden="true"></i><span class="arc-leg-fig">${posM.below}</span> below</span>
                 <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${posM.at}</span> on market</span>
@@ -3433,7 +3435,10 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                   rest are eligible metrics still waiting on data. Same disclosure SuperpowerPage
                   reconciliation is also reachable as the "no reading yet" filter. */ ""}
             ` :
-            html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this area is assessed on practice.</span>`}
+            // the old copy pointed at "the practice read", which Diff 4 (2026-07-14) removed
+            // from domain pages — it named a thing that is not on this page. Say what is
+            // true, and where the answer actually is.
+            html`<span class="caption cat-brief-span">No market position yet — too few of these benchmarks have a peer rate to place ${name} against the market. The metrics below still show where you stand one at a time.</span>`}
           ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
                 practice from analysis — the home bucket and the practice lens carry the
                 story; practice ROWS stay in the metric list below, tagged. */ ""}
@@ -3442,7 +3447,10 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               The left column is the stand block: ring, legend, scale. */ ""}
         <div class="cat-brief-body cat-brief-body-solo">
           <div class="cat-brief-drivers">
-            <div class="cat-brief-collab">What's driving it</div>
+            ${/* three gaps and one strength, always, by distance from the peer median — a
+                  fixed rule the page never stated, so the list read as a selection nobody
+                  could check. */ ""}
+            <div class="cat-brief-collab" title="The three widest gaps below the peer median, and your single biggest strength above it — ranked by distance from the median.">What's driving it</div>
             ${(hero.drivers || []).length ? (hero.drivers || []).map(d => html`
               <button key=${d.question_id + d.kind} type="button" class="cat-driver" onClick=${() => openMetric(d.question_id)}
                 title=${"Open " + d.label}>
