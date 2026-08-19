@@ -144,10 +144,21 @@ window.focusables = (el) => el ? [...el.querySelectorAll('button, input, textare
 // profile menu and notification bell). Outside-click + Escape close; Escape returns
 // focus to the wrap's trigger (its first button) so keyboard users aren't dropped to body.
 window.useMenuClose = function (ref, open, setOpen) {
+  // Escape used to focus "the wrap's FIRST button", which is not always the one that opened
+  // the menu. On the split Save control the first button is the star, so Escape landed there
+  // and the next Enter or Space silently UNSAVED the signal. Remember what actually had focus
+  // when the menu opened and give it back, falling back to the old behaviour if that element
+  // has since left the DOM.
+  const opener = useRef(null);
   useEffect(() => {
     if (!open) return;
+    opener.current = document.activeElement;
     const away = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const esc = e => { if (e.key === "Escape") { setOpen(false); const t = ref.current && ref.current.querySelector("button"); if (t) t.focus(); } };
+    const esc = e => { if (e.key === "Escape") { setOpen(false);
+      const back = opener.current;
+      const t = (back && back.focus && document.contains(back)) ? back
+                : (ref.current && ref.current.querySelector("button"));
+      if (t && t.focus) t.focus(); } };
     document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
