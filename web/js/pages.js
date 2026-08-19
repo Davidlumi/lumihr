@@ -2631,7 +2631,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             <span class="sfold-subgroup">
               ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
                 <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
-                  onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
+                  onClick=${() => setView({ kind: "folder", name: f })} title=${f}><${Icon} name="folder" size=${12} /> <span class="sfold-name">${f}</span> <b class="num">${cntFolder(f)}</b></button>
                 ${/* rename/delete used to appear only on the folder you were already inside, so
                       the controls were unreachable from the rail and their arrival shoved it
                       sideways. Always in the DOM now, revealed on hover, focus or when active. */ ""}

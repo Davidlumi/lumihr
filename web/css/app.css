@@ -4525,6 +4525,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-unread { display: inline-block; width: 7px; height: 7px; padding: 0; min-width: 0;
   margin-left: 5px; border-radius: 50%; background: var(--blue); font-size: 0; }
 .sfold-pill.on .sfold-unread { background: var(--navy); }
+/* Folder names are user-typed up to 40 characters, and four folders with one long name put
+   the rail on THREE rows at the page's real 1120px cap (children summing 1479 into 1120) —
+   which is what strands the lifecycle bins on a row of their own. Bounding the label fixes
+   the cause and leaves "bins pushed right, recessive" exactly as ruled. Full name in title. */
+.sfold-name { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* lifecycle bins pushed right, recessive (filing, not active triage) */
 .sfold-life { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
 /* the bins are filing, not triage: one step down in size and weight so the eye lands on
