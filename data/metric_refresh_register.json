@@ -1,6 +1,6 @@
 {
  "class_counts": {
-  "annual": 44,
+  "annual": 45,
   "benefit": 44,
   "structural": 245
  },
@@ -1284,6 +1284,12 @@
    "class": "structural",
    "domain": "Time Off & Family",
    "months": 24
+  },
+  "REW266_PAY_INCREASE_NEXT": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
   },
   "REW26_BEN_PENSION_COST_SHARE": {
    "category": "metric",
