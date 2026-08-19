@@ -1690,7 +1690,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   /* the stand column grows into the space on a wide screen but never takes more than a
      third of the card — a flat 340px left the commentary on 350px at 1060px wide. */
   display: grid; grid-template-columns: minmax(0, clamp(240px, 33%, 340px)) minmax(0, 1fr);
-  grid-template-areas: "head head" "stand read"; gap: 0 var(--s6); align-items: stretch; }
+  /* the head row holds only the two right-aligned controls, so spanning it across BOTH
+     columns left the top-left of the card empty and pushed the ring 77px down. It sits in
+     the commentary column now and the stand block runs the full height beside it. */
+  grid-template-areas: "stand head" "stand read"; grid-template-rows: auto 1fr;
+  gap: 0 var(--s6); align-items: stretch; }
 .cat-brief > .cat-brief-head { grid-area: head; }
 /* the stand block is shorter than the commentary on most domains — on Wellbeing by 115px.
    Centring it spreads that air above and below the ring instead of dumping all of it under
@@ -1699,7 +1703,8 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-brief > .cat-brief-read { grid-area: stand; align-self: center; }
 .cat-brief > .cat-brief-body { grid-area: read; }
 @media (max-width: 900px) {
-  .cat-brief { grid-template-columns: 1fr; grid-template-areas: "head" "stand" "read"; }
+  .cat-brief { grid-template-columns: 1fr; grid-template-areas: "head" "stand" "read";
+    grid-template-rows: auto auto 1fr; }
 }
 .cat-brief-head { display: flex; align-items: center; justify-content: flex-end; gap: var(--s3); flex-wrap: wrap; }
 .cat-brief-head .cat-insights-toggle { margin-left: 0; }
@@ -1708,7 +1713,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    22px on one shared grid so the market ruler and practice bar start, end and centre on
    identical edges; the ruler's axis words are dropped here (the pill + counts carry the
    meaning; asymmetric label rows were the misalignment David could feel but not name). */
-.cat-brief-read { display: block; padding: var(--s4) 0; }
+/* no padding of its own — the card already pads, and centring supplies the rest. With both
+   it sat 63px below the card's top edge for a 26px pad. */
+.cat-brief-read { display: block; padding: 0; }
 .cat-brief-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
   text-transform: uppercase; letter-spacing: .04em; }
 .cat-brief-read .chip { justify-self: start; min-width: 88px; justify-content: center; }
@@ -1726,7 +1733,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-brief-basis { margin: var(--s3) 0 0; color: var(--ink-faint); cursor: help; text-align: center; }
 .cat-brief-basis b { color: var(--ink-soft); font-weight: 650; }
 /* the stand block mirrors "Where you stand": ring + legend, then the scale under both */
-.cat-stand-duo { margin: 0; }
+/* .arc-duo carries a padding-top for the home card's header; this panel's ring sits directly
+   under the card edge, so it is not wanted here. */
+.cat-stand-duo { margin: 0; padding-top: 0; }
 .cat-stand-aim { display: inline-flex; margin-top: var(--s2); }
 .cat-brief-minibar { display: flex; gap: 3px; height: 22px; }
 .cat-brief-minibar span { border-radius: var(--radius-2xs); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
