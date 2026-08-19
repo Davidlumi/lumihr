@@ -1425,6 +1425,27 @@ async def invite(request: Request):
     # (Creation into an org-suspended tenant is separately refused by the F12
     # design — that is a creation rule, not a mail gate, and it does not touch
     # the sole-admin-recovery path, which suspends a USER, not the org.)
+    # the only unlimited outbound-email path from an authenticated session: login, MFA,
+    # register and reset are all rate-limited and this was not, so an admin session — or a
+    # stolen one — could send unbounded mail from lumi's domain to arbitrary addresses.
+    if auth_lib.rate_limited("invite-org:%s" % org["org_id"]):
+        raise HTTPException(429, "That's a lot of invites at once — wait a few minutes and try again.")
+    # RE-INVITING REFRESHES, it does not stack. create_invite is a plain INSERT, so inviting the
+    # same address twice produced two live invites — two rows for one person in the access list,
+    # two working links, and no way to "resend" except to make a third.
+    # The retirement happens AFTER the send, deliberately: link minting and mail can both fail
+    # (a 503 when LUMI_BASE_URL is unset, for one), and retiring first meant a FAILED invite
+    # revoked the recipient's working link. Identify the prior invite now, kill it only once
+    # the new one is actually away.
+    _conn = get_conn()
+    _prior = []
+    _lv = [r["token"] for r in _conn.execute(
+        "SELECT token FROM invites WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now')",
+        (org["org_id"],))][:identity.INVITE_BATCH_CAP]
+    if _lv:
+        _prior = [t for t, e in identity.invite_email_batch(_lv).items()
+                  if (e or "").strip().lower() == email.lower()]
+    _resent = bool(_prior)
     token = auth_lib.create_invite(org["org_id"], email, role, user["user_id"])
     link = "%s/app#/invite/%s" % (base_url(minting=True), token)
     inviter = user["display_name"] or user["email"]
@@ -1441,7 +1462,15 @@ async def invite(request: Request):
             "— lumi · UK reward benchmarking" % (inviter, org_name, ROLE_LABELS.get(role, role),
                                                  link, auth_lib.INVITE_TTL_DAYS),
             to=email))
-    return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
+    # the new invite is away — now retire the one it replaces
+    for _t in _prior:
+        _conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
+                      (_t, org["org_id"]))
+    if _prior:
+        _conn.commit()
+    _audit(user, "team.invite_resent" if _resent else "team.invite", "invite", token,
+           {"role": role, "org_id": org["org_id"]})
+    return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS, "resent": _resent}
 
 
 @app.put("/api/team/role")
@@ -1469,8 +1498,13 @@ async def change_role(request: Request):
         if admins <= 1:
             raise HTTPException(400, "Promote another Admin before removing yourself — "
                                      "your organisation must always have at least one Admin.")
+    _was = target["role"]
     conn.execute("UPDATE users SET role=? WHERE user_id=?", (role, target["user_id"]))
     conn.commit()
+    # who granted whom what, and when. The audit trail existed for platform staff actions only;
+    # a change of access INSIDE an org — the one an auditor asks about — left no record at all.
+    _audit(user, "team.role", "user", target["user_id"],
+           {"from": _was, "to": role, "org_id": org["org_id"]})
     return {"ok": True, "email": ident["email"], "role": role}
 
 
@@ -1514,6 +1548,8 @@ async def remove_member(request: Request):
         conn.rollback()
         raise
     identity.shadow(identity.remove_user_identity, target["user_id"], user["user_id"])
+    _audit(user, "team.remove", "user", target["user_id"],
+           {"role": target["role"], "self": target["user_id"] == user["user_id"], "org_id": org["org_id"]})
     return {"ok": True, "removed": ident["email"]}
 
 
@@ -1524,6 +1560,8 @@ async def revoke_invite(token: str, request: Request):
     cur = conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
                        (token, org["org_id"]))
     conn.commit()
+    if cur.rowcount == 1:
+        _audit(user, "team.invite_revoked", "invite", token, {"org_id": org["org_id"]})
     if cur.rowcount != 1:
         # the identity shadow marks by TOKEN ALONE — firing it when the org-scoped
         # reward update matched nothing would let one org's admin burn another org's

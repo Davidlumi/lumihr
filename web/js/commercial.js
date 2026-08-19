@@ -868,9 +868,14 @@ window.TeamPage = function ({ me }) {
     setInviteErr(null); setMsg(null); setInviting(true);
     try {
       const r = await api("/api/team/invite", { method: "POST", body: { email, role } });
-      setMsg(`Invite sent to ${email} — the link expires in ${r.expires_days} days. You can also copy it and share it yourself:`);
+      // re-inviting an address REPLACES its live invite rather than adding a second, so say
+      // "re-sent" — the previous link has just stopped working and the admin needs to know.
+      setMsg((r.resent
+        ? `Invite re-sent to ${email} — the earlier link no longer works. This one expires in ${r.expires_days} days.`
+        : `Invite sent to ${email} — the link expires in ${r.expires_days} days.`)
+        + " You can also copy it and share it yourself:");
       setInviteLink(r.link);
-      toast("Invite sent to " + email);
+      toast((r.resent ? "Invite re-sent to " : "Invite sent to ") + email);
       setEmail(""); refresh();
     } catch (e) { setInviteErr(e.message); }
     setInviting(false);
