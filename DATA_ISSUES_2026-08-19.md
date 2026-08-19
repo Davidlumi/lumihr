@@ -233,3 +233,34 @@ Both migrations were applied to a throwaway pair (SQLite backup API, not `cp`), 
 and put through the full suite: **17/17 gates green**, including `qa_plausibility`, the
 enforcing freeze gate. Then applied to the live DB and re-aggregated. 2,088 answers moved in
 total, every question count-conserving.
+
+---
+
+# Class 10 — the pension duplicates, ruled and retired
+
+David's rulings, 2026-08-19, on the overlapping pairs found by his p9 note:
+
+| Retired | Kept | Why |
+|---|---|---|
+| `ALLOW_03` "Are allowances pensionable?" | `REW_PAY_020` (by level) | the matrix asks the same thing and carries strictly more |
+| `PROP_36b990f9` employer pension contribution (banded, whole-org) | `REW_BEN_112` (by level) | degenerate copy; the `PROP_634adacd` evolve-don't-duplicate precedent |
+
+Seed answers **deleted**, per his ruling and the Diff 14 precedent. `answers_history` keeps the
+pre-retire snapshot, so nothing is lost and the live tables stop carrying rows no member can
+reach. Both are recorded in `qa_engine_audit.RETIRED_LINEAGE` with the reason, and the status
+is flipped in `data/lumi_questions.csv` as well as the DB so the retirement survives a reseed.
+
+What retiring `ALLOW_03` costs, on the record: it held a **David-signed 72/20/8 ruling** from
+2026-06-12, and `REW_PAY_020` was originally seeded *aligned to it*. The ladder was re-struck
+against that signed figure in class 9 **before** this retirement, so the signed ruling survives
+in the matrix's numbers — but it is no longer a live constraint, and the audit pin for
+`REW_PAY_020` is re-commented to say so rather than pointing at a retired question.
+
+Knock-ons handled: refresh register regenerated (334 → **332**), and `PROP_36b990f9`'s
+declaration removed from `data/applicable_bases.json` (`qa_release` requires every declaration
+to name an active metric).
+
+The flexible-benefits ladder was confirmed as set — board 9.0% down to frontline 3.2%.
+
+**Verified: 17/17 green**, with `LUMI_GATES_SRC` pointed at the migrated database, then applied
+live and re-confirmed against live.

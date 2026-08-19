@@ -54,14 +54,11 @@ REGEN_WHITELIST = {
     # counts re-recorded 2026-08-14 after +50 seed orgs (add50, sector/size-faithful clone): pin == store
     "EXT_REW_GAP_013": {"Monthly": 165, "Weekly": 28, "Mixed (varies by role)": 21,
                         "Fortnightly": 13},
-    # allowances-pensionability joint regen (2026-06-12, David-signed 72/20/8; +50 re-record 2026-08-14):
-    "ALLOW_03": {"No – non-pensionable": 187, "Yes – some allowances only": 51,
-                 "Yes – all allowances": 27,
-                 "Varies by allowance/contract": 2},
     # v2-H aligned this non-pensionable where ALLOW_03 says so, but seeded every one of the
     # seven levels at exactly 27/243 — David's 2026-08-19 data review: "very odd the same and
     # the same at every level". Re-laddered 2026-08-19 (dataqa c6/c9) against the UNCHANGED
-    # David-signed ALLOW_03 above: 78 of 267 orgs (29.2%) report some pensionable allowance,
+    # David-signed ALLOW_03 figure (ALLOW_03 itself RETIRED 2026-08-19, c10): 78 of 267
+    # orgs (29.2%) reported some pensionable allowance,
     # so the ladder peaks at 27% (board) and thins to 5.9% (frontline). Alignment to ALLOW_03
     # is preserved — it is the height and the gradient that changed, not the basis.
     "REW_PAY_020": {"No": 1586, "Yes": 304},
@@ -76,6 +73,14 @@ RETIRED_LINEAGE = {
     "PROP_dff9a2a5": "Diff 14: pay-increase award-rate — fictional-practice distribution, retired",
     "REW264_PEN_CONTRIBTIER": "Diff 14: service/age pension escalation — legally-dead practice, retired "
                               "(never in response CSVs; listed for completeness)",
+    "ALLOW_03": "dataqa c10 (David 2026-08-19): duplicate of REW_PAY_020, which asks the "
+                "same thing by level and carries strictly more. Held the 2026-06-12 "
+                "David-signed 72/20/8; REW_PAY_020's ladder was re-struck against that "
+                "figure in c9 BEFORE this retirement, so the signed ruling survives in "
+                "the matrix's numbers.",
+    "PROP_36b990f9": "dataqa c10 (David 2026-08-19): banded whole-org employer pension "
+                     "contribution, a degenerate copy of REW_BEN_112 (by level). Same "
+                     "evolve-don't-duplicate precedent as PROP_634adacd.",
     "REW263_BEN_PMIMH": "r3sw8: PMI MH/digital-GP single-select — N/A 56.8% distorted the graph; "
                         "replaced by REW265_BEN_PMICOMP (multi-select composition over PMI-havers)",
 }

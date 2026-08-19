@@ -1,8 +1,8 @@
 {
  "class_counts": {
-  "annual": 45,
+  "annual": 44,
   "benefit": 44,
-  "structural": 245
+  "structural": 244
  },
  "classes": {
   "annual": 12,
@@ -23,12 +23,6 @@
    "months": 12
   },
   "ALLOW_02": {
-   "category": "policy",
-   "class": "structural",
-   "domain": "Pay",
-   "months": 24
-  },
-  "ALLOW_03": {
    "category": "policy",
    "class": "structural",
    "domain": "Pay",
@@ -203,12 +197,6 @@
    "class": "structural",
    "domain": "Governance & Transparency",
    "months": 24
-  },
-  "PROP_36b990f9": {
-   "category": "metric",
-   "class": "annual",
-   "domain": "Pensions & Savings",
-   "months": 12
   },
   "PROP_38555969": {
    "category": "practice",
