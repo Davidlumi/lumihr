@@ -281,8 +281,8 @@ window.PulseDetailPage = function ({ me, pid }) {
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
       <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>
-      <p class="caption" style=${{ display: "flex", flexWrap: "wrap", gap: "var(--s1) var(--s2)", alignItems: "center" }}>
-        <span>${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating</span>
+      <p class="caption pulse-subhead">
+        <span class="pulse-subhead-desc">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating</span>
         <${CloseChip} p=${p} /></p>
 
       ${p.report && html`<${PulseReport} report=${p.report} pid=${pid} me=${me} />`}
@@ -587,13 +587,13 @@ function PulseQuestionBlock({ q, pid, me, idx, total, report, com }) {
   };
 
   if (blk.suppressed) return html`
-    <div class="card bench-card stacked pulse-card">
+    <div class="card bench-card stacked pulse-qcard">
       <div class="bench-head"><h3 class="bench-title">${q.title}</h3></div>
       <div class="caption" style=${{ padding: "var(--s4) 0" }}>Fewer than 5 participating organisations — protected, not shown.</div>
     </div>`;
 
   return html`
-    <div class="card bench-card stacked pulse-card" ref=${ref} id=${"pq-" + q.question_id}>
+    <div class="card bench-card stacked pulse-qcard" ref=${ref} id=${"pq-" + q.question_id}>
       <div class="bench-head">
         <h3 class="bench-title" title=${q.text}>${q.title}</h3>
       </div>

@@ -2505,15 +2505,31 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   color: var(--ink-soft); background: var(--surface-sunk); border-radius: 999px; padding: 1px var(--s2); }
 .pulse-close.soon { color: var(--blue-deep); background: var(--blue-tint); }
 /* pulse report — narrative/key-findings panel + a polished print document */
-/* The report's read sits ON the card, not in a filled slab. --surface-sunk (#F4F1EC) is
-   a warm grey meant for small inset panels; at the width of a full report header it read
-   as an off-brand block of colour rather than as the summary (David 2026-08-20). Type and
-   a hairline carry the hierarchy instead. */
-.pulse-narrative { background: none; padding: 0; margin: var(--s3) 0 0; }
-.pulse-narrative > p:first-child { font-size: var(--fs-subhead); line-height: 1.45; max-width: 68ch; }
-.pulse-findings { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--border); }
+/* ===== Pulse report header: alignment, type, and no grey slab ================
+   Three things were wrong at once (David 2026-08-20). The report card carried
+   padding:0 while .qsec-head supplies its own 12/16, so the header text was inset
+   16px and everything under it sat flush to the card edge — a visible step down
+   the left margin. .qsec-head also paints --surface-sunk, a warm grey meant for
+   small inset panels, which across a full-width report header reads as a block of
+   colour. And the summary was set at --fs-subhead, two steps above the body text
+   it introduces. One inset, one surface, one type scale. */
+.pulse-report-doc > .card { padding: 0 0 var(--s4); }
+.pulse-report-doc .qsec-head {
+  background: none; border-radius: var(--radius) var(--radius) 0 0;
+  padding: var(--s4) var(--s5) var(--s3);
+}
+/* .pulse-findings is nested INSIDE .pulse-narrative, so only the outer one takes the
+   inset — padding on both put the key findings 24px further in than the summary above. */
+.pulse-narrative { padding-left: var(--s5); padding-right: var(--s5); }
+.pulse-narrative { background: none; margin: var(--s4) 0 0; }
+.pulse-narrative > p:first-child {
+  font-size: var(--fs-body); line-height: 1.55; max-width: 76ch; color: var(--ink);
+}
+.pulse-findings { margin-top: var(--s4); padding: var(--s4) 0 0; border-top: 1px solid var(--border); }
+.pulse-findings .eyebrow { margin-bottom: var(--s2); }
+.pulse-findings ol { max-width: 88ch; }
 .pulse-findings ol { margin: var(--s1) 0 0; padding-left: var(--s5); }
-.pulse-findings li { margin: 3px 0; font-size: var(--fs-label); }
+.pulse-findings li { margin: 0 0 var(--s2); font-size: var(--fs-label); line-height: 1.5; padding-left: 2px; }
 .pulse-pdf-head, .pulse-pdf-foot { display: none; }
 .pulse-pdf-head .logo { font-weight: 700; color: var(--blue); }
 .pulse-pdf-head .logo span { color: var(--lumi-coral); }
@@ -2523,7 +2539,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   .pulse-pdf-foot { display: block; font-size: 8.5pt; color: var(--ink-soft); border-top: 1px solid var(--border);
     padding-top: 6pt; margin-top: 16pt; }
   .pulse-report-doc .card { box-shadow: none; border: 0; margin: 0; padding: 0; }
-  .pulse-report-doc .pulse-card { break-inside: avoid; page-break-inside: avoid; }
+  .pulse-report-doc .pulse-qcard { break-inside: avoid; page-break-inside: avoid; }
   .pulse-narrative { break-inside: avoid; }
 }
 
@@ -5692,9 +5708,13 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
    with the report's own commentary sitting above the grid. Almost nothing needs new
    CSS, which is the point. */
 .pulse-grid-cards { margin-top: var(--s4); }
-.pulse-card .bench-title { font-size: var(--fs-card-title); }
+/* The report's question card. Named .pulse-qcard, NOT .pulse-card: that class already
+   belongs to the Explore tile (medallion, teaser, CTA) and carries gap, cursor:pointer and
+   a hover lift. Reusing the name silently gave every report card a 12px flex gap the
+   benchmark card it is meant to match does not have, plus a hover transform (2026-08-20). */
+.pulse-qcard .bench-title { font-size: var(--fs-card-title); }
 /* the card's own foot line, matching .bench-foot spacing on a benchmark card */
-.pulse-card .bench-foot { margin-top: auto; }
+.pulse-qcard .bench-foot { margin-top: auto; }
 
 /* commentary sits inside the card, between the chart and the controls that opened it */
 .pulse-com {
@@ -5709,7 +5729,7 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 
 @media print {
   .pulse-grid-cards { grid-template-columns: 1fr; gap: var(--s3); }
-  .pulse-card { break-inside: avoid; page-break-inside: avoid; }
+  .pulse-qcard { break-inside: avoid; page-break-inside: avoid; }
 }
 
 /* Pulse commentary: the comparison leads, the caveats recede — they are identical on
@@ -5735,3 +5755,11 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
    .bench-grid — which puts a pulse card at the same ~640px a benchmark card gets, and
    renders the 620 canvas at its natural size instead of scaling it down. */
 .pulse-page-report { max-width: none; }
+
+/* The pulse subhead ran the full 1320px once the report lifted the width cap, so a
+   two-line description became one very long line and the close chip drifted to the far
+   right, detached from the sentence it belongs to. Cap the measure; keep the chip next
+   to the words. */
+.pulse-subhead { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); align-items: baseline; margin: 0; }
+.pulse-subhead-desc { max-width: 96ch; }
+.pulse-page-report .display-title { margin-bottom: var(--s1); }
