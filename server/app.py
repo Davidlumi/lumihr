@@ -1832,7 +1832,11 @@ async def pulse_commentary(pid: str, request: Request):
                         (pid, org["org_id"], qid)).fetchone()
     payload = {
         "metric": entry["title"], "definition": q.definition or "",
-        "cut_label": "the %s pulse cohort" % p["name"],
+        # most pulses are NAMED "… Pulse 2026", so appending "pulse cohort" produced
+        # "the Creative Workforce & Freelance Reward Pulse 2026 pulse cohort" — the word
+        # twice, in every sentence of every commentary on that pulse.
+        "cut_label": ("the %s cohort" if "pulse" in (p["name"] or "").lower()
+                      else "the %s pulse cohort") % p["name"],
         "n": blk.get("n"), "n_real": blk.get("n_real", 0), "suppressed": bool(blk.get("suppressed")),
         # the generator reads "direction", not "polarity". Sending only polarity meant every
         # pulse question missed the prevalence framing and fell through to generic filler
@@ -9448,9 +9452,19 @@ async def unhandled_error(request: Request, exc):
 @app.exception_handler(404)
 async def not_found(request: Request, exc):
     """A mistyped public URL (a PA re-typing a share link) gets a branded page,
-    not raw API JSON. API paths keep their JSON contract."""
+    not raw API JSON. API paths keep their JSON contract — AND their own message.
+
+    "Keeps the JSON contract" used to mean a hardcoded {"detail": "Not Found"}, which
+    threw away the detail the raising handler had written. Every deliberate 404 in the
+    API — "Unknown pulse", "That question isn't part of this pulse.", "No such dashboard."
+    — reached the client as framework noise, and the UI rendered it verbatim (2026-08-19).
+    Existence is still not leaked: the handlers that must hide it already raise the SAME
+    message for "missing" and "not yours" (see _owned_pulse), which is where that decision
+    belongs. A genuinely unrouted path still falls back to "Not Found"."""
     if request.url.path.startswith("/api/"):
-        return JSONResponse({"detail": "Not Found"}, status_code=404)
+        detail = getattr(exc, "detail", None)
+        return JSONResponse({"detail": detail if isinstance(detail, str) and detail else "Not Found"},
+                            status_code=404)
     return HTMLResponse(status_code=404, content="""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Page not found · lumi</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">

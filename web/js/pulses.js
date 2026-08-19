@@ -341,7 +341,15 @@ function pulseCsv(report) {
   (report.questions || []).forEach(q => {
     const blk = q.block || {};
     if (blk.suppressed) { rows.push([q.title, "(suppressed — fewer than 5)", "", "", "", ""]); return; }
-    if (blk.options && blk.options.length) blk.options.forEach(o => rows.push([q.title, o.label, o.pct, "", blk.n, ""]));
+    if (blk.options && blk.options.length) {
+      // mark WHICH option the member chose. The column existed and was always blank on
+      // option rows, so a downloaded pulse showed the cohort and not the comparison —
+      // the whole point of the export (2026-08-19).
+      const normC = t => (t || "").replace(/\s+/g, " ").trim().toLowerCase();
+      const picked = new Set(String(q.you == null ? "" : q.you).split(";").map(normC).filter(Boolean));
+      blk.options.forEach(o => rows.push([q.title, o.label, o.pct, "", blk.n,
+        picked.has(normC(o.label)) ? "Yes" : ""]));
+    }
     else if (blk.p50 != null) rows.push([q.title, "", "", blk.p50, blk.n, q.you || ""]);
     (q.matrix_rows || []).forEach(r => rows.push([q.title + " — " + r.label, "", "",
       (r.block && r.block.p50) != null ? r.block.p50 : "", (r.block && r.block.n) || "", r.you || ""]));

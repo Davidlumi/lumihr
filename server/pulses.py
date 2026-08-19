@@ -564,10 +564,11 @@ def save_response(pulse_id, org_id, qid, row_id, value, conn=None):
     qs_now = pulse_questions(p)
     if qid not in qs_now:
         raise ValueError("That question isn't part of this pulse.")
-    # "None of these" is exclusive. The builder UI enforces that when you tick boxes, but
-    # the enforcement was CLIENT-SIDE ONLY — the API happily stored "None of these" next to
-    # six other options, and the report then showed 64% saying they pay nothing while also
-    # paying premiums. Found by seeding a cohort through the API, 2026-08-19.
+    # "None of these" is exclusive. The API path already enforces this in validate_answer
+    # (app.py, since 2026-06-11) and returns {"ok": false, errors:[…]}; this is defence in
+    # depth for callers that reach save_response directly — a seeder or a future import
+    # that skips the endpoint, which is exactly how a self-contradicting cohort ("pays
+    # nothing" alongside six premiums) got into a QA fixture on 2026-08-19.
     q_now = qs_now[qid]
     if getattr(q_now, "type", None) == "multi_select" and value:
         picked = [t.strip() for t in str(value).split(";") if t.strip()]
