@@ -1491,9 +1491,23 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
                     if i["question_id"] in seen:
                         continue
                     seen.add(i["question_id"])
+                    # the size of the gap, not just its rank. value_display/p50_display/n are
+                    # already on the pool item, so this is carriage, not computation.
+                    # GUARD: for a banded metric value_display is the internal 0-100 ordinal —
+                    # the very thing _ordinal_leak exists to keep out of the UI — so the pair is
+                    # dropped in that case rather than leaking "35/100" onto a driver row.
+                    _vd = i.get("value_display")
+                    # the same "N/100" ordinal shape signals._ordinal_leak guards against.
+                    # Checked inline: signals imports positions, not the reverse, and this
+                    # module does not import re.
+                    _s = str(_vd or "").strip()
+                    _leaky = _s.endswith("/100") and _s[:-4].strip().isdigit()
                     out.append({"question_id": i["question_id"], "label": i["label"],
                                 "percentile": round(i["percentile"], 1),
-                                "polarity": i["polarity"], "kind": kind})
+                                "polarity": i["polarity"], "kind": kind,
+                                "value_display": None if _leaky else _vd,
+                                "p50_display": None if _leaky else i.get("p50_display"),
+                                "n": i.get("n")})
                 return out
             drivers = (_dd(top_gaps(d_sub, 6), "gap")[:3] +
                        _dd(top_strengths(d_sub, 3), "strength")[:1]) or None

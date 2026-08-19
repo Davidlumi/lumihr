@@ -1729,6 +1729,10 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    it needs to say what its ends mean, exactly as the home card's marker does. */
 .cat-brief-ruler { margin-top: var(--s4); }
 .cat-brief-ruler .bp-scale-labels { display: flex; }
+/* what the scale IS: the P the marker carries and the band's own thresholds. Without it the
+   three fixed-width colours read as a distribution of the counts in the ring above. */
+.cat-brief-band { margin: var(--s2) 0 0; text-align: center; color: var(--ink-faint); }
+.cat-brief-band b { color: var(--ink-soft); }
 /* the denominator, between the ring and the scale — one quiet line, its split in the title */
 .cat-brief-basis { margin: var(--s3) 0 0; color: var(--ink-faint); cursor: help; text-align: center; }
 .cat-brief-basis b { color: var(--ink-soft); font-weight: 650; }

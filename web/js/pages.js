@@ -3247,6 +3247,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // the "All benchmarks N" head below. approach = carries a prevalence reading but no market band
   // (an approach choice the market has no rate for); waiting = eligible, no band yet.
   const _unrated = Math.max(0, (all || []).length - ((posM && posM.pool) || 0));
+  // a LOCKED card returns from the builder before `answered` is set (app.py:900), so the key
+  // is simply absent there — counting it as unanswered would print a number that is quietly
+  // wrong. The line only renders when every card in the domain carries the flag.
+  const _ansKnown = (all || []).length > 0 && (all || []).every(c => typeof c.answered === "boolean");
+  const _answered = (all || []).filter(c => c.answered).length;
   const _approachN = (all || []).filter(c => !fbBand(c) && fbPrev(c)).length;
   const _basisTip = _unrated <= 0 ? "Every benchmark here carries a market rate."
     : (_approachN + " approach choice" + (_approachN === 1 ? "" : "s") + " the market has no rate for"
@@ -3402,15 +3407,31 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               </div>
             </div>
             <p class="cat-brief-basis caption" title=${_basisTip}><b class="num">${posM.pool}</b> of <b class="num">${(all || []).length}</b> benchmarks have a market rate</p>
+            ${/* is this verdict built on a full return or a half-finished one? The panel could
+                  not say, so a director had no way to know whether to trust it or go and
+                  finish the data. Counted from the cards already in scope. */ ""}
+            ${_ansKnown && _answered < (all || []).length ? html`
+              <p class="cat-brief-basis caption cat-brief-todo">
+                <a href="#/data">${_answered} of ${(all || []).length} answered — add the rest</a></p>` : null}
+            ${/* reward_mix=benefits: a below-market PAY verdict is the cash-light mix working as
+                  intended. The engine has annotated this since the §5.2 reframe and nothing has
+                  ever rendered it. */ ""}
+            ${hero.mix_note === "benefits" ? html`
+              <p class="cat-brief-mixnote caption"><${Icon} name="info" size=${12} /> Your reward mix leads on benefits, so a below-market pay position here is the mix working as intended, not a shortfall.</p>` : null}
             <div class="cat-brief-ruler">${pos && pos.depth_pctl != null ? html`
-              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
+              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />
+              ${/* the coloured widths are the BAND, fixed at 35/30/35 on every domain — not the
+                    counts, which sit in the ring above in the same three colours. Saying where
+                    the band starts and ends is what stops the bar being read as a distribution,
+                    and it is the one fact about this scale the page never stated. */ ""}
+              <p class="cat-brief-band caption">Typical metric at <b class="num">P${Math.round(pos.depth_pctl)}</b> · on-market band runs P${(window.MARKET_BAND || [35, 65])[0]}–P${(window.MARKET_BAND || [35, 65])[1]}</p>` : null}</div>
             ${/* THE DENOMINATOR (2026-08-18). The counts used to end at "3 above" while the header
                   two rows down said "All benchmarks 61" — for Pay that is 34 counted and 27 with no
                   account given anywhere on the page. posM.pool was already here, used only as a
                   truthiness gate. The remainder splits by what the cards carry: a metric with a
                   prevalence band and no market band is an approach choice with no market rate; the
                   rest are eligible metrics still waiting on data. Same disclosure SuperpowerPage
-                  has shipped since 2026-08-13 (pages.js _ratedClause). */ ""}
+                  reconciliation is also reachable as the "no reading yet" filter. */ ""}
             ` :
             html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this area is assessed on practice.</span>`}
           ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
@@ -3426,7 +3447,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               <button key=${d.question_id + d.kind} type="button" class="cat-driver" onClick=${() => openMetric(d.question_id)}
                 title=${"Open " + d.label}>
                 <${Icon} name=${d.kind === "gap" ? "arrow-down" : "arrow-up"} size=${13} />
-                <span class="cat-driver-lab">${d.label}</span>
+                <span class="cat-driver-lab">${d.label}
+                  ${/* the SIZE of the gap, not only its rank — a percentile alone never told a
+                        reward director what they pay against what the market pays. Absent for
+                        banded metrics, where the org's own figure is an internal ordinal. */ ""}
+                  ${d.value_display && d.p50_display ? html`<span class="cat-driver-vs caption">you ${d.value_display} · peers ${d.p50_display}</span>` : null}</span>
                 <span class=${"num cat-driver-p " + d.kind}>P${Math.round(d.percentile)}${d.polarity === "lower_is_better" ? html` <i>· lower is better</i>` : ""}</span>
               </button>`) : html`<div class="caption">No positioned metrics to rank yet.</div>`}
             ${/* the flag count is the ONLY number in this panel not read against the selected cut:
