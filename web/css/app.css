@@ -5640,8 +5640,13 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   .team-roles > div { grid-template-columns: 1fr; gap: 0; }
   .team-inviterow > * { flex: 1 1 100%; }
 }
-/* a deactivated member: still listed (they hold a seat) but visibly not an active account */
-.team-off td { opacity: .62; }
-.team-deact { display: inline-block; margin-left: var(--s2); padding: 1px 7px; border-radius: 999px;
-  font-size: var(--fs-micro); font-weight: 650; background: var(--unfavourable-tint);
-  color: var(--unfavourable-ink); cursor: help; }
+/* ACCESS column — the one question this page exists to answer, per row.
+   NO row dimming: opacity .72 composited BOTH ink and chip toward the card and took the
+   deactivated and pending rows to 3.41 and 3.03 against a 4.5 bar — the two rows an Admin
+   most needs to read during an access review. The chip states it in colour AND words, so
+   the recession was decoration bought at the cost of legibility. Measured, then removed. */
+.team-state { display: inline-block; padding: 1px 8px; border-radius: 999px;
+  font-size: var(--fs-micro); font-weight: 650; white-space: nowrap; }
+.team-state-on { background: var(--favourable-tint); color: var(--favourable-ink); }
+.team-state-off { background: var(--unfavourable-tint); color: var(--unfavourable-ink); cursor: help; }
+.team-state-pending { background: var(--neutral-perf-tint); color: var(--neutral-perf); }

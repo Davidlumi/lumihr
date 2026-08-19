@@ -916,27 +916,30 @@ window.TeamPage = function ({ me }) {
       if (self) window.location.assign("/"); }
     catch (e) { setErr(e.message); }
   };
+  const revoke = async (token) => {
+    setErr(null);
+    if (!window.confirm("Revoke this invite? The link stops working — if the colleague already has it, they won't be able to join.")) return;
+    try { await api("/api/team/invite/" + token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }
+    catch (e) { toast("Couldn't revoke that invite — try again", "error"); }
+  };
   if (loadErr) return html`<${EmptyState} title="Couldn't load your team" body=${loadErr}
     action=${html`<button class="btn small primary" onClick=${refresh}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   return html`
     <div class="team-page">
       <h1 class="display-title">Team</h1>
-      <p class="caption">One organisation, one dataset, one benchmark. Roles decide who can edit.</p>
+      <p class="caption">Everyone who can reach your organisation's data, and what each of them can do.</p>
       ${/* TeamPage only mounts for admins (app.js route guard), so the old isAdmin branches
             here were unreachable — including a read-only role chip no one could ever see. */ ""}
       <div class="card team-card">
         ${/* long emails and a fourth column overflowed the card below ~600px */ ""}
         <div class="team-tablewrap">
         <table class="data">
-          <thead><tr><th>Member</th><th>Role</th><th>Joined</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <thead><tr><th>Member</th><th>Role</th><th>Access</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             ${data.users.map(u => html`
               <tr key=${u.email} class=${u.disabled_at ? "team-off" : null}><td>
                 <b>${u.display_name || u.email}</b>
-                ${/* a deactivated colleague cannot sign in; the page used to render them as an
-                      ordinary member with no explanation */ ""}
-                ${u.disabled_at ? html`<span class="team-deact" title=${u.disabled_reason || "Deactivated by lumi support"}>deactivated</span>` : null}
                 <div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
               <td><select class="ctl team-role" value=${u.role}
                   title=${ROLE_DESC[u.role]}
@@ -946,11 +949,27 @@ window.TeamPage = function ({ me }) {
                   <option value="contributor">Contributor</option>
                   <option value="viewer">Viewer</option>
                 </select></td>
-              <td class="caption">${fmtDate(u.created_at + "Z")}</td>
+              ${/* ACCESS replaces "Joined" (2026-08-18). A join date answers no question this
+                    page is for; whether the account can actually get in answers the only one. */ ""}
+              <td>${u.disabled_at
+                ? html`<span class="team-state team-state-off" title=${u.disabled_reason || "Deactivated by lumi support"}>No — deactivated</span>`
+                : html`<span class="team-state team-state-on">Active</span>`}</td>
               ${/* three identically-labelled buttons read as one control to a screen reader */ ""}
               <td class="team-actions">
                 <button class="btn small quiet team-remove" aria-label=${"Remove " + (u.display_name || u.email)}
                   onClick=${() => remove(u.email)}>Remove</button></td></tr>`)}
+            ${/* an unaccepted invite IS access, granted and in flight. It used to sit as a
+                  footnote under the invite form, so the one list of who can reach your data
+                  was not actually the one list. */ ""}
+            ${(data.invites || []).map(i => html`
+              <tr key=${"inv-" + i.token} class="team-pending"><td>
+                <b>${i.email}</b>
+                <div class="caption">invited — not yet accepted</div></td>
+              <td><span class="chip" title=${ROLE_DESC[i.role]}>${ROLE_LABEL[i.role] || i.role}</span></td>
+              <td><span class="team-state team-state-pending">Pending · expires ${fmtDate(i.expires_at + "Z")}</span></td>
+              <td class="team-actions">
+                <button class="btn small quiet team-remove" aria-label=${"Revoke the invite to " + i.email}
+                  onClick=${() => revoke(i.token)}>Revoke</button></td></tr>`)}
           </tbody>
         </table>
         </div>
@@ -988,17 +1007,8 @@ window.TeamPage = function ({ me }) {
             <button class="btn small" onClick=${() => copyInvite(inviteLink)}>Copy link</button>
           </div>`}
           <div class="caption team-note">Invites expire after ${data.invite_ttl_days || 7} days. For another Admin, invite as Contributor and promote above. Joiners accept the Platform Terms only — your Data Contribution agreement covers the whole organisation.</div>
-          ${data.invites.length > 0 && html`
-            <h3 class="team-subhead">Outstanding invites</h3>
-            ${data.invites.map(i => html`
-              <div key=${i.token} class="caption row spread">
-                <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${fmtDate(i.expires_at + "Z")}</span>
-                <button class="btn small quiet" onClick=${async () => {
-                  if (!window.confirm("Revoke this invite? The link stops working — if the colleague already has it, they won't be able to join.")) return;
-                  try { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }
-                  catch (e) { toast("Couldn't revoke that invite — try again", "error"); }
-                }}>Revoke</button>
-              </div>`)}`}
+          ${/* the outstanding-invite list that used to sit here is now IN the access table
+                above, where it belongs — an invite in flight is access granted. */ ""}
         </div>`}
     </div>`;
 };
