@@ -201,8 +201,12 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
   const fs = rowH >= 22 ? (width > 700 ? 12 : 10.5) : 9.5;
   // label gutter sized to the actual labels, not a fixed share of the card; the hero
   // canvas affords a wider gutter so long option labels stop truncating
-  const longest = Math.max(...opts.map(o => Math.min(o.label.length, 34)), 3);
-  const labelW = Math.min(width > 700 ? 300 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
+  // the 34-char measuring cap binds BEFORE labelW does, so raising the gutter alone did
+  // nothing — a wide canvas has room to measure the real label
+  const longest = Math.max(...opts.map(o => Math.min(o.label.length, width > 700 ? 56 : 34)), 3);
+  // 300 still truncated 51-character options on the 780 pulse canvas; 340 clears ~54
+  // characters and still leaves 354px of bar. Narrow cards are untouched.
+  const labelW = Math.min(width > 700 ? 340 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;
   // Match the server's whitespace-collapsing _norm_label so the "you" highlight
@@ -253,8 +257,12 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
   if (H > 300) cap += 16;
   const rowH = Math.max(15, Math.min(cap, Math.floor((H - 6) / Math.max(opts.length, 1))));
   const fs = rowH >= 22 ? (width > 700 ? 12 : 10.5) : 9.5;
-  const longest = Math.max(...opts.map(o => Math.min(o.label.length, 34)), 3);
-  const labelW = Math.min(width > 700 ? 300 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
+  // the 34-char measuring cap binds BEFORE labelW does, so raising the gutter alone did
+  // nothing — a wide canvas has room to measure the real label
+  const longest = Math.max(...opts.map(o => Math.min(o.label.length, width > 700 ? 56 : 34)), 3);
+  // 300 still truncated 51-character options on the 780 pulse canvas; 340 clears ~54
+  // characters and still leaves 354px of bar. Narrow cards are untouched.
+  const labelW = Math.min(width > 700 ? 340 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
   const railX = labelW + 5;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;

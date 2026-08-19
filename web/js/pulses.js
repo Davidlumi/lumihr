@@ -409,6 +409,10 @@ function PulseReport({ report, pid, me }) {
     </div>`;
 }
 
+// the pulse report renders full-column, not in a benchmark card — draw at that width so
+// the SVG is not scaled up (a 420 canvas in a 780 column magnifies all type 1.87x)
+const PULSE_CHART_W = 780;
+
 function PulseQuestionBlock({ q, pid, me }) {
   const blk = q.block || {};
   const [com, setCom] = useState(null);
@@ -432,10 +436,15 @@ function PulseQuestionBlock({ q, pid, me }) {
       ${blk.suppressed ? html`
         <div class="caption">Fewer than 5 participating organisations — protected, not shown.</div>` : html`
         <div>
-          ${blk.p50 != null && html`<div role="img" aria-label=${q.title + " — participant median " + (blk.p50_display || blk.p50) + (youNum != null ? ", your answer " + youNum : "") + ", " + (blk.n || 0) + " organisations."}><${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} /></div>`}
+          ${/* The report column is ~780px, but a chart with no width draws on the 420-unit
+                default canvas and stretches to fill — magnifying every label 1.87x, so a
+                10.5px label rendered at 19.6px and long options truncated anyway. Passing
+                the real width takes the charts' own wide-canvas path (>700): 1:1 scale, a
+                300px label gutter instead of 190, and the type back on the scale. */ ""}
+          ${blk.p50 != null && html`<div role="img" aria-label=${q.title + " — participant median " + (blk.p50_display || blk.p50) + (youNum != null ? ", your answer " + youNum : "") + ", " + (blk.n || 0) + " organisations."}><${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} width=${PULSE_CHART_W} /></div>`}
           ${blk.options && (q.type === "multi_select"
-            ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
-            : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} />`)}
+            ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} width=${PULSE_CHART_W} height=${Math.max(150, (blk.options || []).length * 26 + 8)} />`
+            : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} width=${PULSE_CHART_W} height=${Math.max(150, (blk.options || []).length * 26 + 8)} />`)}
           ${q.matrix_rows && html`
 <div class="matrix-num-wrap"><table class="data" style=${{ marginTop: "var(--s2)" }}>
               <thead><tr><th>Level</th><th class="num">Cohort</th><th class="num">You</th></tr></thead>
