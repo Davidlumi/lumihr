@@ -550,7 +550,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
             "clean dashboard"). The home is MARKET-only now; PracticeBucketCard and the
             practice-mode DomainInstrument rows stay defined but are no longer mounted here. */ ""}
       <div class="ov-top">
-        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced} />
+        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${goToSignals}
           barMode=${barMode} setBarMode=${setBarMode} />
@@ -927,7 +927,7 @@ function leanCaption(market) {
     : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
   return strength + " " + (v === "below" ? "below" : "above") + " the market";
 }
-function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed, contribution, canEdit, heroCta }) {
+function OverallArc({ market, approach, pending, pct, orgKey, stratOff, contribution, canEdit, heroCta }) {
   // Hooks run BEFORE the early return so the order is stable when market is null
   // vs present. 2.1 — the needle settles ONCE per org, on the first populated
   // render (localStorage gate); every later visit snaps. Reduced motion + no
@@ -2949,14 +2949,23 @@ function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
   if (sigDefs.length) facets.push({ key: "sig", lab: "Signal", title: "Signal", count: f.sig.length,
     items: sigDefs.map(d => ({ ...d, sel: f.sig.includes(d.k), onClick: () => togMulti("sig", d.k) })) });
   const posItems = withN(FB_POS_DEF, fbBand).map(d => ({ ...d, dot: FB_DOT[d.k], sel: f.pos.includes(d.k), onClick: () => togPos(d.k) }));
-  if (posItems.length) facets.push({ key: "pos", lab: "Market", title: "Market position", count: f.pos.length, items: posItems });
+  // "No reading yet" is BACK (2026-08-18). It was removed on 2026-08-13 because "the header's
+  // 'N not yet rated' already surfaces it" — and 99 minutes later that header text was removed
+  // too, on an unrelated request, leaving no surface anywhere that reconciles the rated subset
+  // with the "N benchmarks" headline. The filter model never lost f.none (FB_EMPTY and
+  // applyCardFilters both still carry it); only the control went.
+  const _noneN = T.filter(c => !fbBand(c) && !fbPrev(c)).length;
+  if (_noneN) posItems.push({ k: "none", lab: "no reading yet", n: _noneN, sep: true, sel: !!f.none,
+    onClick: () => on(f.none ? { none: false } : { none: true, pos: [], prev: [] }) });
+  if (posItems.length) facets.push({ key: "pos", lab: "Market", title: "Market position",
+    count: f.pos.length + (f.none ? 1 : 0), items: posItems });
   const prevDefs = withN(FB_PREV_DEF, fbPrev);
   if (prevDefs.length) facets.push({ key: "prev", lab: "Practice", title: "Practice", count: f.prev.length,
     items: prevDefs.map(d => ({ ...d, lab: (prevStates && prevStates[d.st]) || d.lab, dot: "practice", sel: f.prev.includes(d.k), onClick: () => togPrev(d.k) })) });
   const stratDefs = stratOn ? withN(FB_STRAT_DEF, fbStrat) : [];
   if (stratDefs.length) facets.push({ key: "strat", lab: "Strategy", title: "Strategy alignment", count: f.strat.length,
     items: stratDefs.map(d => ({ ...d, glyph: true, sel: f.strat.includes(d.k), onClick: () => togMulti("strat", d.k) })) });
-  const anyActive = f.pos.length || f.prev.length || f.sig.length || f.strat.length;
+  const anyActive = f.pos.length || f.prev.length || f.sig.length || f.strat.length || f.none;
 
   return html`<${FacetMenus} facets=${facets} anyActive=${anyActive} onClear=${() => on(FB_EMPTY())} />`;
 }
@@ -3025,20 +3034,10 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   // so the union counts each metric ONCE (no overlap arithmetic to drift). Respects the
   // active filters because it reads the same post-filter `cards` the headline counts.
   // NOT the routing fix — the "not yet rated" remainder is the open gate-conflation gap.
-  const _positioned = cards.filter(c => c.market_band).length;
-  const _aligned = cards.filter(c => c.prevalence_band).length;
-  const _both = cards.filter(c => c.market_band && c.prevalence_band).length;
-  const _rated = cards.filter(c => c.market_band || c.prevalence_band).length;
-  const _recorded = cards.length - _rated;
-  const _ratedParts = [_positioned ? `${_positioned} positioned` : null,
-                       _aligned ? `${_aligned} aligned` : null].filter(Boolean).join(" + ");
-  const _ratedTip = `${_rated} rated${_ratedParts ? " = " + _ratedParts : ""}`
-    + (_both ? ` (${_both} counted in both)` : "")
-    + (_recorded ? `. ${_recorded} not yet rated.` : ".");
-  // Suppressed in the reduced/data-pending contributor state: those cards carry no band
-  // fields, so any count would be a false "0 rated". Show the plain headline instead.
-  const _ratedClause = data.reduced ? null : html`<span style=${{ cursor: "help", borderBottom: "1px dotted currentColor" }}
-    title=${_ratedTip} aria-label=${_ratedTip}> · ${_rated} rated${_recorded ? ` · ${_recorded} not yet rated` : ""}</span>`;
+  // (the rated/recorded reconciliation that used to be computed here is gone. Its caption was
+  //  removed on 2026-08-13 — "no need for the text under the heading" — leaving six values
+  //  computed on every render and referenced nowhere. The reconciliation itself now lives where
+  //  it can be acted on: the "no reading yet" filter in the Market facet.)
   return html`
     <div>
       <div class="sp-masthead">
