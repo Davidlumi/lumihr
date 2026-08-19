@@ -5713,3 +5713,14 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 .pcom-compare { margin: 0 0 var(--s2); font-weight: 500; }
 .pcom-implications { margin: 0 0 var(--s2); }
 .pcom-considerations { margin: 0; color: var(--ink-soft); font-size: var(--fs-caption); }
+
+/* The pulse one-pager and the whole-pulse PDF: the observation prints with the chart,
+   never as a screen-only extra. .pulse-com is a screen affordance (a sunk panel opened
+   from a control); on paper it is body copy. */
+.pulse-q-page .pulse-onepager-read .eyebrow { margin-bottom: var(--s2); }
+@media print {
+  .pulse-com { background: none; padding: 0; margin-top: var(--s2); }
+  .pulse-com .pcom-considerations { font-size: var(--fs-micro); }
+  .pulse-q-page .card { box-shadow: none; border: 0; padding: 0; }
+  .pulse-q-page .pulse-onepager-read { margin-top: var(--s3); }
+}

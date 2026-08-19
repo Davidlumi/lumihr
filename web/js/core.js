@@ -642,3 +642,18 @@ window.fmtDate = function (d) {
   new MutationObserver(attach).observe(document.documentElement, { childList: true, subtree: true });
   attach();
 })();
+
+/* Wait for the browser to paint before printing — but never wait FOREVER. rAF does not
+   fire in a hidden or backgrounded tab, so a bare double-rAF await meant that clicking
+   "Print" and switching tab left the promise unresolved: the print never fired and the
+   button stayed disabled until reload. Race the paint against a short timeout so the
+   worst case is printing a frame early rather than not at all. (2026-08-19) */
+window.nextPaint = function (ms) {
+  return new Promise(res => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; res(); } };
+    requestAnimationFrame(() => requestAnimationFrame(finish));
+    setTimeout(finish, ms || 400);
+  });
+};
+

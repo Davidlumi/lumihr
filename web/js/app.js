@@ -428,7 +428,15 @@ function App() {
     ? html`<${PulsesPage} me=${me} tab="run" />`   // Pulse page, "Run a pulse" tab (merged 2026-08-11)
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action."
         action=${html`<button class="btn small primary" onClick=${() => nav("/pulse")}>See open pulses</button>`} />`;
-  else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
+  // the expanded view of ONE pulse question — the pulse equivalent of a metric page. Must
+  // be matched BEFORE the catch-all /pulse/(.+) below, which would swallow the whole path.
+  //
+  // Both strip a trailing query: the global peer-cut selector appends ?cut=… to the hash,
+  // and (.+) captured it straight INTO the id, so every follow-on call went to
+  // /api/pulses/<id>?cut=…/commentary and 405'd. Ids never contain "?".
+  else if ((m = route.match(/^\/pulse\/([^\/?]+)\/q\/([^?]+)/)))
+    page = html`<${PulseQuestionPage} me=${me} pid=${m[1]} qid=${m[2]} />`;
+  else if ((m = route.match(/^\/pulse\/([^?]+)/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
   else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} tab="explore" />`;
   else if (route.startsWith("/register") || (route.startsWith("/reset") && !route.startsWith("/reset/"))) {
     // a bare register/reset deep link while signed in lands home, never a 404 (craft
@@ -1760,7 +1768,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut
       } catch (e) {
         toast("Couldn't write the commentary — printing the standard read.", "error");
       }
-      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));   // let it paint
+      await nextPaint();   // let it paint — bounded, so a hidden tab can't hang the print
     }
     const t = document.title;
     document.title = "lumi — " + c.title + " · one-pager";
