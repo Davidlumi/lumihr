@@ -58,7 +58,13 @@ REGEN_WHITELIST = {
     "ALLOW_03": {"No – non-pensionable": 187, "Yes – some allowances only": 51,
                  "Yes – all allowances": 27,
                  "Varies by allowance/contract": 2},
-    "REW_PAY_020": {"No": 1701, "Yes": 189},   # v2-H: allowances aligned non-pensionable where ALLOW_03 says so
+    # v2-H aligned this non-pensionable where ALLOW_03 says so, but seeded every one of the
+    # seven levels at exactly 27/243 — David's 2026-08-19 data review: "very odd the same and
+    # the same at every level". Re-laddered 2026-08-19 (dataqa c6/c9) against the UNCHANGED
+    # David-signed ALLOW_03 above: 78 of 267 orgs (29.2%) report some pensionable allowance,
+    # so the ladder peaks at 27% (board) and thins to 5.9% (frontline). Alignment to ALLOW_03
+    # is preserved — it is the height and the gradient that changed, not the basis.
+    "REW_PAY_020": {"No": 1586, "Yes": 304},
 }
 
 # Ruled retirements (Diff 14, 2026-07-18 — DECISIONS.md pay/pensions audit round 1):
