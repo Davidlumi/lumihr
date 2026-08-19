@@ -1259,11 +1259,6 @@ def disclosed_absent(org_id, cut, questions, payloads, org_answers, entitled, cf
     return out
 
 
-# Set by the app layer at import (app.py, beside STRATEGY_POSITION_EXCLUDE). Empty here so the
-# engine's own behaviour is unchanged when it is used standalone or under test.
-NO_POSITION_TARGET = ()
-
-
 def _metric_bands(pool, band_low, band_high, margin):
     """{question_id: 'below'|'at'|'above'} — ONE band per METRIC.
 
@@ -1525,15 +1520,7 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
         # (degrade-to-global, inside _market_target). ANNOTATION only — never touches counts /
         # the gauge; this is the queryable input layer-4 suppression reads (parallel to
         # risk_framed). Governance never reaches here (non-competitive branch above → no target).
-        # NO_POSITION_TARGET (2026-08-18): domains the PRODUCT does not let a user set a market
-        # stance for. Wellbeing and Governance & Transparency carry commitments, not positions —
-        # app.py excludes them from the strategy capture — yet the domain panel was still rendering
-        # an alignment chip for Wellbeing, a verdict against an aim the user is never offered.
-        # Governance was already covered by the non-competitive branch above; Wellbeing was not.
-        # The list is a product ruling and stays in app.py (its comment: "not an engine
-        # constraint — the engine can verdict all eight"); the engine only honours what it is handed.
-        d["target"] = (None if sec in (NO_POSITION_TARGET or ())
-                       else _market_target(d["position"], strategy, stance_override=_dts.get(sec)))
+        d["target"] = _market_target(d["position"], strategy, stance_override=_dts.get(sec))
         domains.append(d)
     market = _pool_verdict(gauge_pool, band_low, band_high, margin)
     target = _market_target(market, strategy)
