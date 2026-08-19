@@ -149,9 +149,9 @@
     ]
    },
    "evidence": {
-    "metric": "REW262_GOV_PAYINADVERTS",
+    "metric": "REW_FAI_089",
     "answer_in": [
-     "Never"
+     "No"
     ]
    },
    "status": "contradicted",
@@ -170,7 +170,7 @@
     ]
    },
    "evidence": {
-    "metric": "PAYTR_02_131bd412",
+    "metric": "REW_FAI_088",
     "answer_in": [
      "No"
     ]

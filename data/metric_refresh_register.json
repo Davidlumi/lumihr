@@ -2,7 +2,7 @@
  "class_counts": {
   "annual": 44,
   "benefit": 44,
-  "structural": 244
+  "structural": 238
  },
  "classes": {
   "annual": 12,
@@ -138,18 +138,6 @@
    "months": 24
   },
   "OT_04_b14623a6": {
-   "category": "policy",
-   "class": "structural",
-   "domain": "Pay",
-   "months": 24
-  },
-  "PAYTR_01_42eae7ec": {
-   "category": "policy",
-   "class": "structural",
-   "domain": "Governance & Transparency",
-   "months": 24
-  },
-  "PAYTR_02_131bd412": {
    "category": "policy",
    "class": "structural",
    "domain": "Pay",
@@ -407,12 +395,6 @@
    "domain": "Governance & Transparency",
    "months": 24
   },
-  "REW262_GOV_PAYINADVERTS": {
-   "category": "practice",
-   "class": "structural",
-   "domain": "Governance & Transparency",
-   "months": 24
-  },
   "REW262_GOV_SALHISTORY": {
    "category": "practice",
    "class": "structural",
@@ -425,18 +407,6 @@
    "domain": "Pay",
    "months": 12,
    "override_reason": "AI-skills premia are a fast-moving market"
-  },
-  "REW262_PAY_CANCELLEDSHIFT": {
-   "category": "practice",
-   "class": "structural",
-   "domain": "Pay",
-   "months": 24
-  },
-  "REW262_PAY_GUARANTEEDHRS": {
-   "category": "practice",
-   "class": "structural",
-   "domain": "Pay",
-   "months": 24
   },
   "REW262_PAY_SHIFTNOTICE": {
    "category": "practice",
@@ -1045,12 +1015,6 @@
    "months": 24
   },
   "REW265_GOV_TAKEUP": {
-   "category": "practice",
-   "class": "structural",
-   "domain": "Governance & Transparency",
-   "months": 24
-  },
-  "REW265_GOV_TRS": {
    "category": "practice",
    "class": "structural",
    "domain": "Governance & Transparency",

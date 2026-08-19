@@ -93,13 +93,16 @@ print("=" * 92)
 print("SECTION B — coherence rules: fired / consistent / starved")
 print("=" * 92)
 S = strat(transparency="open")
-out = sa.evaluate(RULES, S, {}, {"REW262_GOV_PAYINADVERTS": "Never", "PAYTR_02_131bd412": "Yes"}, [], EXCLUDE)
+# metrics re-pointed 2026-08-19 (dataqa c11): the adverts/ranges duplicates were retired,
+# so the rules — and these fixtures — now read the surviving REW_FAI_089 / REW_FAI_088.
+# "Never" on the retired 3-point scale is "No" on the survivor's.
+out = sa.evaluate(RULES, S, {}, {"REW_FAI_089": "No", "REW_FAI_088": "Yes"}, [], EXCLUDE)
 g1 = next((c for c in out["commitments"] if c["id"] == "rule:G1"), None)
 g2 = next((c for c in out["commitments"] if c["id"] == "rule:G2"), None)
 check("B", "G1 fires: open transparency + never-in-adverts -> contradicted",
       g1 and g1["status"] == "contradicted")
 check("B", "fired statement carries BOTH sides (intent + the org's answer)",
-      g1 and "fully open" in g1["statement"] and "Never" in g1["statement"], g1 and g1["statement"])
+      g1 and "fully open" in g1["statement"] and "(No," in g1["statement"], g1 and g1["statement"])
 check("B", "G2 consistent: ranges visible -> evidenced", g2 and g2["status"] == "evidenced")
 out = sa.evaluate(RULES, S, {}, {}, [], EXCLUDE)
 g1 = next((c for c in out["commitments"] if c["id"] == "rule:G1"), None)
@@ -107,7 +110,7 @@ check("B", "starved fixture: intent held, evidence unanswered -> not_evidenced",
       g1 and g1["status"] == "not_evidenced")
 # transparency live-gate: 'set' (not reconfirmed) is NOT a stated intent
 S = strat(transparency="open", _tprov="set")
-out = sa.evaluate(RULES, S, {}, {"REW262_GOV_PAYINADVERTS": "Never"}, [], EXCLUDE)
+out = sa.evaluate(RULES, S, {}, {"REW_FAI_089": "No"}, [], EXCLUDE)
 check("B", "transparency 'set'-not-'live' never fires a rule (reconfirm contract)",
       not any(c["id"].startswith("rule:G") for c in out["commitments"]))
 # any-of evidence: I1 via either leg
@@ -125,8 +128,8 @@ print("=" * 92)
 print("SECTION C — the counts contract")
 print("=" * 92)
 out = sa.evaluate(RULES, strat(transparency="ranges"), {},
-                  {"PAYTR_02_131bd412": "Yes"}, [], EXCLUDE,
-                  visible_qids={"PAYTR_02_131bd412"})
+                  {"REW_FAI_088": "Yes"}, [], EXCLUDE,
+                  visible_qids={"REW_FAI_088"})
 check("C", "commitment sections retired 2026-08-15 — no provision/practice commitments emitted",
       not [c for c in out["commitments"] if c["kind"] in ("provision", "practice")])
 # counts contract (brief §12): sum of statuses == commitments per category, all categories

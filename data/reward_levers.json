@@ -371,7 +371,7 @@
       "cost_character": "one-off",
       "speed": "next cycle",
       "reversibility": "hard",
-      "prevalence_metric_id": "PAYTR_02_131bd412",
+      "prevalence_metric_id": "REW_FAI_088",
       "register_effect": "Approach",
       "trade_off": "Publishing ranges surfaces every anomaly at once, so the correction budget and the manager script are load-bearing on the day of release, not after it."
     },
@@ -384,7 +384,7 @@
       "cost_character": "cost-neutral",
       "speed": "this cycle",
       "reversibility": "easy",
-      "prevalence_metric_id": "REW262_GOV_PAYINADVERTS",
+      "prevalence_metric_id": "REW_FAI_089",
       "register_effect": "Approach",
       "trade_off": "Candidates self-select on the number before they hear anything else, which shortens hiring and loses some people who would have been persuadable."
     },

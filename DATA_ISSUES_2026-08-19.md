@@ -264,3 +264,82 @@ The flexible-benefits ladder was confirmed as set — board 9.0% down to frontli
 
 **Verified: 17/17 green**, with `LUMI_GATES_SRC` pointed at the migrated database, then applied
 live and re-confirmed against live.
+
+---
+
+# Classes 11-12 — the duplicate clusters from the plain-English sweep
+
+Reading all 332 question texts (see `migrate_qtext_plain_english_2026_08_19.py`) turned up six
+clusters asking one practice more than once, usually on **different scales** — worse than a
+plain duplicate, because a member can answer them inconsistently and two cards then report
+different numbers for the same practice.
+
+David's rule, 2026-08-19: **keep the richest scale, retire the rest.**
+
+| Retired | Kept | |
+|---|---|---|
+| `PAYTR_01_42eae7ec` | `REW_FAI_089` | Yes/No → All/Some/No |
+| `REW262_GOV_PAYINADVERTS` | `REW_FAI_089` | David's pick: the Enhanced-tier scored one |
+| `PAYTR_02_131bd412` | `REW_FAI_088` | Yes/No → Yes/Partial/No |
+| `REW262_PAY_CANCELLEDSHIFT` | `REW_FAI_CANCEL_1bbcc629` | full/partial payment, and scored |
+| `REW265_GOV_TRS` | `PROP_674db2fc` | 3-point → 6-point provision+access |
+| `REW262_PAY_GUARANTEEDHRS` | `REW263_PAY_GUARHRSAVG` | survivor names the population and the ERA basis |
+
+`REW_FAI_MIN_HOURS_8518a543` was NOT retired — a contractual minimum is a different fact from
+proactively offering guaranteed hours after a reference period (David's ruling). Bank: 332 → **326**.
+
+## What this costs — grade-A anchors now sit on retired questions
+
+Three of the six carried **grade-A register marginals with CIPD citations**:
+
+| | target | source |
+|---|---|---|
+| `PAYTR_01` | 0.40 | CIPD Pay, Performance and Transparency 2024 (n=832) |
+| `REW262_GOV_PAYINADVERTS` | 0.53 | same |
+| `PAYTR_02` | 0.40 | same |
+
+No **number** is lost — the survivors already sit on the same prevalence (`REW_FAI_089` is at
+0.533 against that 0.53; `REW_FAI_088` at 0.356 against that 0.40). But the anchors stay
+attached to retired questions and stop constraining anything, so the survivors are now
+unanchored.
+
+The entries are **deliberately left in `generated_marginals.json` rather than deleted**:
+`reseed_engine.py` consumes `target_share` in the marginal branch, so removing an entry
+silently changes a future re-seed. Re-pointing them at the survivors is a register edit and
+therefore a separate ruling. **OPEN for David.**
+
+## Held back against the rule — `REW26_WEL_FINWELL`
+
+The rule would retire it in favour of `REW263_WEL_FINWELL` (3-point), and the prevalence
+matches almost exactly (0.6333 frozen vs 0.633 achieved on the survivor). It was **not**
+retired, because it is **settled-frozen — tier 1, 0.1pp tolerance** — carrying a full frozen
+distribution, a documented 2026-07-16 G7 re-freeze, a 2026-08-14 re-ratification at n=270, and
+an explicit note that its marginal is retained *because reseed_engine reads it*. Retiring it is
+a re-freeze, not a de-duplication. **OPEN for David.**
+
+## Class 12 — notice periods
+
+Earlier reported as "identical at every level". That overstated it. Measured across all 1,890
+cell pairs they agree **81.9%** of the time — 94–97% at manager and below, which is realistic,
+but 73% at board and 67% at director, where UK contracts normally diverge (six months from the
+employer against three from the employee).
+
+Only the four senior rows moved, and only the **employee** matrix was touched, so the employer
+distribution is byte-identical and nothing reading employer notice shifts. 261 cells stepped
+down one band: board 73%→35% identical, director 67%→42%, head of 72%→52%, senior manager 74%→62%.
+
+## Knock-ons the gates caught
+
+Retiring a question has **five** consequences, not the four recorded after class 10:
+
+1. `gen_refresh_register.py` (326 metrics).
+2. `data/applicable_bases.json` — `qa_release` fails on a declaration naming a retired metric.
+3. `qa_engine_audit.REGEN_WHITELIST` → `RETIRED_LINEAGE` (none needed this time).
+4. `data/lumi_questions.csv` status, so it survives a reseed.
+5. **NEW:** `data/reward_levers.json` and `data/strategy_coherence_rules.json` — `qa_strategy_align`
+   fails on a lever or rule whose metric is retired. Both were re-pointed at the survivors,
+   translating `Never` to `No` for the survivor's scale, and `qa_strategy_align.py`'s own
+   scenario fixtures moved with them.
+
+**Verified: 17/17** with `LUMI_GATES_SRC` pointed at the migrated database, then applied live
+and re-confirmed against live.
