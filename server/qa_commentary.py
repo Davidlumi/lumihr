@@ -365,6 +365,32 @@ for _nm in [n for n in dir(ca) if n.endswith("_SCHEMA")]:
 check("V", "no *_SCHEMA array carries an API-rejected item-count constraint",
       _arr_seen > 0 and not _arr_bad, "checked %d arrays; %s" % (_arr_seen, _arr_bad))
 
+# Engineering vocabulary must never reach a member. On 2026-08-20 a strategy statement
+# shipped "...are stated in this payload, and none are assumed here" onto page 7 of a
+# BOARD DOCUMENT, because only 4 of the 10 validators screened for it. Assert the SCREEN
+# EXISTS for every validator rather than the wording of any one of them: the leak was a
+# missing check, not a bad regex.
+import inspect as _inspect
+_unscreened = []
+for _vn in [n for n in dir(ca) if n.startswith("validate_")]:
+    _fn = getattr(ca, _vn)
+    if not callable(_fn):
+        continue
+    try:
+        _src = _inspect.getsource(_fn)
+    except (OSError, TypeError):
+        continue
+    # either screens directly, or delegates to _screen_prose which screens
+    if "_JARGON_RE" not in _src and "_screen_prose" not in _src:
+        _unscreened.append(_vn)
+check("V", "every validate_* screens engineering jargon (payload/JSON/schema/...)",
+      not _unscreened, "unscreened: %s" % _unscreened)
+
+# and the screen actually bites — the exact sentence that reached the board document
+_leak = "No specific committee structures are stated in this payload, and none are assumed here."
+check("V", "the jargon screen rejects the sentence that reached a board document",
+      bool(ca._JARGON_RE.search(_leak)), "regex no longer matches the known leak")
+
 print()
 print("=" * 100)
 fails = [(s, n, d) for s, n, ok, d in RESULTS if not ok]

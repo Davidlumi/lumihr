@@ -257,7 +257,11 @@ BOARD_PACK_SCHEMA = {
     "additionalProperties": False,
 }
 
-_PACK_JARGON_RE = re.compile(r"\b(payload|JSON|fallback|deterministic)\b", re.I)
+# Engineering vocabulary must never reach a member. Named for the JSON it describes:
+# a strategy statement shipped "...are stated in this payload, and none are assumed here"
+# into a BOARD DOCUMENT on 2026-08-20, because only 4 of the 10 validators screened for
+# this. All ten do now. (schema/endpoint/API added at the same time — same class of leak.)
+_JARGON_RE = re.compile(r"\b(payload|JSON|schema|endpoint|fallback|deterministic)\b", re.I)
 
 
 def validate_pack_narrative(narrative, payload):
@@ -307,8 +311,8 @@ def validate_pack_narrative(narrative, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _PACK_JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _PACK_JARGON_RE.search(text_all).group(0)
+    if _JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
     return True, ""
 
 
@@ -422,8 +426,8 @@ def validate_pulse_narrative(narrative, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _PACK_JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _PACK_JARGON_RE.search(text_all).group(0)
+    if _JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
     return True, ""
 
 
@@ -686,8 +690,8 @@ def _screen_prose(text_all, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _PACK_JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _PACK_JARGON_RE.search(text_all).group(0)
+    if _JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
     return True, ""
 
 
@@ -986,7 +990,12 @@ HARD RULES — breaking any of these makes the output unusable:
 5. Do not name external providers, vendors or consultancies.
 6. Where a choice has not been stated, say so plainly in one clause or leave it out.
    Never fill a gap with a plausible-sounding assumption.
-7. Refer to the organisation by name, or as "the organisation" — never "you"."""
+7. Refer to the organisation by name, or as "the organisation" — never "you".
+8. NEVER refer to the material you were given, or to how you were given it. There is no
+   "payload", "JSON", "data provided", "input" or "above" from the reader's point of view —
+   they are reading a board paper, not a pipeline. Say "the organisation has not stated X",
+   never "X is not stated in this payload". (A statement shipped exactly that sentence into
+   a board document on 2026-08-20.)"""
 
 
 def _statement_floor(p):
@@ -1084,6 +1093,8 @@ def validate_statement(parts, payload):
         if not isinstance(v, str) or not v.strip():
             return False, "missing section " + k
     txt = " ".join(parts[k] for k in STATEMENT_SECTIONS)
+    if _JARGON_RE.search(txt):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(txt).group(0)
     if DIRECTIVE_RE.search(txt):
         return False, "directive: " + DIRECTIVE_RE.search(txt).group(0)
     if LEGAL_RE.search(txt):
@@ -1243,6 +1254,8 @@ def validate_strategy_commentary(parts, payload):
     for verb in ("reported", "submitted", "told us", "peers say", "peers told"):
         if verb in low:
             return False, "attribution wording: " + verb
+    if _JARGON_RE.search(txt):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(txt).group(0)
     n = len(payload.get("areas") or []); off = len(payload.get("off_aim") or [])
     allowed = {str(n), str(off), str(n - off)}
     for num in re.findall(r"\b\d+\b", txt):
@@ -1324,6 +1337,8 @@ def validate_commentary(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
+    if _JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
     if DIRECTIVE_RE.search(text_all):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
@@ -1724,6 +1739,8 @@ def validate_domain_summary(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
+    if _JARGON_RE.search(text_scan):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_scan).group(0)
     if DOMAIN_RATIO_RE.search(text_scan):
         return False, "worded proportion: %s" % DOMAIN_RATIO_RE.search(text_scan).group(0)
     if DIRECTIVE_RE.search(text_scan):
@@ -1971,6 +1988,8 @@ def validate_diagnosis(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
+    if _JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
     if DIRECTIVE_RE.search(text_all):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
@@ -2121,6 +2140,8 @@ def validate_plan(parts, payload):
         joined += " " + " ".join((a.get(k) or "") for k in ("title", "why", "horizon", "roi"))
     if "\\" in joined:
         return False, "malformed text"
+    if _JARGON_RE.search(joined):
+        return False, "engineering jargon: %s" % _JARGON_RE.search(joined).group(0)
     if DIRECTIVE_RE.search(joined):
         return False, "directive language"
     if LEGAL_RE.search(joined):
