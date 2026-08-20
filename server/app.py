@@ -9,6 +9,7 @@ suppression-checked aggregates with all internal ("_"-prefixed) keys stripped.
 
 Run:  python3 -m uvicorn app:app --port 8060
 """
+import concurrent.futures as cf
 import csv
 import functools
 import hashlib
@@ -5256,21 +5257,43 @@ def _reward_document_job_runner(job_id, params, progress):
         req = _JobRequest(user, org, body=dict(force, **(body or {})))
         return asyncio.run(coro_fn(req))
 
-    progress(0)
-    call(strategy_commentary)
-    progress(1)
-    call(strategy_statement)
-    progress(2)
-    call(strategy_diagnosis)
-    progress(3)
-    # the plan is editor-only (require_editor inside the route) and may already exist —
-    # a Viewer reaching this step has nothing to draft, which is a real answer, not a skip
-    if user.get("role") in ("admin", "contributor"):
+    # ALL FOUR AT ONCE. They read the same stored strategy and write four different cache
+    # rows, so nothing orders them — running them in turn just added their latencies
+    # together. Each lands in its own thread with its own event loop and its own
+    # (thread-local) connection, exactly as the job runner itself does.
+    def plan_if_editor():
+        # editor-only inside the route, and a Viewer has nothing to draft — a real
+        # answer rather than a skip, so it completes like any other section
+        if user.get("role") not in ("admin", "contributor"):
+            return None
         try:
-            call(build_action_plan)
+            return call(build_action_plan)
         except HTTPException as e:
-            if e.status_code not in (403, 409):
-                raise
+            if e.status_code in (403, 409):
+                return None
+            raise
+
+    tasks = [lambda: call(strategy_commentary),
+             lambda: call(strategy_statement),
+             lambda: call(strategy_diagnosis),
+             plan_if_editor]
+    progress(0)
+    done = 0
+    errors = []
+    with cf.ThreadPoolExecutor(max_workers=len(tasks)) as ex:
+        futures = [ex.submit(t) for t in tasks]
+        for f in cf.as_completed(futures):
+            try:
+                f.result()
+            except Exception as e:                 # noqa: BLE001
+                errors.append(e)
+            done += 1
+            progress(min(done, len(tasks) - 1))
+    if errors and len(errors) == len(tasks):
+        raise errors[0]                            # every section failed: the job failed
+    for e in errors:
+        log.warning("[lumi] reward document: one section failed (%s) — the page will "
+                    "fall back to its composed floor for that part", e)
     return params["org_id"]
 
 

@@ -60,13 +60,19 @@ KINDS = {
         "label": "reward plan",
         "steps": [("Sequencing your gaps into a plan", 30)],
     },
+    # The four calls are INDEPENDENT, so they run at once rather than in turn. Naming the
+    # steps in sequence (as this did until 2026-08-20) forced them into a queue and roughly
+    # doubled the wait — the browser had always fired them in parallel, and moving the work
+    # into a job quietly lost that. The steps are completion COUNTS now, which is both
+    # faster and more honest: the bar moves when a section actually lands, whichever
+    # section it happens to be.
     "reward_document": {
         "label": "reward document",
         "steps": [
-            ("Reading your strategy against the market", 30),
-            ("Writing your strategy narrative", 40),
-            ("Diagnosing where you stand", 35),
-            ("Drafting your plan", 30),
+            ("Writing your document", 30),
+            ("Two of four sections written", 8),
+            ("Three of four sections written", 8),
+            ("Finishing the last section", 8),
         ],
     },
 }
