@@ -380,16 +380,28 @@ for _vn in [n for n in dir(ca) if n.startswith("validate_")]:
         _src = _inspect.getsource(_fn)
     except (OSError, TypeError):
         continue
-    # either screens directly, or delegates to _screen_prose which screens
-    if "_JARGON_RE" not in _src and "_screen_prose" not in _src:
+    # either screens directly via _engine_leak, or delegates to _screen_prose which does
+    if "_engine_leak" not in _src and "_screen_prose" not in _src:
         _unscreened.append(_vn)
-check("V", "every validate_* screens engineering jargon (payload/JSON/schema/...)",
+check("V", "every validate_* screens engine leaks (jargon + internal identifiers)",
       not _unscreened, "unscreened: %s" % _unscreened)
 
-# and the screen actually bites — the exact sentence that reached the board document
-_leak = "No specific committee structures are stated in this payload, and none are assumed here."
-check("V", "the jargon screen rejects the sentence that reached a board document",
-      bool(ca._JARGON_RE.search(_leak)), "regex no longer matches the known leak")
+# and the screen actually bites — both sentences that reached a member, held verbatim so
+# the patterns cannot be narrowed past them
+for _label, _leak in (
+        ("the sentence that reached a board document",
+         "No specific committee structures are stated in this payload, and none are assumed here."),
+        ("the answer that showed a member a question id",
+         "On typical employer pension contribution (REW_BEN_112), you sit low against peers.")):
+    check("V", "the engine-leak screen still rejects %s" % _label,
+          bool(ca._engine_leak(_leak)), "screen no longer matches the known leak")
+
+# ...and does not reject honest prose that merely looks technical
+for _ok in ("You sit at the 27th percentile against 270 UK organisations, 50-249 FTE.",
+            "Pay is Fully open; the HR team reviews it annually.",
+            "At 10,000+ FTE the median is 6.5%, and you report 4.0%."):
+    check("V", "the engine-leak screen accepts %r" % _ok[:34],
+          ca._engine_leak(_ok) is None, ca._engine_leak(_ok) or "")
 
 print()
 print("=" * 100)

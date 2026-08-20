@@ -4551,9 +4551,17 @@ def _analyst_block(card):
                                                  "organisations selecting that option; "
                                                  "shares can sum past 100")
     if card.get("matrix_rows"):
+        # Matrix rows were 72% of this payload (5,389 of 7,509 bytes on a pension
+        # question), because each row shipped its FULL aggregate block — min, max, p10,
+        # p90, mean, excluded_non_numeric — for an answer that cites a percentile against
+        # a median. Keep the quartiles, the sample size and the member's own position;
+        # drop the rest. The model can only cite numbers present here, so this narrows
+        # what it can say to what it actually says. (2026-08-20)
+        _KEEP = ("n", "n_real", "p25", "p50", "p75", "unit")
         out["rows"] = [{"label": r["label"],
                         "suppressed": r["suppressed"],
-                        "aggregates": r.get("block"),
+                        "aggregates": {k: v for k, v in (r.get("block") or {}).items()
+                                       if k in _KEEP} or None,
                         "you": (r.get("you") or {}).get("value"),
                         "you_percentile": (r.get("you") or {}).get("percentile")}
                        for r in card["matrix_rows"]]

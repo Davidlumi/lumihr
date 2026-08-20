@@ -37,7 +37,15 @@ SURFACE_MODEL = {
     # writes two sentences. Measured at 113 output tokens on the flagship.
     "guide": os.environ.get("LUMI_AI_MODEL_GUIDE", "claude-haiku-4-5-20251001"),
 }
-SURFACE_EFFORT = {}
+SURFACE_EFFORT = {
+    # A/B'd on the same payload, three runs each (2026-08-20): high averaged 47.9s
+    # (37.0-66.7) and medium 31.2s (28.6-35.4) — the ranges do not overlap, so a third
+    # off the wait is not noise. The validator accepted 3/3 at medium against 2/3 at
+    # high, the one high-effort rejection being a THINNER answer ("only 1 key_findings").
+    # Three runs each is too few to claim medium writes better packs; it is ample to say
+    # it does not write worse ones, and the validator is what stands behind that.
+    "board_pack": os.environ.get("LUMI_AI_EFFORT_BOARD_PACK", "medium"),
+}
 
 
 def _model_for(surface):
@@ -304,6 +312,25 @@ BOARD_PACK_SCHEMA = {
 # this. All ten do now. (schema/endpoint/API added at the same time — same class of leak.)
 _JARGON_RE = re.compile(r"\b(payload|JSON|schema|endpoint|fallback|deterministic)\b", re.I)
 
+# Internal question ids — REW_BEN_112, PULSE_FD780F8D1B, CAR_STATUS_01 — are handed to the
+# model in every payload as the key it must answer about, and they occasionally come back
+# out in the prose: "On typical employer pension contribution (REW_BEN_112), you sit low
+# against..." reached a member on 2026-08-20, 1 answer in 13. A member has never seen one
+# of these and cannot act on it. NOT case-insensitive, deliberately: lower-cased, this
+# shape matches ordinary snake_case and would reject honest prose.
+_ID_RE = re.compile(r"\b[A-Z]{2,8}\d{0,4}_[A-Z0-9_]{2,}\b")
+
+
+def _engine_leak(text):
+    """Vocabulary a member should never be shown. Returns a ready reason, or None."""
+    m = _JARGON_RE.search(text or "")
+    if m:
+        return "engineering jargon: %s" % m.group(0)
+    m = _ID_RE.search(text or "")
+    if m:
+        return "internal identifier: %s" % m.group(0)
+    return None
+
 
 def validate_pack_narrative(narrative, payload):
     """The board pack's runtime trust gate — until now the flagship export was the
@@ -352,8 +379,9 @@ def validate_pack_narrative(narrative, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
+    _leak = _engine_leak(text_all)
+    if _leak:
+        return False, _leak
     return True, ""
 
 
@@ -467,8 +495,9 @@ def validate_pulse_narrative(narrative, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
+    _leak = _engine_leak(text_all)
+    if _leak:
+        return False, _leak
     return True, ""
 
 
@@ -731,8 +760,9 @@ def _screen_prose(text_all, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if _JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
+    _leak = _engine_leak(text_all)
+    if _leak:
+        return False, _leak
     return True, ""
 
 
@@ -1134,8 +1164,9 @@ def validate_statement(parts, payload):
         if not isinstance(v, str) or not v.strip():
             return False, "missing section " + k
     txt = " ".join(parts[k] for k in STATEMENT_SECTIONS)
-    if _JARGON_RE.search(txt):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(txt).group(0)
+    _leak = _engine_leak(txt)
+    if _leak:
+        return False, _leak
     if DIRECTIVE_RE.search(txt):
         return False, "directive: " + DIRECTIVE_RE.search(txt).group(0)
     if LEGAL_RE.search(txt):
@@ -1295,8 +1326,9 @@ def validate_strategy_commentary(parts, payload):
     for verb in ("reported", "submitted", "told us", "peers say", "peers told"):
         if verb in low:
             return False, "attribution wording: " + verb
-    if _JARGON_RE.search(txt):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(txt).group(0)
+    _leak = _engine_leak(txt)
+    if _leak:
+        return False, _leak
     n = len(payload.get("areas") or []); off = len(payload.get("off_aim") or [])
     allowed = {str(n), str(off), str(n - off)}
     for num in re.findall(r"\b\d+\b", txt):
@@ -1378,8 +1410,9 @@ def validate_commentary(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
-    if _JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
+    _leak = _engine_leak(text_all)
+    if _leak:
+        return False, _leak
     if DIRECTIVE_RE.search(text_all):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
@@ -1780,8 +1813,9 @@ def validate_domain_summary(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
-    if _JARGON_RE.search(text_scan):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_scan).group(0)
+    _leak = _engine_leak(text_scan)
+    if _leak:
+        return False, _leak
     if DOMAIN_RATIO_RE.search(text_scan):
         return False, "worded proportion: %s" % DOMAIN_RATIO_RE.search(text_scan).group(0)
     if DIRECTIVE_RE.search(text_scan):
@@ -2029,8 +2063,9 @@ def validate_diagnosis(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
-    if _JARGON_RE.search(text_all):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(text_all).group(0)
+    _leak = _engine_leak(text_all)
+    if _leak:
+        return False, _leak
     if DIRECTIVE_RE.search(text_all):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
@@ -2181,8 +2216,9 @@ def validate_plan(parts, payload):
         joined += " " + " ".join((a.get(k) or "") for k in ("title", "why", "horizon", "roi"))
     if "\\" in joined:
         return False, "malformed text"
-    if _JARGON_RE.search(joined):
-        return False, "engineering jargon: %s" % _JARGON_RE.search(joined).group(0)
+    _leak = _engine_leak(joined)
+    if _leak:
+        return False, _leak
     if DIRECTIVE_RE.search(joined):
         return False, "directive language"
     if LEGAL_RE.search(joined):
