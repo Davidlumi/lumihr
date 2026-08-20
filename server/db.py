@@ -553,7 +553,10 @@ CREATE TABLE IF NOT EXISTS board_packs (
     created_by TEXT NOT NULL,
     payload_json TEXT NOT NULL,     -- data passed to the model
     narrative_json TEXT NOT NULL,   -- model output sections
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- dedupe: a pack whose inputs have not moved IS the pack you already have, so the
+    -- same org + cut + figures returns it instead of paying for a second one
+    payload_hash TEXT
 );
 
 -- ===================== CORE QUESTION-SET VERSIONING / GOVERNANCE ===========
@@ -776,7 +779,9 @@ def init_schema(conn=None):
     conn = conn or get_conn()
     conn.executescript(SCHEMA)
     # migration-lite for existing databases
-    for ddl in (# a finished board pack / reward document is a bell item until opened
+    for ddl in (# dedupe key: a board pack whose inputs have not moved is the SAME pack
+                "ALTER TABLE board_packs ADD COLUMN payload_hash TEXT",
+                # a finished board pack / reward document is a bell item until opened
                 "ALTER TABLE generation_jobs ADD COLUMN bell_read_at TEXT",
                 "ALTER TABLE orgs ADD COLUMN clock_start TEXT",
                 "ALTER TABLE orgs ADD COLUMN insights_unlocked_at TEXT",
@@ -911,6 +916,11 @@ def init_schema(conn=None):
             conn.execute(ddl)
         except sqlite3.OperationalError:
             pass  # column already exists
+    # AFTER the ALTERs, never inside SCHEMA: on an existing database board_packs predates
+    # payload_hash, and executescript runs first — indexing a column that does not exist
+    # yet takes the whole startup down (2026-08-20).
+    conn.execute("CREATE INDEX IF NOT EXISTS ix_board_packs_dedupe "
+                 "ON board_packs(org_id, payload_hash)")
     conn.commit()
 
 

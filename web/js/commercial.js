@@ -190,9 +190,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const regenerate = async () => {
     if (!window.confirm("Regenerate creates a new version of this pack. Any share links you've already sent will keep showing THIS version — re-share the new pack to update recipients. Continue?")) return;
     // background job, same as the Overview export (2026-08-20): a regenerate is the same
-    // several-model-call generation, and the member should be free to leave it running
+    // several-model-call generation, and the member should be free to leave it running.
+    // force: this button exists to buy a FRESH wording — it is the one path that should
+    // skip the dedupe and pay, which is why the confirm above warns before spending.
     await gj.start("/api/jobs/boardpack",
-      { cut: (p.cut && p.cut.dim) || "all", cut_value: p.cut ? p.cut.value : null },
+      { cut: (p.cut && p.cut.dim) || "all", cut_value: p.cut ? p.cut.value : null, force: true },
       st => { gj.reset(); nav("/boardpack/" + st.result_id); });
   };
   // evidence CSV (Sprint 2): the vendor convention — the data behind the document,

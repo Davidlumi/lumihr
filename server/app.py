@@ -4251,18 +4251,36 @@ def _analyst_rate_limited(org_id):
 # Board-pack generation fires a large (max_tokens=8000, high-effort) Claude call.
 # Cap it per org per day so a member can't rack up spend by regenerating; the
 # deterministic pack floor is never capped (only the paid AI call is).
-BOARDPACK_PER_DAY = int(os.environ.get("LUMI_BOARDPACK_PER_DAY", "20"))
+# 20/day permitted 600 packs a month per org (~13M input tokens) and was protecting
+# nothing. With dedupe in place an unchanged benchmark costs nothing at all, so this only
+# has to bound DELIBERATE regeneration after real changes — 3 is generous for that.
+BOARDPACK_PER_DAY = int(os.environ.get("LUMI_BOARDPACK_PER_DAY", "3"))
 _boardpack_gen = defaultdict(list)
 
 
-def _boardpack_rate_limited(org_id):
+def _boardpack_rate_limited(org_id, consume=True):
+    """The same-day brake. SPLIT into peek and consume (2026-08-20): it used to stamp the
+    counter the moment it was asked, so a request that went on to reuse an existing pack —
+    or to fail — still spent the member's allowance. Only a real generation consumes now."""
     import time as _t
     now = _t.time()
     _boardpack_gen[org_id] = [t for t in _boardpack_gen[org_id] if now - t < 86400]
     if len(_boardpack_gen[org_id]) >= BOARDPACK_PER_DAY:
         return True
-    _boardpack_gen[org_id].append(now)
+    if consume:
+        _boardpack_gen[org_id].append(now)
     return False
+
+
+def _pack_payload_hash(payload):
+    """Dedupe key for a board pack: the figures, NOT the day they were printed.
+
+    generated_date is the one field that moves on its own, and it is a rendering detail —
+    excluding it means an unchanged benchmark returns the pack you already have however
+    long ago you made it, rather than buying a fresh wording of identical facts. Regenerate
+    exists for when a freshly-dated copy is actually wanted."""
+    stripped = {k: v for k, v in payload.items() if k != "generated_date"}
+    return hashlib.sha256(j(stripped).encode()).hexdigest()[:16]
 
 
 ANALYST_LOG_RETENTION_DAYS = int(os.environ.get("LUMI_ANALYST_LOG_RETENTION_DAYS", "180"))
@@ -4937,8 +4955,10 @@ async def boardpack_generate(request: Request):
     body = await _json(request)
     cut = boardpack_resolve_cut(org, body)
     boardpack_spend_guard(org, _ai_ok)
-    pack_id, ai_used = await to_thread.run_sync(boardpack_build, user, org, cut, _ai_ok)
-    return {"pack_id": pack_id, "ai": ai_used}
+    force = bool(body.get("force"))
+    pack_id, ai_used, reused = await to_thread.run_sync(
+        boardpack_build, user, org, cut, _ai_ok, None, force)
+    return {"pack_id": pack_id, "ai": ai_used, "reused": reused}
 
 
 def boardpack_resolve_cut(org, body):
@@ -4966,36 +4986,60 @@ def boardpack_resolve_cut(org, body):
 
 
 def boardpack_spend_guard(org, ai_ok):
-    """The two cost ceilings, checked BEFORE a job is created so a refusal is an immediate
-    429 the member can read — not a background job that fails a minute later."""
+    """PEEK at the ceilings before a job is created, so a refusal is an immediate 429 the
+    member can read rather than a background job that fails a minute later. Consumes
+    nothing: the allowance is spent in boardpack_build, and only if a pack is really
+    written — a reused pack is free, and so is one the model declined to produce."""
     # cap only the paid AI call — the deterministic pack floor is always available
-    if ai_ok and _boardpack_rate_limited(org["org_id"]):
+    if ai_ok and _boardpack_rate_limited(org["org_id"], consume=False):
         raise HTTPException(429, "You've generated a lot of board packs today — please try again "
                                  "tomorrow. Packs you've already produced are still available.")
-    if ai_ok:
-        _ai_generation_or_429(org)
 
 
-def boardpack_build(user, org, cut, ai_ok, progress=None):
+def boardpack_build(user, org, cut, ai_ok, progress=None, force=False):
     """The whole pack, figures to stored row. SYNCHRONOUS and free of Request, so the
     immediate route and the background job run one implementation rather than two that
     drift. `progress(i)` marks the start of step i for the preparing screen.
-    Returns (pack_id, ai_used)."""
+    Returns (pack_id, ai_used, reused).
+
+    DEDUPE (2026-08-20): assembling the payload costs no model call, so it is built first
+    and hashed. If a pack already exists on those exact figures, that pack IS the answer —
+    it is returned untouched, no call is made and no allowance is spent. This is what stops
+    cost scaling with CLICKS: twenty Exports on an unchanged benchmark are one generation
+    and nineteen free opens. force=True is the explicit Regenerate, which does want a fresh
+    wording and does pay for it."""
     step = progress or (lambda i: None)
+    conn = get_conn()
     step(0)                                     # gathering your figures
     payload = assemble_pack_payload(None, user, org, cut)
+    phash = _pack_payload_hash(payload)
+    if not force:
+        prior = conn.execute(
+            "SELECT pack_id FROM board_packs WHERE org_id=? AND payload_hash=? "
+            "ORDER BY created_at DESC LIMIT 1", (org["org_id"], phash)).fetchone()
+        if prior:
+            step(2)
+            return prior["pack_id"], True, True
+
+    # a pack is genuinely being written: NOW spend the allowance
+    if ai_ok:
+        if _boardpack_rate_limited(org["org_id"]):
+            raise HTTPException(429, "You've generated a lot of board packs today — please try "
+                                     "again tomorrow. Packs you've already produced are still "
+                                     "available.")
+        _ai_generation_or_429(org)
     step(1)                                     # writing and checking the narrative
     result = claude_api.generate_board_pack_narrative(payload) if ai_ok \
         else {"ok": False, "error": "AI narrative not enabled for this member",
               "narrative": claude_api._deterministic_pack(payload)}
     step(2)                                     # saving your pack
     pack_id = str(uuid.uuid4())
-    conn = get_conn()
     conn.execute(
-        "INSERT INTO board_packs(pack_id, org_id, created_by, payload_json, narrative_json) VALUES (?,?,?,?,?)",
-        (pack_id, org["org_id"], user["user_id"], j(payload), j(result["narrative"])))
+        "INSERT INTO board_packs(pack_id, org_id, created_by, payload_json, narrative_json, "
+        "payload_hash) VALUES (?,?,?,?,?,?)",
+        (pack_id, org["org_id"], user["user_id"], j(payload), j(result["narrative"]), phash))
     conn.commit()
-    return pack_id, result["ok"]
+    return pack_id, result["ok"], False
 
 
 @app.get("/api/boardpack/{pack_id}")
@@ -5133,8 +5177,9 @@ def _boardpack_job_runner(job_id, params, progress):
     conn = get_conn()
     org = conn.execute("SELECT * FROM orgs WHERE org_id=?", (params["org_id"],)).fetchone()
     user = conn.execute("SELECT * FROM users WHERE user_id=?", (params["user_id"],)).fetchone()
-    pack_id, _ai = boardpack_build(dict(user), dict(org), params["cut"], params["ai_ok"],
-                                   progress=progress)
+    pack_id, _ai, _reused = boardpack_build(dict(user), dict(org), params["cut"],
+                                            params["ai_ok"], progress=progress,
+                                            force=bool(params.get("force")))
     return pack_id
 
 
@@ -5259,7 +5304,7 @@ async def job_boardpack(request: Request):
     return _start_job("boardpack", org, user,
                       {"notify": bool(body.get("notify"))},
                       {"org_id": org["org_id"], "user_id": user["user_id"],
-                       "cut": cut, "ai_ok": _ai_ok})
+                       "cut": cut, "ai_ok": _ai_ok, "force": bool(body.get("force"))})
 
 
 @app.post("/api/jobs/{job_id}/notify")
@@ -5297,6 +5342,13 @@ async def job_status(job_id: str, request: Request):
     st["job_id"] = job_id
     st["url"] = _job_result_path(row) if row["status"] == "done" else None
     st["notify_email"] = row["notify_email"]
+    # Did this job WRITE the pack, or hand back one that already existed? Derivable rather
+    # than stored: a reused pack predates the job that returned it. Lets the client say
+    # "your figures haven't moved" instead of looking like Export did nothing.
+    if row["status"] == "done" and row["kind"] == "boardpack" and row["result_id"]:
+        st["reused"] = bool(conn.execute(
+            "SELECT 1 FROM board_packs WHERE pack_id=? AND created_at < ?",
+            (row["result_id"], row["created_at"])).fetchone())
     return st
 
 

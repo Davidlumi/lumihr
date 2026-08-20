@@ -328,9 +328,16 @@ function ExportBoardPack({ me, cut }) {
   const generate = async () => {
     setErr(null);
     setOpen(true);                        // the panel renders inside the existing menu card
+    // no force: Export means "give me the pack for this cut". If the figures have not
+    // moved since the last one, that pack already exists and is opened instead of bought
+    // again — this is what stops cost scaling with clicks (2026-08-20).
     await gj.start("/api/jobs/boardpack",
       { cut: cut.dim, cut_value: cut.value },
-      st => { gj.reset(); nav("/boardpack/" + st.result_id); });
+      st => {
+        gj.reset();
+        if (st.reused) toast("Your figures haven't moved — opening the pack you already have.");
+        nav("/boardpack/" + st.result_id);
+      });
   };
   const toggle = () => {
     setOpen(!open);
