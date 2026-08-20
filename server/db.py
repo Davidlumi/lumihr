@@ -315,6 +315,26 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
 );
 CREATE INDEX IF NOT EXISTS ix_credit_ledger_org ON credit_ledger(org_id, created_at);
 
+CREATE TABLE IF NOT EXISTS generation_jobs (
+    job_id          TEXT PRIMARY KEY,
+    org_id          TEXT NOT NULL REFERENCES orgs(org_id),
+    user_id         TEXT NOT NULL,
+    kind            TEXT NOT NULL,             -- boardpack | reward_document
+    status          TEXT NOT NULL,             -- running | done | failed
+    step_index      INTEGER NOT NULL DEFAULT 0,
+    step_started_at TEXT,
+    params_json     TEXT NOT NULL DEFAULT '{}',
+    result_id       TEXT,                      -- pack_id, for the link the member follows
+    error           TEXT,
+    notify_email    TEXT,                      -- set ⇒ email this address on completion
+    notified_at     TEXT,                      -- set once, so a retry cannot double-send
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at     TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_generation_jobs_org ON generation_jobs(org_id, created_at);
+CREATE INDEX IF NOT EXISTS ix_generation_jobs_live ON generation_jobs(status, updated_at);
+
 CREATE TABLE IF NOT EXISTS notification_events (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     org_id       TEXT NOT NULL REFERENCES orgs(org_id),

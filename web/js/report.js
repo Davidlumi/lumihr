@@ -606,6 +606,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
     return Promise.all(jobs);
   };
+  const gj = useGenerationJob();
   const [planBusy, setPlanBusy] = useState(false);
   const buildPlan = async (a) => {
     setPlanBusy(true);
@@ -635,12 +636,26 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         if (autoPlan && a && a.ok !== false && !a.plan && (a.data_state || {}).unlocked !== false) buildPlan(false);
       })
       .catch(e => setErr(e.message));
-    loadNarrative(false);
+    // The document is four model calls. Firing them from here meant a multi-minute wait
+    // with nothing to look at, and all four lost if the member navigated away. So: peek
+    // first (free, generates nothing) — if the document is already written, load it from
+    // store as before; if not, hand the four generations to a background job the member
+    // can watch, leave, or be emailed about. (2026-08-20)
+    api("/api/strategy/commentary", { method: "POST", body: { peek: true } })
+      .then(r => (r && r.cached)
+        ? loadNarrative(false)
+        : gj.start("/api/jobs/reward-document", {}, () => { gj.reset(); loadNarrative(false); }))
+      .catch(() => loadNarrative(false));
   }, [kind]);
 
   if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't build the document"
     body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Try again</button>`} />`;
+  if (gj.job && gj.job.status !== "done") return html`
+    <div class="rr-preparing no-print">
+      <${PreparingScreen} job=${gj.job} onNotify=${gj.notifyMe}
+        onRetry=${() => { gj.reset(); window.location.reload(); }} />
+    </div>`;
   if (!st || !al) return html`<${PageLoading} />`;
   if (!st.completed_at) return html`<${EmptyState} icon="compass" title="Set your reward strategy first"
     body="This document is written from your stated strategy — so it starts there."

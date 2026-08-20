@@ -21,6 +21,7 @@ import urllib.parse
 import secrets
 import sys
 import time
+import types
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -75,6 +76,7 @@ import strategy_diag
 import pulses as pulses_mod
 import payments as payments_mod
 import credits as credits_mod
+import generation_jobs as jobs_mod
 import releases
 import retrieval
 import guide
@@ -152,13 +154,18 @@ AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
 AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
-# Per-domain AI summary (Pass 3) — its OWN kill switch. Default OFF: go-live to ALL members
-# is RESERVED for David and gated on the compliance track (DPA / privacy notice / sub-processor
-# review — this ships AI-generated, member-facing content derived from member data). The
-# adversarial gate (qa_domain_summary.py) is green and the voice is signed off, so it's enabled
-# per-environment with LUMI_AI_DOMAIN_SUMMARY=on (demo / preview) until David explicitly
-# authorizes launch. (The 2026-06-28 default-on flip was unauthorized and reverted.)
-AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
+# Per-domain AI summary (Pass 3) — its OWN kill switch. Default ON since 2026-08-20, on
+# David's instruction: "I want AI switched on across the site so we are ready for full
+# testing when we go to prod." This was the last dark AI feature, and a feature nobody
+# exercises is a feature nobody has tested. (An earlier 2026-06-28 default-on flip was
+# reverted as unauthorized — this one is authorized by the person whose ruling it was.
+# Do not revert it on the strength of that older note.)
+#
+# STILL OWED BEFORE REAL MEMBERS SEE IT, and David's to close, not the code's: the
+# compliance track this switch was originally holding — DPA, privacy notice, sub-processor
+# review — because this ships AI-generated, member-facing content derived from member data.
+# Set LUMI_AI_DOMAIN_SUMMARY=off to take it dark again without a deploy.
+AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "on").lower() == "on"
 
 # Per-org cap on paid AI GENERATIONS (pre-prod audit 2026-08-12: most AI endpoints had
 # no rate limit — one scripted member could burn unbounded spend). Generous by design:
@@ -4840,6 +4847,14 @@ async def boardpack_generate(request: Request):
     if not contrib["insights_unlocked"]:
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
     body = await _json(request)
+    cut = boardpack_resolve_cut(org, body)
+    boardpack_spend_guard(org, _ai_ok)
+    pack_id, ai_used = await to_thread.run_sync(boardpack_build, user, org, cut, _ai_ok)
+    return {"pack_id": pack_id, "ai": ai_used}
+
+
+def boardpack_resolve_cut(org, body):
+    """The peer cut a pack is built against, from the request body."""
     cut = {"dim": body.get("cut", "all"), "value": body.get("cut_value")}
     if cut["dim"] not in ("all", "industry", "fte_band", "twin", "group"):
         cut["dim"] = "all"
@@ -4859,23 +4874,40 @@ async def boardpack_generate(request: Request):
         cut["value"] = org["industry"]
     if cut["dim"] == "fte_band" and not cut["value"]:
         cut["value"] = org["fte_band"]
+    return cut
+
+
+def boardpack_spend_guard(org, ai_ok):
+    """The two cost ceilings, checked BEFORE a job is created so a refusal is an immediate
+    429 the member can read — not a background job that fails a minute later."""
     # cap only the paid AI call — the deterministic pack floor is always available
-    if _ai_ok and _boardpack_rate_limited(org["org_id"]):
+    if ai_ok and _boardpack_rate_limited(org["org_id"]):
         raise HTTPException(429, "You've generated a lot of board packs today — please try again "
                                  "tomorrow. Packs you've already produced are still available.")
-    if _ai_ok:
+    if ai_ok:
         _ai_generation_or_429(org)
-    payload = assemble_pack_payload(request, user, org, cut)
-    result = (await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)) if _ai_ok \
+
+
+def boardpack_build(user, org, cut, ai_ok, progress=None):
+    """The whole pack, figures to stored row. SYNCHRONOUS and free of Request, so the
+    immediate route and the background job run one implementation rather than two that
+    drift. `progress(i)` marks the start of step i for the preparing screen.
+    Returns (pack_id, ai_used)."""
+    step = progress or (lambda i: None)
+    step(0)                                     # gathering your figures
+    payload = assemble_pack_payload(None, user, org, cut)
+    step(1)                                     # writing and checking the narrative
+    result = claude_api.generate_board_pack_narrative(payload) if ai_ok \
         else {"ok": False, "error": "AI narrative not enabled for this member",
               "narrative": claude_api._deterministic_pack(payload)}
+    step(2)                                     # saving your pack
     pack_id = str(uuid.uuid4())
     conn = get_conn()
     conn.execute(
         "INSERT INTO board_packs(pack_id, org_id, created_by, payload_json, narrative_json) VALUES (?,?,?,?,?)",
         (pack_id, org["org_id"], user["user_id"], j(payload), j(result["narrative"])))
     conn.commit()
-    return {"pack_id": pack_id, "ai": result["ok"]}
+    return pack_id, result["ok"]
 
 
 @app.get("/api/boardpack/{pack_id}")
@@ -4945,6 +4977,205 @@ async def boardpack_get(pack_id: str, request: Request):
             "current_collection_window": snap["collection_window"] if snap else None,
             "previous": prev_summary,
             "live_headline": live_headline}
+
+
+# ==================================================== BACKGROUND GENERATION JOBS ==
+# The board pack and the reward document are several model calls deep. A typical one lands
+# in 15-25 seconds, but the Claude SDK retries transient failures twice behind a 120-second
+# ceiling, so a loaded afternoon can stretch one past five minutes — and a five-minute
+# spinner is indistinguishable from a hang. These routes hand back a job id immediately;
+# the work runs on a daemon thread and survives the member closing the tab.
+
+
+def _job_result_path(row):
+    """Where the finished artefact lives, for the preparing screen and the email."""
+    if row["kind"] == "boardpack" and row["result_id"]:
+        return "/boardpack/" + row["result_id"]
+    if row["kind"] == "reward_document":
+        return "/reward-document"
+    return None
+
+
+def _job_notify(job_id):
+    """Email the member that their document is ready. Best-effort by construction: the job
+    row is the source of truth, and send_notification never raises."""
+    conn = get_conn()
+    row = jobs_mod.get(conn, job_id)
+    if row is None or not row["notify_email"] or row["status"] != "done":
+        return
+    if not jobs_mod.mark_notified(conn, job_id):
+        return                                  # already sent — never notify twice
+    label = (jobs_mod.KINDS.get(row["kind"]) or {}).get("label", "document")
+    org_name = (identity.org_display(row["org_id"]) or {}).get("name") or "your organisation"
+    # base_url(minting=True) raises HTTPException, which means nothing on a job thread —
+    # and an unconfigured LUMI_BASE_URL must not cost the member their notification. Send
+    # it without a link rather than not at all, and say where to look instead.
+    try:
+        where = "%s/app#%s" % (base_url(minting=True), _job_result_path(row) or "/")
+    except Exception:                           # noqa: BLE001
+        where = "Open lumi and it will be waiting on your dashboard."
+    send_notification(
+        "Your %s is ready" % label,
+        "Your %s for %s has finished generating.\n\n%s\n\n"
+        "You asked to be told when it was done, so this is that message — there is "
+        "nothing to reply to.\n" % (label, org_name, where),
+        to=row["notify_email"])
+
+
+def _start_job(kind, org, user, params, runner_args):
+    """Create the row, hand back the id, and run the work behind it."""
+    conn = get_conn()
+    notify = None
+    if (params or {}).get("notify"):
+        notify = identity.user_email(user["user_id"])
+    job_id = jobs_mod.create(conn, kind, org["org_id"], user["user_id"],
+                             params=params, notify_email=notify)
+    jobs_mod.start(kind, job_id, runner_args, on_done=_job_notify)
+    return {"job_id": job_id, "notify_email": notify}
+
+
+def _boardpack_job_runner(job_id, params, progress):
+    """Runs on the job thread. `params` carries only plain data — the row is re-read here
+    rather than closing over request-scoped objects."""
+    conn = get_conn()
+    org = conn.execute("SELECT * FROM orgs WHERE org_id=?", (params["org_id"],)).fetchone()
+    user = conn.execute("SELECT * FROM users WHERE user_id=?", (params["user_id"],)).fetchone()
+    pack_id, _ai = boardpack_build(dict(user), dict(org), params["cut"], params["ai_ok"],
+                                   progress=progress)
+    return pack_id
+
+
+jobs_mod.register("boardpack", _boardpack_job_runner)
+
+
+class _JobRequest:
+    """The smallest thing the strategy routes will accept in place of a Request.
+
+    The reward document is four independent generations, and re-implementing each one for
+    the background runner would give us two versions of 700 lines of payload assembly that
+    drift apart. Those routes touch exactly three things on a Request — state.user,
+    state.org, the JSON body and (via parse_cut) query_params — so the job calls the REAL
+    route with this stand-in and gets the real code path, cache writes included.
+
+    It is deliberately not a Starlette Request: nothing here should be able to reach a
+    header, a client address or a cookie, because on a job thread there is no caller to
+    read them from."""
+
+    def __init__(self, user, org, body=None, query=None):
+        self.state = types.SimpleNamespace(user=user, org=org)
+        self._body = body or {}
+        self.query_params = query or {}
+
+    async def json(self):
+        return self._body
+
+
+def _reward_document_job_runner(job_id, params, progress):
+    """The four generations the reward document needs, in order, each one a real step.
+    Their results land in the same caches the page reads, so when the member returns the
+    document renders from store rather than regenerating."""
+    import asyncio
+
+    conn = get_conn()
+    org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (params["org_id"],)).fetchone())
+    user = dict(conn.execute("SELECT * FROM users WHERE user_id=?",
+                             (params["user_id"],)).fetchone())
+    force = {"force": True} if params.get("force") else {}
+
+    def call(coro_fn, body=None):
+        req = _JobRequest(user, org, body=dict(force, **(body or {})))
+        return asyncio.run(coro_fn(req))
+
+    progress(0)
+    call(strategy_commentary)
+    progress(1)
+    call(strategy_statement)
+    progress(2)
+    call(strategy_diagnosis)
+    progress(3)
+    # the plan is editor-only (require_editor inside the route) and may already exist —
+    # a Viewer reaching this step has nothing to draft, which is a real answer, not a skip
+    if user.get("role") in ("admin", "contributor"):
+        try:
+            call(build_action_plan)
+        except HTTPException as e:
+            if e.status_code not in (403, 409):
+                raise
+    return params["org_id"]
+
+
+jobs_mod.register("reward_document", _reward_document_job_runner)
+
+
+@app.post("/api/jobs/reward-document")
+async def job_reward_document(request: Request):
+    """Start the reward document's four generations in the background."""
+    user, org = require_user(request)
+    body = await _json(request)
+    return _start_job("reward_document", org, user,
+                      {"notify": bool(body.get("notify"))},
+                      {"org_id": org["org_id"], "user_id": user["user_id"],
+                       "force": bool(body.get("force"))})
+
+
+@app.post("/api/jobs/boardpack")
+async def job_boardpack(request: Request):
+    """Start a board pack in the background. Same guards, same refusals, same 403/429s as
+    the immediate route — they are checked HERE so a member sees them straight away rather
+    than as a job that dies a minute later."""
+    user, org = require_user(request)
+    if user["role"] not in ("admin", "contributor"):
+        raise HTTPException(403, "Generating a board pack is for Admins and Contributors — "
+                                 "Viewers can open any pack the team has already produced.")
+    _ai_ok = ai_feature_on(ai_gate(get_conn(), user), AI_BOARDPACK)
+    if not contribution_state(get_conn(), org)["insights_unlocked"]:
+        raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your "
+                                 "key reward questions." % int(TARGET_PCT))
+    body = await _json(request)
+    cut = boardpack_resolve_cut(org, body)
+    boardpack_spend_guard(org, _ai_ok)
+    return _start_job("boardpack", org, user,
+                      {"notify": bool(body.get("notify"))},
+                      {"org_id": org["org_id"], "user_id": user["user_id"],
+                       "cut": cut, "ai_ok": _ai_ok})
+
+
+@app.post("/api/jobs/{job_id}/notify")
+async def job_notify_me(job_id: str, request: Request):
+    """Ask to be emailed when this job lands. Offered DURING the wait rather than before
+    it, because that is when a member actually decides to stop watching — and a job that
+    has already finished needs no email, so it says so instead of sending a pointless one."""
+    user, org = require_user(request)
+    conn = get_conn()
+    row = jobs_mod.get(conn, job_id, org_id=org["org_id"])
+    if row is None:
+        raise HTTPException(404, "That job has expired or never existed.")
+    if row["status"] != "running":
+        return {"ok": False, "reason": "finished", "status": row["status"]}
+    addr = identity.user_email(user["user_id"])
+    if not addr:
+        raise HTTPException(400, "We don't have an email address for your account.")
+    # updated_at is left ALONE on purpose: step timing is measured from it, and a member's
+    # click is not progress.
+    conn.execute("UPDATE generation_jobs SET notify_email=? WHERE job_id=?", (addr, job_id))
+    conn.commit()
+    return {"ok": True, "email": addr}
+
+
+@app.get("/api/jobs/{job_id}")
+async def job_status(job_id: str, request: Request):
+    """What the preparing screen polls. Scoped to the caller's org — a job id from another
+    organisation is a 404, not a peek at their progress."""
+    user, org = require_user(request)
+    conn = get_conn()
+    row = jobs_mod.get(conn, job_id, org_id=org["org_id"])
+    if row is None:
+        raise HTTPException(404, "That job has expired or never existed.")
+    st = jobs_mod.state(conn, row)
+    st["job_id"] = job_id
+    st["url"] = _job_result_path(row) if row["status"] == "done" else None
+    st["notify_email"] = row["notify_email"]
+    return st
 
 
 @app.get("/api/boardpacks")
@@ -9746,6 +9977,14 @@ def startup():
             print("       Contributor: %s / %s" % DEMO_CONTRIBUTOR)
             print("       Viewer     : %s / %s\n" % DEMO_VIEWER)
     backfill_terms(conn)
+    # A row still reading 'running' cannot be: this process is the only thing that runs
+    # jobs, and it has just started. Fail them so nobody returns to a bar that stopped
+    # moving before the restart.
+    _reaped = jobs_mod.reap_stale(get_conn())
+    if _reaped:
+        print("[lumi] GENERATION JOBS: failed %d job(s) interrupted by the last restart"
+              % _reaped, flush=True)
+
     # proactive signal alerts (the marketing "we email you when it moves"): the
     # nightly sweep + email digest. Env-gated OFF by default so dev/tests/QA never
     # start it; set LUMI_SIGNAL_SWEEP=on in production (SINGLE instance) to email

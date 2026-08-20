@@ -657,3 +657,106 @@ window.nextPaint = function (ms) {
   });
 };
 
+
+/* ============================ background generation jobs (2026-08-20) ============
+   The board pack and the reward document are several model calls deep. A typical one
+   lands in 15-25 seconds, but the Claude SDK retries transient failures twice behind a
+   120-second ceiling, so a loaded afternoon can stretch one past five minutes — and a
+   five-minute spinner is indistinguishable from a hang. The server runs the work on a
+   thread and hands back a job id; this polls it, and PreparingScreen renders it.
+
+   The percentage is composed server-side from REAL step boundaries (see
+   generation_jobs.py) — this file never invents or animates one, because a bar that
+   moves while nothing happens is exactly the lie the spinner was replaced to avoid. */
+
+window.useGenerationJob = function () {
+  const [job, setJob] = useState(null);          // the /api/jobs/<id> state, or null
+  const [error, setError] = useState(null);
+  const timer = useRef(null);
+  const stop = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
+  useEffect(() => stop, []);                     // a poll must never outlive the component
+
+  const poll = (id, onDone) => {
+    stop();
+    timer.current = setInterval(async () => {
+      try {
+        const st = await api("/api/jobs/" + id);
+        setJob(st);
+        if (st.status === "done") { stop(); if (onDone) onDone(st); }
+        if (st.status === "failed") stop();
+      } catch (e) {
+        // a dropped poll is not a failed job — the work carries on server-side, so keep
+        // trying rather than telling the member their document died
+      }
+    }, 1500);
+  };
+
+  const start = async (path, body, onDone) => {
+    setError(null);
+    try {
+      const r = await api(path, { method: "POST", body: body || {} });
+      setJob({ job_id: r.job_id, status: "running", percent: 1, step: "Starting" });
+      poll(r.job_id, onDone);
+      return r.job_id;
+    } catch (e) { setError(e.message); setJob(null); return null; }
+  };
+
+  const notifyMe = async () => {
+    if (!job || !job.job_id) return null;
+    try {
+      const r = await api("/api/jobs/" + job.job_id + "/notify", { method: "POST", body: {} });
+      setJob(j => j && ({ ...j, notify_email: r.email || null }));
+      return r;
+    } catch (e) { toast(e.message, "error"); return null; }
+  };
+
+  const reset = () => { stop(); setJob(null); setError(null); };
+  return { job, error, start, notifyMe, reset, busy: !!job && job.status === "running" };
+};
+
+/* The preparing panel. Deliberately plain: one bar, one honest sentence about what is
+   happening now, and the two things a member actually wants — permission to leave, and
+   an email when it lands. */
+window.PreparingScreen = ({ job, onNotify, onCancel, onRetry }) => {
+  if (!job) return null;
+  const pct = Math.max(0, Math.min(100, job.percent || 0));
+
+  if (job.status === "failed") {
+    return html`
+      <div class="preparing" role="alert">
+        <div class="preparing-title">We couldn't finish it</div>
+        <div class="preparing-step">${job.error || "Something went wrong while generating."}</div>
+        <div class="preparing-actions">
+          ${onRetry && html`<button class="btn small primary" onClick=${onRetry}>Try again</button>`}
+          ${onCancel && html`<button class="btn small" onClick=${onCancel}>Close</button>`}
+        </div>
+      </div>`;
+  }
+
+  return html`
+    <div class="preparing" role="status" aria-live="polite">
+      <div class="preparing-title">Preparing your ${job.label || "document"}</div>
+      <div class="progressbar" role="progressbar" aria-valuenow=${pct}
+           aria-valuemin="0" aria-valuemax="100"
+           aria-label=${"Preparing your " + (job.label || "document")}>
+        <div style=${{ width: pct + "%" }}></div>
+      </div>
+      <div class="preparing-meta">
+        <span class="preparing-step">${job.step || "Working"}</span>
+        <span class="preparing-pct">${pct}%</span>
+      </div>
+      ${job.slow && html`<div class="preparing-step preparing-slow">
+        This is taking longer than usual. It's still running — the model is busy, not stuck.
+      </div>`}
+      <div class="preparing-leave">
+        ${job.notify_email
+          ? html`We'll email <strong>${job.notify_email}</strong> when it's ready. You can close this page.`
+          : html`You can close this page — it keeps building without you.`}
+      </div>
+      <div class="preparing-actions">
+        ${!job.notify_email && onNotify && html`<button class="btn small" onClick=${onNotify}>
+          <${Icon} name="bell" size=${13} /> Email me when it's ready</button>`}
+        ${onCancel && html`<button class="btn small" onClick=${onCancel}>Close</button>`}
+      </div>
+    </div>`;
+};

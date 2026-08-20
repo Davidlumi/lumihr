@@ -302,8 +302,9 @@ function ExportBoardPack({ me, cut }) {
   const contrib = me.contribution;
   const [open, setOpen] = useState(false);
   const [packs, setPacks] = useState(null);
-  const [gen, setGen] = useState(false);
   const [err, setErr] = useState(null);
+  const gj = useGenerationJob();
+  const gen = gj.busy;
   const menuRef = useRef(null);
   useMenuClose(menuRef, open, setOpen);
   const [pulse, setPulse] = useState(false);
@@ -320,13 +321,16 @@ function ExportBoardPack({ me, cut }) {
   // without AI (deterministic narrative, labelled "composed directly from the figures"), so
   // hiding the button behind me.features.boardpack hid a working feature whenever AI was off.
   // The flag now scopes the Claude call server-side; the button always renders.
+  // A pack is several model calls deep and the API can retry behind a 120s ceiling, so
+  // this runs as a background job (2026-08-20): the member watches a real progress bar,
+  // can close the page, and can ask to be emailed instead. The old inline await meant a
+  // multi-minute spinner that lost the work if they navigated away.
   const generate = async () => {
-    setGen(true); setErr(null);
-    try {
-      const r = await api("/api/boardpack/generate", { method: "POST", body: { cut: cut.dim, cut_value: cut.value } });
-      nav("/boardpack/" + r.pack_id);
-    } catch (e) { setErr(e.message); setOpen(true); }
-    setGen(false);
+    setErr(null);
+    setOpen(true);                        // the panel renders inside the existing menu card
+    await gj.start("/api/jobs/boardpack",
+      { cut: cut.dim, cut_value: cut.value },
+      st => { gj.reset(); nav("/boardpack/" + st.result_id); });
   };
   const toggle = () => {
     setOpen(!open);
@@ -345,7 +349,12 @@ function ExportBoardPack({ me, cut }) {
         ${isEditor ? null : html`<${Icon} name="file-text" size=${14} /> Board packs `}<${Icon} name="chevron-down" size=${13} /></button>
       ${open && html`
         <div class="card bp-menu">
-          ${err && html`<div class="caption" style=${{ padding: "var(--s2)", maxWidth: "280px" }}>${err}${" "}
+          ${/* While a pack is building the menu does ONE thing. Generate opens this popover
+                without fetching the history, so leaving the list mounted showed a "Loading…"
+                that never resolved underneath the progress bar. */ ""}
+          ${gj.job ? html`<${PreparingScreen} job=${gj.job} onNotify=${gj.notifyMe}
+            onRetry=${() => { gj.reset(); generate(); }} onCancel=${() => { gj.reset(); setOpen(false); }} />` : html`
+          ${(err || gj.error) && html`<div class="caption" style=${{ padding: "var(--s2)", maxWidth: "280px" }}>${err || gj.error}${" "}
             <a href="#/settings" onClick=${e => { e.preventDefault(); nav("/settings"); }}>Review AI settings →</a></div>`}
           ${packs == null && html`<div class="caption" style=${{ padding: "var(--s2)" }}>Loading…</div>`}
           ${packs && packs.length === 0 && !err && html`<div class="caption" style=${{ padding: "var(--s2)" }}>No packs yet — Export writes one from your live position.</div>`}
@@ -364,7 +373,7 @@ function ExportBoardPack({ me, cut }) {
                   catch (e2) { toast(e2.message, "error"); } }}>
                 <${Icon} name="close" size=${12} /></button>`}
             </div>`)}
-          <button class="bp-menu-item bp-menu-all" onClick=${() => nav("/boardpack")}>All board packs →</button>
+          <button class="bp-menu-item bp-menu-all" onClick=${() => nav("/boardpack")}>All board packs →</button>`}
         </div>`}
     </div>`;
 }

@@ -161,7 +161,8 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const [shareLink, setShareLink] = useState(null);
   const [shareBusy, setShareBusy] = useState(false);
   const [expiry, setExpiry] = useState(30);
-  const [regen, setRegen] = useState(false);
+  const gj = useGenerationJob();
+  const regen = gj.busy;
   useEffect(() => {
     if (!sharedData) { setPack(null); api("/api/boardpack/" + packId).then(setPack).catch(e => setPack({ error: true, status: e.status })); }
   }, [packId]);
@@ -188,13 +189,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   };
   const regenerate = async () => {
     if (!window.confirm("Regenerate creates a new version of this pack. Any share links you've already sent will keep showing THIS version — re-share the new pack to update recipients. Continue?")) return;
-    setRegen(true);
-    try {
-      const r = await api("/api/boardpack/generate", { method: "POST",
-        body: { cut: (p.cut && p.cut.dim) || "all", cut_value: p.cut ? p.cut.value : null } });
-      nav("/boardpack/" + r.pack_id);
-    } catch (e) { toast(e.message, "error"); }
-    setRegen(false);
+    // background job, same as the Overview export (2026-08-20): a regenerate is the same
+    // several-model-call generation, and the member should be free to leave it running
+    await gj.start("/api/jobs/boardpack",
+      { cut: (p.cut && p.cut.dim) || "all", cut_value: p.cut ? p.cut.value : null },
+      st => { gj.reset(); nav("/boardpack/" + st.result_id); });
   };
   // evidence CSV (Sprint 2): the vendor convention — the data behind the document,
   // exported client-side from the pack's own stored payload (nothing recomputed)
@@ -248,6 +247,10 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                ["The evidence", String(PN.evid)], ["Appendix — peer practices", String(PN.appx)]];
   return html`
     <div>
+      ${gj.job && html`<div class="no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
+        <${PreparingScreen} job=${gj.job} onNotify=${gj.notifyMe}
+          onRetry=${() => { gj.reset(); regenerate(); }} onCancel=${gj.reset} />
+      </div>`}
       ${!shared && html`
         <div class="row spread no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
           <button class="btn quiet" onClick=${() => nav("/overview")}>← Back</button>
