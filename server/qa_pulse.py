@@ -152,12 +152,21 @@ adversarial = [
 for label, bad in adversarial:
     ok, _why = claude_api.validate_pulse_narrative(bad, rep5_ship)
     check("trust gate rejects %s" % label, not ok, "unexpectedly accepted")
-# J. and it still ACCEPTS a faithful, measured narrative built from real figures
+# J. and it still ACCEPTS a faithful, measured narrative built from real figures.
+# Two findings, because a narrative is not a report at one: the count floor moved out of
+# PULSE_NARRATIVE_SCHEMA and into the validator on 2026-08-20 (the structured-output API
+# rejects minItems above 1, so the schema's "2" had never once been enforced).
 faithful = {"summary": nar5["summary"],
             "key_findings": ["The cohort's answers are shown across the whole group, "
-                             "each figure held to the same 5-organisation floor."]}
+                             "each figure held to the same 5-organisation floor.",
+                             "Every question below carries the number of organisations "
+                             "that answered it."]}
 okJ, whyJ = claude_api.validate_pulse_narrative(faithful, rep5_ship)
 check("trust gate accepts a faithful, grounded narrative", okJ, whyJ)
+# ...and the count floor is REAL: the same faithful narrative, one finding short, falls back
+thin = {"summary": faithful["summary"], "key_findings": faithful["key_findings"][:1]}
+okT, whyT = claude_api.validate_pulse_narrative(thin, rep5_ship)
+check("trust gate rejects a one-finding narrative", (not okT) and "at least 2" in (whyT or ""), whyT)
 
 print("== HARD SEPARATION (the cardinal rule) ==")
 core_after = json.loads(conn.execute(

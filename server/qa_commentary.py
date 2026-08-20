@@ -333,6 +333,38 @@ for _nm in [n for n in dir(ca) if n.endswith("_SCHEMA")]:
 check("V", "every object node in every *_SCHEMA sets additionalProperties: false",
       _seen > 0 and not _bad, "checked %d nodes; missing on %s" % (_seen, _bad))
 
+# The same class on ARRAY nodes, and the same silent outcome: the API rejects minItems
+# above 1 ("values other than 0 or 1 are not supported") and maxItems outright, 400ing
+# the whole request. BOARD_PACK_SCHEMA (3/6) and PULSE_NARRATIVE_SCHEMA (2/6) carried
+# them, so neither surface produced a single model output until 2026-08-20. A minimum
+# count belongs in the validator, where a thin answer falls back instead of shipping.
+def _arr_nodes(node, path="$"):
+    out = []
+    if isinstance(node, dict):
+        if node.get("type") == "array":
+            out.append((path, node))
+        for k, v in node.items():
+            out += _arr_nodes(v, path + "." + str(k))
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            out += _arr_nodes(v, "%s[%d]" % (path, i))
+    return out
+
+_arr_bad = []
+_arr_seen = 0
+for _nm in [n for n in dir(ca) if n.endswith("_SCHEMA")]:
+    _sch = getattr(ca, _nm)
+    if not isinstance(_sch, dict):
+        continue
+    for _path, _node in _arr_nodes(_sch, _nm):
+        _arr_seen += 1
+        if "maxItems" in _node:
+            _arr_bad.append("%s: maxItems is not supported at all" % _path)
+        if _node.get("minItems", 0) not in (0, 1):
+            _arr_bad.append("%s: minItems=%s (only 0 or 1 accepted)" % (_path, _node["minItems"]))
+check("V", "no *_SCHEMA array carries an API-rejected item-count constraint",
+      _arr_seen > 0 and not _arr_bad, "checked %d arrays; %s" % (_arr_seen, _arr_bad))
+
 print()
 print("=" * 100)
 fails = [(s, n, d) for s, n, ok, d in RESULTS if not ok]

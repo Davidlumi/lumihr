@@ -71,6 +71,21 @@ def _ai_cap_reached():
     return False
 
 
+def _log_fallback(surface, err):
+    """Say WHY an AI surface shipped its deterministic floor. Every generator here returns
+    200 with plausible prose either way, so without this a permanently-broken model path is
+    indistinguishable from a healthy one — which is exactly how a rejected board pack went
+    unnoticed until 2026-08-20. A keyless deployment is a designed, honest state rather than
+    a failure, so that one alone stays at debug — every other reason, the daily cap
+    included, is something an operator needs to see: it means members are being served
+    the floor while the surface still looks healthy from outside.
+    """
+    err = err or "generation failed"
+    keyless = "no ANTHROPIC_API_KEY" in err
+    (log.debug if keyless else log.warning)(
+        "[lumi] %s fell back to the composed floor: %s", surface, err)
+
+
 def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=True, effort="medium"):
     """One grounded Claude call via the official SDK. Returns {ok, text} on success
     or {ok: False, error} otherwise — the caller always has a deterministic fallback.
@@ -102,6 +117,13 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
     try:
         resp = client.messages.create(**kwargs)
         text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        # adaptive thinking counts toward max_tokens, so a long think can leave too little
+        # budget for the answer. Structured output still yields a well-formed object, just
+        # a thin one — which reaches the validator as "missing section X" and reads like a
+        # model that ignored the prompt. Name the real cause instead (2026-08-20).
+        if getattr(resp, "stop_reason", None) == "max_tokens":
+            return {"ok": False, "error": "response hit max_tokens (%d) before finishing — "
+                                          "raise max_tokens or lower effort" % max_tokens}
         return {"ok": True, "text": text}
     except anthropic.AuthenticationError:
         return {"ok": False, "error": "Claude API key rejected (401) — check ANTHROPIC_API_KEY"}
@@ -187,8 +209,13 @@ BOARD_PACK_SCHEMA = {
     "type": "object",
     "properties": {
         "executive_summary": {"type": "string"},
-        "key_findings": {"type": "array", "items": {"type": "string"},
-                         "minItems": 3, "maxItems": 6},
+        # Array constraints the structured-output API does NOT accept: minItems above 1
+        # ("values other than 0 or 1 are not supported") and maxItems at all ("property
+        # 'maxItems' is not supported"). Either one 400s the entire request, so the 3/6
+        # written here 400'd every board pack ever generated and this surface served its
+        # deterministic floor for its whole life. The real counts live in the validator,
+        # where a thin answer falls back instead of shipping a thin board page (2026-08-20).
+        "key_findings": {"type": "array", "items": {"type": "string"}, "minItems": 1},
         "strengths_narrative": {"type": "string"},
         "gaps_narrative": {"type": "string"},
         "opportunity_narrative": {"type": "string"},
@@ -196,7 +223,7 @@ BOARD_PACK_SCHEMA = {
         "evidence_commentary": {"type": "string"},
         "strategy_commentary": {"type": "string"},
         "recommended_actions": {"type": "array", "items": {"type": "string"},
-                                "minItems": 4, "maxItems": 6},
+                                "minItems": 1},
     },
     "required": list(BOARD_PACK_PARTS),
     "additionalProperties": False,
@@ -219,19 +246,30 @@ def validate_pack_narrative(narrative, payload):
         if k in ("recommended_actions", "key_findings"):
             if not isinstance(v, list) or not v or not all(isinstance(x, str) and x.strip() for x in v):
                 return False, "missing or empty %s" % k
-            texts += v
+            # the counts the SCHEMA used to carry (3 findings, 4 actions). The API caps
+            # minItems at 1, so the real floor lives here — a board page with one finding
+            # falls back to the composed floor rather than shipping thin (2026-08-20).
+            need = 3 if k == "key_findings" else 4
+            if len(v) < need:
+                return False, "only %d %s — expected at least %d" % (len(v), k, need)
+            texts += [(k, x) for x in v]
         else:
             # the three secondary commentaries may legitimately be empty on thin data
             if not isinstance(v, str) or (k not in ("opportunity_narrative", "position_commentary",
                                                     "evidence_commentary", "strategy_commentary") and not v.strip()):
                 return False, "missing or empty %s" % k
-            texts.append(v)
-    for t in texts:
-        if re.search(r"[\x00-\x1f\\]", t):
-            return False, "malformed text (control/escape chars)"
+            texts.append((k, v))
+    for k, t in texts:
+        # executive_summary is the one MULTI-PARAGRAPH field — commercial.js:363 splits it on
+        # blank lines into <p>s, and the deterministic floor writes it that way too. Screening
+        # newlines out of it rejected every model pack ever generated, and the floor failed its
+        # own gate (2026-08-20). Everywhere else a newline still means mangled JSON escaping.
+        bad = r"[\x00-\x09\x0b-\x1f\\]" if k == "executive_summary" else r"[\x00-\x1f\\]"
+        if re.search(bad, t):
+            return False, "malformed text (control/escape chars) in %s" % k
         if "placeholder" in t.lower() or "lorem ipsum" in t.lower():
-            return False, "stub/placeholder text"
-    text_all = " ".join(texts)
+            return False, "stub/placeholder text in %s" % k
+    text_all = " ".join(t for _, t in texts)
     allowed = _commentary_numbers(payload)
     for tok in re.findall(r"\d+(?:\.\d+)?", text_all.replace(",", "")):
         v = float(tok)
@@ -264,6 +302,7 @@ def generate_board_pack_narrative(payload):
         if ok:
             return {"ok": True, "narrative": narrative}
         last_err = "narrative rejected: %s" % reason
+    _log_fallback("board pack", last_err)
     return {"ok": False, "error": last_err or "generation failed",
             "narrative": _deterministic_pack(payload)}
 
@@ -316,7 +355,7 @@ PULSE_NARRATIVE_SCHEMA = {
     "type": "object",
     "properties": {
         "summary": {"type": "string"},
-        "key_findings": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6},
+        "key_findings": {"type": "array", "items": {"type": "string"}, "minItems": 1},
     },
     "required": ["summary", "key_findings"],
     "additionalProperties": False,
@@ -334,6 +373,10 @@ def validate_pulse_narrative(narrative, payload):
         return False, "missing summary"
     if not (isinstance(kf, list) and kf and all(isinstance(x, str) and x.strip() for x in kf)):
         return False, "missing or empty key_findings"
+    # the count the SCHEMA used to carry: the API caps minItems at 1, so the real floor
+    # lives here — a one-finding narrative falls back rather than shipping thin (2026-08-20)
+    if len(kf) < 2:
+        return False, "only %d key finding — expected at least 2" % len(kf)
     texts = [summary] + list(kf)
     for t in texts:
         if re.search(r"[\x00-\x1f\\]", t):
@@ -380,6 +423,7 @@ def generate_pulse_narrative(payload):
             return {"ok": True, "narrative": {"summary": narrative["summary"].strip(),
                     "key_findings": [k.strip() for k in narrative["key_findings"]]}, "source": "model"}
         last_err = "narrative rejected: %s" % reason
+    _log_fallback("pulse narrative", last_err)
     return {"ok": False, "error": last_err, "narrative": floor, "source": "deterministic"}
 
 
@@ -821,8 +865,20 @@ DIRECTIVE_RE = re.compile(
 LEGAL_RE = re.compile(
     r"\b(required by law|legally (required|obliged|bound)|in breach|non-compliant|"
     r"unlawful|illegal|statutory requirement to|violates?|regulatory requirement to)\b", re.I)
-AHEAD_WORDS = re.compile(r"\b(ahead of|above most|stronger than most|leads? the peer|top of the peer)\b", re.I)
-BEHIND_WORDS = re.compile(r"\b(behind|below most|lags?|trails?|weaker than most|bottom of the peer)\b", re.I)
+# A market verdict needs a MARKET to be ahead of or behind. The bare "ahead of" and
+# "behind" these patterns used to carry matched ordinary prose — "acts ahead of events",
+# "the beliefs behind the choices" — and rejected two of every three strategy statements
+# on wording that asserts nothing about position (2026-08-20). Anchoring to the object
+# keeps every real verdict and drops the temporal and causal senses.
+_MARKET_OBJ = (r"(?:the )?(?:market|peers?|peer group|peer median|benchmark|median|"
+               r"comparison (?:pool|group)|competitors|industry|sector|pack|"
+               r"most (?:organisations|employers|peers))")
+AHEAD_WORDS = re.compile(
+    r"\b(ahead of " + _MARKET_OBJ + r"|above most|stronger than most|leads? the peer|"
+    r"top of the peer|(?:sits?|stands?|ranks?) ahead)\b", re.I)
+BEHIND_WORDS = re.compile(
+    r"\b(behind " + _MARKET_OBJ + r"|below most|lags?|trails?|weaker than most|"
+    r"bottom of the peer|(?:sits?|stands?|ranks?|falls?) behind)\b", re.I)
 
 COMMENTARY_PARTS = ("measures", "compare", "implications", "considerations")
 
@@ -1006,7 +1062,11 @@ def validate_statement(parts, payload):
     for pat in (AHEAD_WORDS, BEHIND_WORDS):
         m = pat.search(txt)
         if m:
-            return False, "market verdict in the intent half: " + m.group(0)
+            # quote the surrounding clause, not just the trigger word: "ahead of" also has
+            # innocent temporal uses ("ahead of the next review"), and the bare match cannot
+            # tell an over-block from a real market claim in the log (2026-08-20)
+            a, b = max(0, m.start() - 45), min(len(txt), m.end() + 45)
+            return False, "market verdict in the intent half: …%s…" % txt[a:b].replace("\n", " ")
     if re.search(r"industry standard|best practice", txt, re.I):
         return False, "invented authority"
     # every number must be one the payload actually contains
@@ -1021,24 +1081,33 @@ def generate_strategy_statement(payload):
     """Six narrative sections for the Total Reward Strategy document. Model output passes
     validate_statement or the composed floor ships — never an unvalidated sentence."""
     floor = _statement_floor(payload)
-    res = call_claude(STATEMENT_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                      max_tokens=4000, schema=STATEMENT_SCHEMA, effort="high")
-    if not res.get("ok"):
-        log.warning("[lumi] strategy statement fell back: %s", res.get("error"))
-        return {"ok": True, "parts": floor, "source": "deterministic"}
-    text = res["text"].strip()
-    if text.startswith("```"):
-        text = text.strip("`").lstrip("json").strip()
-    try:
-        parts = json.loads(text)
-    except ValueError:
-        return {"ok": True, "parts": floor, "source": "deterministic"}
-    ok, why = validate_statement(parts, payload)
-    if not ok:
-        log.warning("[lumi] strategy statement rejected: %s", why)
-        return {"ok": True, "parts": floor, "source": "deterministic"}
-    return {"ok": True, "parts": {k: parts[k].strip() for k in STATEMENT_SECTIONS},
-            "source": "model"}
+    last_err = None
+    # one retry on a rejected or garbled attempt, as every other generator here does —
+    # this one used to fall to the floor on a single reject, so one unlucky sentence cost
+    # the whole document its model draft (2026-08-20)
+    for _ in range(2):
+        # six sections of connected prose at effort "high": 4000 shared with adaptive
+        # thinking was not enough headroom, so drafts arrived with a section left empty
+        res = call_claude(STATEMENT_SYSTEM, json.dumps(payload, ensure_ascii=False),
+                          max_tokens=8000, schema=STATEMENT_SCHEMA, effort="high")
+        if not res.get("ok"):
+            last_err = res.get("error")
+            break                       # API-level failure — a retry won't conjure a key
+        text = res["text"].strip()
+        if text.startswith("```"):
+            text = text.strip("`").lstrip("json").strip()
+        try:
+            parts = json.loads(text)
+        except ValueError:
+            last_err = "model returned non-JSON"
+            continue
+        ok, why = validate_statement(parts, payload)
+        if ok:
+            return {"ok": True, "parts": {k: parts[k].strip() for k in STATEMENT_SECTIONS},
+                    "source": "model"}
+        last_err = "statement rejected: %s" % why
+    _log_fallback("strategy statement", last_err)
+    return {"ok": True, "parts": floor, "source": "deterministic"}
 
 # bump when DIAGNOSIS_SYSTEM/SCHEMA changes — it keys the diagnosis cache, so a
 # prompt change must invalidate every stored narrative rather than serve the old one
