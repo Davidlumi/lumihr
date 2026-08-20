@@ -326,6 +326,20 @@ def contribution_state(conn, org):
     }
 
 
+def _clock_reminder_offloop(org_id, state):
+    """maybe_send_clock_reminder on a worker thread. Re-reads the org through this
+    thread's own connection rather than borrowing the request's — sqlite connections are
+    thread-local here (db.get_conn), and sharing one across threads is a data race, not a
+    style preference. Never raises into the request: a reminder is not worth a 500."""
+    try:
+        conn = get_conn()
+        org = conn.execute("SELECT * FROM orgs WHERE org_id=?", (org_id,)).fetchone()
+        if org is not None:
+            maybe_send_clock_reminder(conn, org, state)
+    except Exception:                              # noqa: BLE001
+        log.exception("[lumi] clock reminder failed for org %s", org_id)
+
+
 def maybe_send_clock_reminder(conn, org, state):
     """Gentle reminders at 7 and 1 days left. Triggers are stored so email
     fires automatically once SMTP is configured; in-app banners are driven
@@ -1313,7 +1327,13 @@ async def me(request: Request):
     vis = org_visible_questions(org)
     contrib = contribution_state(conn, org)
     # (sticky-unlock stamping now happens centrally in org_unlocked)
-    maybe_send_clock_reminder(conn, org, contrib)
+    # OFF THE EVENT LOOP (2026-08-20): this is synchronous smtplib inside the hottest
+    # endpoint in the product. smtplib's timeout is per socket operation, so a
+    # black-holed relay froze EVERY request for 10-50s, on a single-instance server with
+    # no second worker to absorb it. The whole helper moves to a thread — DB work
+    # included — because it writes reminders_json before sending, and a connection must
+    # not cross threads. get_conn() is thread-local, so the worker opens its own.
+    await to_thread.run_sync(_clock_reminder_offloop, org["org_id"], contrib)
     # AI features are now EFFECTIVE flags: master gate AND the member's consent AND the
     # per-feature kill-switch. So every existing client gate (me.features.X) automatically
     # respects the master switch + consent with no client change. ai_insights carries the
@@ -8144,11 +8164,12 @@ async def create_metric_request(request: Request):
     conn.commit()
     requester = identity.user_display(user["user_id"]) or {}
     org_name = (identity.org_display(org["org_id"]) or {}).get("name")
-    status = send_notification(
+    status = await to_thread.run_sync(functools.partial(
+        send_notification,
         "lumi metric request: %s" % text[:80],
         "Requested metric: %s\nNotes: %s\nFrom: %s (%s, %s)\nSource: %s\nWhen: %s\nRequest id: %d"
         % (text, notes or "—", requester.get("display_name") or requester.get("email"), requester.get("email"),
-           org_name, source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid))
+           org_name, source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid)))
     return {"ok": True, "id": cur.lastrowid, "notification": status}
 
 
@@ -8189,7 +8210,7 @@ async def create_suggestion(request: Request):
         " why_it_matters, suggested_category) VALUES (?,?,?,?,?,?,?)",
         (org["org_id"], user["user_id"], user["email"], name, measures, matters, category))
     conn.commit()
-    notify_suggestion_team({
+    await to_thread.run_sync(notify_suggestion_team, {
         "id": cur.lastrowid, "metric_name": name, "what_it_measures": measures,
         "why_it_matters": matters, "suggested_category": category,
         "user_name": user["display_name"] or user["email"], "user_email": user["email"],
@@ -9079,7 +9100,8 @@ async def admin_org_invite(org_id: str, request: Request):
     # the API response below already hands the operator the link directly, so
     # the logged copy served no one and exposed a live bearer (PH-PROV-1d's
     # defect class). The real email body (SMTP path) still carries the link.
-    send_notification(
+    await to_thread.run_sync(functools.partial(
+        send_notification,
         "You've been invited to lumi",
         "Hello,\n\nThe lumi team has invited you to join %s on lumi — the UK reward "
         "benchmarking co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\n"
@@ -9089,7 +9111,7 @@ async def admin_org_invite(org_id: str, request: Request):
         to=email,
         log_body="[provisioning invite — link withheld from logs (PH-PROV-1f); "
                  "token sha256[:12]=%s; the link was returned to the console operator "
-                 "in the API response]" % hashlib.sha256(token.encode()).hexdigest()[:12])
+                 "in the API response]" % hashlib.sha256(token.encode()).hexdigest()[:12]))
     # the email itself stays out of the reward-store audit row (Phase-1 split);
     # the invite's identity half already records it, org-scoped. Superseded
     # tokens appear as sha256[:12] digests — the PH-PROV-1d convention: the

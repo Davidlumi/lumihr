@@ -55,11 +55,12 @@ provisions infrastructure.
 LUMI_BASE_URL=https://app.lumihr.co.uk
 LUMI_DB=/srv/lumi/data/lumi.db
 LUMI_IDENTITY_DB=/srv/lumi/data/identity.db
+LUMI_AI_INSIGHTS_ENABLED=on     # R8 OVERRIDDEN by David, 2026-08-20 — see below
+LUMI_AI_LIVE=on                 # the paid-API positive switch
+ANTHROPIC_API_KEY=<rotated>     # rotate before go-live; any key seen in the tree is compromised
 # deliberately ABSENT / off at launch:
 #   LUMI_OPEN_REGISTRATION   (unset -> self-serve registration CLOSED)
 #   LUMI_QA_SEAMS            (unset -> fault-injection seams inert)
-#   LUMI_AI_INSIGHTS_ENABLED (off until R8: after provenance surfacing ships)
-#   LUMI_AI_LIVE             (off — the paid-API positive switch)
 # D2 (before first provisioning): LUMI_SMTP_* for SES SMTP.
 ```
 
@@ -78,8 +79,21 @@ set -e
 J="journalctl -u lumi -b --no-pager"
 $J | grep -q "LUMI_BASE_URL = https://app.lumihr.co.uk" \
   || { echo "FATAL: base URL wrong/unset — link minting would refuse or lie"; exit 1; }
-$J | grep -q "AI INSIGHTS: OFF" \
-  || { echo "FATAL: AI surfaces not dark (R8: stays off until provenance ships)"; exit 1; }
+# R8 OVERRIDE (David, 2026-08-20): AI ships ON. This assertion was the inverse — it
+# required AI dark until provenance surfacing shipped. David ruled to launch with AI
+# live, so it now asserts the opposite: that the surfaces are actually reaching the
+# model, because the failure mode of this feature is silent (every generator falls back
+# to a deterministic floor and returns 200 with plausible prose either way).
+#
+# THE PRECONDITION THIS REPLACES IS NOT DISCHARGED. Generated content derived from
+# member data leaves the instance to reach a model, so the DPA, the privacy notice and
+# the sub-processor review must be in place BEFORE the first real customer — not before
+# the first deploy. That is a David action, tracked outside this file. If it is not done,
+# set LUMI_AI_INSIGHTS_ENABLED=off (env only, no deploy) and take customers without AI.
+$J | grep -q "AI INSIGHTS: ON" \
+  || { echo "FATAL: AI master gate off — members would silently get composed floors"; exit 1; }
+$J | grep -q "model: LIVE" \
+  || { echo "FATAL: AI on but not live (key missing or LUMI_AI_LIVE unset) — silent floors"; exit 1; }
 curl -s https://app.lumihr.co.uk/api/legal >/dev/null \
   || { echo "FATAL: edge not serving"; exit 1; }
 curl -s -X POST https://app.lumihr.co.uk/api/auth/register \
