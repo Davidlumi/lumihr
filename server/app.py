@@ -1895,8 +1895,7 @@ async def pulse_commentary(pid: str, request: Request):
         # most pulses are NAMED "… Pulse 2026", so appending "pulse cohort" produced
         # "the Creative Workforce & Freelance Reward Pulse 2026 pulse cohort" — the word
         # twice, in every sentence of every commentary on that pulse.
-        "cut_label": ("the %s cohort" if "pulse" in (p["name"] or "").lower()
-                      else "the %s pulse cohort") % p["name"],
+        "cut_label": "this pulse's cohort",
         "n": blk.get("n"), "n_real": blk.get("n_real", 0), "suppressed": bool(blk.get("suppressed")),
         # the generator reads "direction", not "polarity". Sending only polarity meant every
         # pulse question missed the prevalence framing and fell through to generic filler

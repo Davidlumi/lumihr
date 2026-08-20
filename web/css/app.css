@@ -5732,20 +5732,22 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
   .pulse-qcard { break-inside: avoid; page-break-inside: avoid; }
 }
 
-/* Pulse commentary: the comparison leads, the caveats recede — they are identical on
-   every question, so at full weight a seven-question report reads the same paragraph
-   seven times. */
-.pcom-compare { margin: 0 0 var(--s2); font-weight: 500; }
-.pcom-implications { margin: 0 0 var(--s2); }
-.pcom-considerations { margin: 0; color: var(--ink-soft); font-size: var(--fs-caption); }
+/* Pulse commentary. The card's copy is PRINT ONLY: the PDF flow writes a read for every
+   question, and on screen those reads had no dismiss control (the card deliberately has no
+   commentary toggle, matching a benchmark card) so they stuck permanently. Reducing their
+   weight was not the fix — not showing them on screen is. */
+.pcom-compare { margin: 0; font-weight: 500; }
+.pcom-implications { margin: var(--s2) 0 0; }
+.pcom-note { margin: var(--s3) 0 0; color: var(--ink-soft); font-size: var(--fs-caption); }
+.print-only { display: none; }
 
 /* The pulse one-pager and the whole-pulse PDF: the observation prints with the chart,
    never as a screen-only extra. .pulse-com is a screen affordance (a sunk panel opened
    from a control); on paper it is body copy. */
 .pulse-q-page .pulse-onepager-read .eyebrow { margin-bottom: var(--s2); }
 @media print {
+  .print-only { display: block; }
   .pulse-com { background: none; padding: 0; margin-top: var(--s2); }
-  .pulse-com .pcom-considerations { font-size: var(--fs-micro); }
   .pulse-q-page .card { box-shadow: none; border: 0; padding: 0; }
   .pulse-q-page .pulse-onepager-read { margin-top: var(--s3); }
 }

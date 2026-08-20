@@ -587,6 +587,10 @@ const PULSE_CHART_W = 620;
    gives you: the chart at full size, the written read of where you sit, and a print that
    puts both on one page. The commentary is fetched on arrival rather than on a click,
    because on this page it IS the content, not an extra. */
+// The deterministic floor emits this same paragraph for every neutral measure, which is
+// every pulse question — so it is filler here. A live model read is not, and still shows.
+const GENERIC_READ = /no inherently better or worse direction/i;
+
 window.PulseQuestionPage = function ({ me, pid, qid }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -655,9 +659,12 @@ window.PulseQuestionPage = function ({ me, pid, qid }) {
       ${(com || busy) && html`
         <div class="card pulse-onepager-read" style=${{ marginTop: "var(--s4)", padding: "var(--s5)" }}>
           <div class="eyebrow">Where you sit</div>
-          ${busy && !com ? html`<${Spinner} />` : Object.entries((com || {}).parts || {})
-            .filter(([k]) => k !== "measures")
-            .map(([k, v]) => html`<p key=${k} class=${"pcom-" + k}>${v}</p>`)}
+          ${busy && !com ? html`<${Spinner} />` : html`
+            <p class="pcom-compare">${((com || {}).parts || {}).compare}</p>
+            ${((com || {}).parts || {}).implications && !GENERIC_READ.test(((com || {}).parts || {}).implications)
+              ? html`<p class="pcom-implications">${com.parts.implications}</p>` : null}
+            <p class="pcom-note">A pulse mirrors what the cohort answered. It carries no
+              better-or-worse direction — a starting point for your own read, not advice.</p>`}
         </div>`}
       <div class="row no-print" style=${{ gap: "var(--s2)", marginTop: "var(--s4)" }}>
         <button class="btn small primary" onClick=${onePager}><${Icon} name="file-text" size=${14} /> One-pager</button>
@@ -743,12 +750,18 @@ function PulseQuestionBlock({ q, pid, me, idx, total, report, com }) {
             </tbody></table></div>`}
       </div>
 
-      ${com && com !== "…" && html`
-        <div class="pulse-com">
-          ${Object.entries(com.parts || {}).filter(([k]) => k !== "measures")
-            .map(([k, v]) => html`<p key=${k} class=${"pcom-" + k}>${v}</p>`)}
+      ${/* PRINT ONLY, and the comparison only.
+            Two faults met here. "Print / save as PDF" writes every question's read before
+            printing, and those reads then sat permanently on the cards with no way to
+            dismiss them — the card has no commentary toggle, by design, since a benchmark
+            card has none either. And every pulse question is polarity-neutral, so the
+            implications and considerations paragraphs came out WORD FOR WORD IDENTICAL on
+            all seven cards: two paragraphs of wallpaper per card saying nothing. Only the
+            comparison carries information, so only the comparison prints. (David 2026-08-20) */ ""}
+      ${com && com !== "…" && (com.parts || {}).compare && html`
+        <div class="pulse-com print-only">
+          <p class="pcom-compare">${com.parts.compare}</p>
         </div>`}
-      ${com === "…" && html`<div class="pulse-com"><${Spinner} /></div>`}
 
       <div class="bench-foot">
         <span class="bench-n">${blk.n} organisation${blk.n === 1 ? "" : "s"}</span>

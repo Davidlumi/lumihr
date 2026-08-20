@@ -155,13 +155,16 @@ for qid in qids:
 r = demo.post(B + "/api/pulses/%s/submit" % pid)
 check("a participant can submit", r.status_code == 200, r.text[:150])
 det = j(demo.get(B + "/api/pulses/" + pid))
-rep = det.get("report") or {}
-check("participating unlocks the report", bool(rep), "still no report after submitting")
-check("below the floor, the report says so and shows no figures",
-      rep.get("below_floor") is True and all(
-          not (q.get("block") or {}).get("options") and (q.get("block") or {}).get("p50") is None
-          for q in rep.get("questions", [])),
-      "n=%s below_floor=%s" % (rep.get("participants"), rep.get("below_floor")))
+# Results publish at CLOSE (David 2026-08-20) — participating is not enough while open.
+check("an OPEN pulse serves no report, even to a participant",
+      not det.get("report") and det.get("report_available") is False,
+      "available=%s report=%s" % (det.get("report_available"), bool(det.get("report"))))
+check("a participant is recorded as having access before close",
+      det.get("report_access") == "participant", det.get("report_access"))
+check("the owner gets no early sight of its own open pulse",
+      not (j(owner.get(B + "/api/pulses/" + pid)) or {}).get("report"))
+check("commentary is refused while the pulse is open",
+      demo.post(B + "/api/pulses/%s/commentary" % pid, json={"question_id": qids[0]}).status_code == 403)
 
 # multi-select exclusivity is enforced server-side, not just in the browser
 msq = next((q for q in qs if q.get("type") == "multi_select"), None)
@@ -177,7 +180,9 @@ if msq:
 print("\n== G2. crossing the 5-organisation floor ==")
 # five MORE organisations answer, so the report crosses the floor and the >=5 paths
 # (figures, commentary comparison, narrative) are exercised rather than only the guard
-extra_actors = [sess(e) for e in ("pulse-agent-2@example.com", "pulse-agent-3@example.com",
+# deliberately NOT pulse-agent-2: it is the actor the locked-report test needs to have
+# missed this pulse. The Viewer shares the demo's org and adds nobody.
+extra_actors = [sess(e) for e in ("pulse-agent-1@example.com", "pulse-agent-3@example.com",
                                   "pulse-agent-4@example.com")] + [sess(*STAFF)]
 for k, a in enumerate(extra_actors):
     a.post(B + "/api/pulses/%s/join" % pid)
@@ -187,13 +192,7 @@ for k, a in enumerate(extra_actors):
                "multi_select": "Y" if k % 2 else "X", "numeric": str(3 + k)}.get(q.get("type"), "Yes")
         a.put(B + "/api/pulses/%s/response" % pid, json={"question_id": q["id"], "value": val})
     a.post(B + "/api/pulses/%s/submit" % pid)
-rep_now = (j(demo.get(B + "/api/pulses/" + pid)) or {}).get("report") or {}
-check("the report crosses the floor once 5 organisations have answered",
-      rep_now.get("participants", 0) >= 5 and rep_now.get("below_floor") is False,
-      "n=%s below_floor=%s" % (rep_now.get("participants"), rep_now.get("below_floor")))
-check("above the floor, figures appear",
-      any((q.get("block") or {}).get("options") or (q.get("block") or {}).get("p50") is not None
-          for q in rep_now.get("questions", [])), "no figures above the floor")
+print("  (five organisations have answered; the floor is checked after close, because\n         that is when a report exists)")
 
 # ---------------------------------------------------------------- E. core firewall
 print("\n== E. the firewall between a pulse and the core bank ==")
@@ -212,7 +211,49 @@ r = demo.put(B + "/api/pulses/%s/response" % pid,
 check("a closed pulse refuses new answers", r.status_code == 400, r.status_code)
 r = demo.post(B + "/api/pulses/%s/join" % pid)
 check("a closed pulse refuses new joiners", r.status_code == 400, r.status_code)
-check("the report still reads after close", bool((j(demo.get(B + "/api/pulses/" + pid)) or {}).get("report")))
+after = j(demo.get(B + "/api/pulses/" + pid))
+check("closing PUBLISHES the report to a participant",
+      bool(after.get("report")) and after.get("report_available") is True,
+      "available=%s report=%s" % (after.get("report_available"), bool(after.get("report"))))
+check("the report opens on the whole cohort", (after.get("cut") or {}).get("dim") == "all", after.get("cut"))
+_ar = after.get("report") or {}
+check("above the floor the report is not suppressed",
+      _ar.get("participants", 0) >= 5 and _ar.get("below_floor") is False,
+      "n=%s below_floor=%s" % (_ar.get("participants"), _ar.get("below_floor")))
+check("above the floor, figures appear",
+      any((q.get("block") or {}).get("options") or (q.get("block") or {}).get("p50") is not None
+          for q in _ar.get("questions", [])), "no figures above the floor")
+cutted = j(demo.get(B + "/api/pulses/%s?cut=fte_band&cut_value=250-999" % pid))
+_cr = cutted.get("report") or {}
+check("a peer cut narrows the cohort",
+      _cr.get("participants") is not None and _cr["participants"] <= _ar.get("participants", 0),
+      "%s vs %s" % (_cr.get("participants"), _ar.get("participants")))
+np_view = j(other.get(B + "/api/pulses/" + pid))
+if np_view.get("report_access") is None:
+    check("a non-participant is LOCKED out of a closed report",
+          np_view.get("report_locked") is True and not np_view.get("report"))
+    check("a locked member cannot reach commentary either",
+          other.post(B + "/api/pulses/%s/commentary" % pid,
+                     json={"question_id": qids[0]}).status_code == 403)
+    tgt = next((o for o in j(staff.get(B + "/api/admin/orgs")).get("orgs", [])
+                if o["name"] == "Alderbourne Power Group plc"), None)
+    if tgt:
+        check("granting access needs a reason",
+              staff.post(B + "/api/admin/orgs/%s/pulse-access" % tgt["org_id"],
+                         json={"pulse_id": pid}).status_code == 400)
+        check("staff can grant report access",
+              staff.post(B + "/api/admin/orgs/%s/pulse-access" % tgt["org_id"],
+                         json={"pulse_id": pid, "reason": "QA INV-1"}).status_code == 200)
+        bought = j(other.get(B + "/api/pulses/" + pid))
+        check("a purchased report unlocks",
+              bought.get("report_access") == "purchased" and bool(bought.get("report")))
+        check("staff can revoke it again",
+              staff.post(B + "/api/admin/orgs/%s/pulse-access" % tgt["org_id"],
+                         json={"pulse_id": pid, "revoke": True}).status_code == 200)
+        check("revoking re-locks the report",
+              j(other.get(B + "/api/pulses/" + pid)).get("report_locked") is True)
+else:
+    print("  (skip: the second actor took part, so it is not a non-participant)")
 r = staff.post(B + "/api/admin/pulses/%s/archive" % pid)
 check("staff can archive a closed pulse", r.status_code == 200, r.text[:120])
 
