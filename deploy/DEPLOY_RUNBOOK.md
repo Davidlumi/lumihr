@@ -130,11 +130,29 @@ delete its own off-box copies.
    carries a ~11,247-event un-swept dev backlog (seed orgs, no recipients —
    nothing would mail, but production must not begin life replaying a dev
    backlog through its first sweep). Run once, before first provisioning:
-   bump `composition_epoch` in meta (`set_meta("composition_epoch", "prod-1")`)
-   and run one sweep — P1-F's epoch mechanism rebaselines every org SILENTLY,
-   zero events, FULL-REPLACE (clears all stored signal_state rows incl. the
-   5,504 carrying pre-SIG-1 vocabulary). Use the built idiom; do not invent a
-   truncation. NOTE: notification_events history (7,407 dev rows, seed orgs,
+   **The instruction that used to sit here did not work, and was measured failing
+   on 2026-08-20.** It said: bump `composition_epoch` and run one sweep. But the
+   sweep treats a MISSING `org_signal_epoch` row as the CURRENT epoch and stamps
+   it lazily — deliberately, so a pre-P1F org is not rebaselined into eating
+   genuinely pending changes. This database has **0 epoch rows** against 220 orgs
+   carrying `signal_state`, so the bump is invisible and every org falls through
+   to `diff_and_record`. Run against a copy of the live stores, the literal
+   instruction wrote **14,238 notification events**. The corrected sequence wrote
+   **0**.
+
+   Every org must therefore be STAMPED with a prior epoch first, so the bump is
+   something the sweep can actually see. Use the script, which does this and the
+   rest of the first-provisioning cleanup in one pass, dry-run by default:
+
+   ```bash
+   python3 server/prepare_production_stores.py \
+       --db /srv/lumi/data/lumi.db --identity-db /srv/lumi/data/identity.db
+   # read the plan, then add:  --write --confirmed-by-david
+   ```
+
+   Then boot once and run a single sweep: it must report **0 events written**.
+   If it reports anything else, STOP — the backlog is replaying into what will
+   become real member notifications. NOTE: notification_events history (7,407 dev rows, seed orgs,
    never mailed) is the immutable event log and persists — archived history,
    not a served surface; it does not reach production members.
 
