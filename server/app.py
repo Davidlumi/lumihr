@@ -5079,7 +5079,7 @@ def _job_result_path(row):
     """Where the finished artefact lives, for the preparing screen and the email."""
     if row["kind"] == "boardpack" and row["result_id"]:
         return "/boardpack/" + row["result_id"]
-    if row["kind"] == "reward_document":
+    if row["kind"] in ("reward_document", "reward_plan"):
         # /strategy, NOT /reward-document: strategy and plan became ONE document on
         # 2026-08-16 and it lives on the strategy page (app.js:452 folds /plan and
         # /report/* into it). /reward-document is not a route at all — it fell through
@@ -5195,6 +5195,35 @@ def _reward_document_job_runner(job_id, params, progress):
             if e.status_code not in (403, 409):
                 raise
     return params["org_id"]
+
+
+def _reward_plan_job_runner(job_id, params, progress):
+    """Just the plan — what "Rebuild plan" asks for. Re-running the other three would be
+    both wasteful and wrong: the button names one artefact."""
+    import asyncio
+
+    conn = get_conn()
+    org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (params["org_id"],)).fetchone())
+    user = dict(conn.execute("SELECT * FROM users WHERE user_id=?",
+                             (params["user_id"],)).fetchone())
+    progress(0)
+    asyncio.run(build_action_plan(_JobRequest(user, org, body={})))
+    return params["org_id"]
+
+
+jobs_mod.register("reward_plan", _reward_plan_job_runner)
+
+
+@app.post("/api/jobs/reward-plan")
+async def job_reward_plan(request: Request):
+    """Rebuild the plan in the background. Editor-only, checked HERE so a Viewer sees the
+    refusal immediately rather than as a job that dies a moment later."""
+    user, org = require_user(request)
+    if user["role"] not in ("admin", "contributor"):
+        raise HTTPException(403, "Rebuilding the plan is for Admins and Contributors.")
+    body = await _json(request)
+    return _start_job("reward_plan", org, user, {"notify": bool(body.get("notify"))},
+                      {"org_id": org["org_id"], "user_id": user["user_id"]})
 
 
 jobs_mod.register("reward_document", _reward_document_job_runner)

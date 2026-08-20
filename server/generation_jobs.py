@@ -54,6 +54,12 @@ KINDS = {
     # Four steps because the document really is four independent generations — the page
     # used to fire them in parallel from the browser and lose all four if the member
     # navigated away. Each boundary here is one of those calls returning.
+    # Rebuild plan is one call, but one call is 21s on a quiet API and 97s on a loaded one
+    # — the same spinner problem at a smaller scale, so it gets the same treatment.
+    "reward_plan": {
+        "label": "reward plan",
+        "steps": [("Sequencing your gaps into a plan", 30)],
+    },
     "reward_document": {
         "label": "reward document",
         "steps": [

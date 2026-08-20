@@ -608,18 +608,27 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   };
   const gj = useGenerationJob();
   const [planBusy, setPlanBusy] = useState(false);
-  const buildPlan = async (a) => {
+  // `announce` distinguishes the two callers: the automatic first-open build stays silent
+  // and inline (it is invisible groundwork), while the explicit Rebuild plan button runs
+  // as a job with the preparing screen, because a member pressed it and is waiting.
+  const buildPlan = async (announce) => {
+    if (announce) {
+      await gj.start("/api/jobs/reward-plan", {}, async () => {
+        gj.reset();
+        try { setAl(await api("/api/strategy/alignment")); } catch (e) {}
+        toast("Plan rebuilt from your current gaps.");
+      });
+      return;
+    }
     setPlanBusy(true);
     try {
       const r = await api("/api/strategy/plan", { method: "POST", body: {} });
       if (r && r.ok === false) {
         if (r.reason === "locked") toast("Your insights unlock once your data is in.", "error");
       } else {
-        const fresh = await api("/api/strategy/alignment");
-        setAl(fresh);
-        if (a) toast("Plan rebuilt from your current gaps.");
+        setAl(await api("/api/strategy/alignment"));
       }
-    } catch (e) { if (a) toast(e && e.message || "Couldn't build the plan.", "error"); }
+    } catch (e) { /* silent: nobody asked for this one */ }
     setPlanBusy(false);
   };
   useEffect(() => {
@@ -839,14 +848,27 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     nav("/signals");
   };
 
+  // Rewrite is THREE model calls. Inline it was a ~90-second disabled button over a
+  // half-blanked document, and navigating away lost all three — the same spinner the cold
+  // load was moved off, left behind on the explicit path (2026-08-20). Same job, same
+  // preparing screen, same freedom to leave.
   const regen = async () => {
-    setBusy(true);
     setCm(null); if (wantsPlan) setDg(null); if (wantsIntent) setStm(null);
-    try { await loadNarrative(true); toast("Commentary rewritten from your current position."); }
-    catch (e) { toast("Couldn't rewrite the commentary.", "error"); }
-    setBusy(false);
+    await gj.start("/api/jobs/reward-document", { force: true }, async () => {
+      gj.reset();
+      await loadNarrative(false);
+      toast("Commentary rewritten from your current position.");
+    });
   };
   const doPrint = () => {
+    // A rewrite BLANKS the narrative sections before refilling them, so exporting mid-flight
+    // produced a board PDF with ~3,000 characters of narrative simply missing — and nothing
+    // stopped it (2026-08-20). Belt to the preparing screen's braces: the panel already
+    // replaces the document while a job runs, and this refuses even if a path reaches here.
+    if (busy || planBusy || aiWaiting || (gj.job && gj.job.status === "running")) {
+      toast("Still writing — the export will be complete once it finishes.", "error");
+      return;
+    }
     const t = document.title;
     document.title = "lumi — " + orgName + " — " + K.file + " — " + today;
     window.print();
@@ -2857,7 +2879,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             title="Re-sequence the plan from your current gaps">${planBusy ? "Writing…" : "Rebuild plan"}</button>` : null}
           <button class="btn" disabled=${busy || aiWaiting} onClick=${regen}
             title="Rewrite the commentary from your current position">${busy ? "Rewriting…" : "Rewrite commentary"}</button>
-          <button class="btn primary" onClick=${doPrint}><${Icon} name="download" size=${14} /> Save as PDF</button>
+          <button class="btn primary" disabled=${busy || planBusy || aiWaiting || (gj.job && gj.job.status === "running")}
+            onClick=${doPrint}><${Icon} name="download" size=${14} /> Save as PDF</button>
         </div>
       </div>
       ${pages.map((p, i) => html`
