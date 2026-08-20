@@ -622,7 +622,12 @@ def report_is_available(p):
     then choose their own against them, and would let the author — who wrote the questions
     — watch the market answer before committing. Waiting until close removes both, and it
     is one rule with no exceptions to explain."""
-    return (p["status"] or "") in ("closed", "archived")
+    if (p["status"] or "") in ("closed", "archived"):
+        return True
+    # A pulse whose close date has passed but whose status has not been flipped yet has
+    # closed as far as a member is concerned — it stopped accepting answers on that date.
+    # Keying only on status left it in limbo: not accepting, and no report either.
+    return (p["status"] or "") == "open" and not is_accepting(p)
 
 
 def report_access(pulse_id, org_id, conn=None):

@@ -66,7 +66,13 @@ window.PulsesPage = function ({ me, tab }) {
     }
     return html`<span class="caption num pulse-partic"><${Icon} name="users" size=${12} /> ${p.participants} participating</span>`;
   };
-  const cardCta = (p) => p.participated ? "View report" : p.joined ? "Finish your answers" : p.accepting ? "Take part (free)" : "View";
+  // The call to action has to tell the truth about the new gate: while a pulse is open
+  // there IS no report to view, however fully you answered (David 2026-08-20).
+  const cardCta = (p) =>
+    p.accepting ? (p.participated ? "You're in — results at close"
+                 : p.joined ? "Finish your answers" : "Take part (free)")
+    : p.report_locked ? "Locked — get access"
+    : p.report_available ? "View report" : "View";
   const goPulse = (p) => nav("/pulse/" + p.pulse_id);
 
   const communityCard = (p) => html`
@@ -128,21 +134,31 @@ window.PulsesPage = function ({ me, tab }) {
       : null;
 
   const exploreView = () => {
-    const open = [...data.pulses.filter(p => p.accepting)].sort((a, b) => (a.closes_at || "z") < (b.closes_at || "z") ? -1 : 1);
-    const past = data.pulses.filter(p => !p.accepting);
-    const mine = past.filter(p => p.participated);        // closed pulses whose report is yours — foregrounded
-    const archived = past.filter(p => !p.participated);   // closed, your org sat out — the report belongs to participants
-    if (!open.length && !past.length) return html`<${EmptyState} tone="invite" icon="zap" title="No pulses yet"
+    // FOUR states, and a member wants a different thing in each — so each gets its own
+    // section rather than one undifferentiated wall (David 2026-08-20). Order is by what
+    // they can act on: answer it, wait for it, read it, buy it.
+    const bySoonest = (a, b) => (a.closes_at || "z") < (b.closes_at || "z") ? -1 : 1;
+    const openTodo = data.pulses.filter(p => p.accepting && !p.participated).sort(bySoonest);
+    const openDone = data.pulses.filter(p => p.accepting && p.participated).sort(bySoonest);
+    const reports  = data.pulses.filter(p => !p.accepting && !p.report_locked).sort(bySoonest).reverse();
+    const locked   = data.pulses.filter(p => !p.accepting && p.report_locked).sort(bySoonest).reverse();
+    if (!data.pulses.length) return html`<${EmptyState} tone="invite" icon="zap" title="No pulses yet"
       body="Short, timely community deep-dives on reward land here — take part free to unlock each report."
       action=${isAdmin ? html`<button class="btn small primary" onClick=${() => nav("/run-a-pulse")}>Run a pulse →</button>` : null} />`;
-    const section = (title, list) => html`
-      <h2 class="section-title" style=${{ margin: "var(--s6) 0 var(--s3)" }}>${title}</h2>
+    const section = (title, note, list) => !list.length ? null : html`
+      <div class="pulse-section-head">
+        <h2 class="section-title">${title} <span class="pulse-section-n">${list.length}</span></h2>
+        ${note ? html`<p class="caption">${note}</p>` : null}
+      </div>
       <div class="pulse-grid">${list.map(communityCard)}</div>`;
     return html`
-      ${open.length ? html`${heroCard(open[0])}${open.length > 1 ? html`<div class="pulse-grid">${open.slice(1).map(communityCard)}</div>` : null}`
-        : html`<div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} /><span>No pulse is open right now — new topics land here as they emerge.</span></div>`}
-      ${mine.length ? section("Your reports", mine) : null}
-      ${archived.length ? section("Archived", archived) : null}`;
+      ${openTodo.length
+        ? html`${heroCard(openTodo[0])}
+               ${openTodo.length > 1 ? section("Also open", "Free to take part — your answers unlock the report when the pulse closes.", openTodo.slice(1)) : null}`
+        : html`<div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} /><span>Nothing open to answer right now — new topics land here as they emerge.</span></div>`}
+      ${section("Answered — waiting to close", "You've taken part. Results publish to participants when the pulse closes.", openDone)}
+      ${section("Your reports", "Closed pulses you can read.", reports)}
+      ${section("You missed these", "Closed before you took part. Taking part is always free; access to a closed report is bought from lumi.", locked)}`;
   };
 
   const orgRow = (p) => html`

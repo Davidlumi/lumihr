@@ -1706,10 +1706,24 @@ def _pulse_member_view(conn, p, org, with_teaser=False, request=None):
         "joined": part is not None, "participated": bool(part and part["submission_complete"]),
         "topic": topic, "icon": icon,
     }
-    # a compact report teaser for the Explore card — only for a participant whose report
-    # has actually unlocked, and only when the caller asks (the list view), so the detail
-    # page (which builds the full report anyway) never double-pays for the aggregation.
-    if with_teaser and view["participated"] and n_parts >= SUPPRESSION_FLOOR:
+    # THE REPORT GATE, computed once for BOTH the list card and the detail page:
+    #   1. TIME   — results publish only once the pulse has CLOSED, owner included.
+    #   2. ACCESS — you took part, you own it, or you bought sight of it.
+    # The Explore cards need these to say the right thing (an open pulse has no report to
+    # offer, however fully you answered) and to sort into their sections.
+    view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
+    view["report_available"] = pulses_mod.report_is_available(p)
+    view["report_access"] = pulses_mod.report_access(p["pulse_id"], org["org_id"], conn)
+    view["report_locked"] = bool(view["report_available"] and not view["report_access"])
+    # a compact report teaser for the Explore card — only where the report has ACTUALLY
+    # unlocked, and only when the caller asks (the list view), so the detail page (which
+    # builds the full report anyway) never double-pays for the aggregation.
+    #
+    # It now needs the same two locks as the report itself. Showing a headline figure from
+    # an open pulse would publish the cohort early through the back door, which is the one
+    # thing waiting until close exists to prevent (David 2026-08-20).
+    if (with_teaser and view["report_available"] and view["report_access"]
+            and n_parts >= SUPPRESSION_FLOOR):
         try:
             rep = pulses_mod.pulse_report(
                 p["pulse_id"], conn,
@@ -1772,11 +1786,7 @@ async def pulse_detail(pid: str, request: Request):
     #   2. ACCESS — give-to-get: you took part, you own it, or you bought sight of it.
     # A member who fails only the second lock still sees the card, locked, with a route to
     # buy; failing the first, everyone sees the same "results when it closes" state.
-    view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
-    view["report_available"] = pulses_mod.report_is_available(p)
-    access = pulses_mod.report_access(pid, org["org_id"], conn)
-    view["report_access"] = access
-    view["report_locked"] = bool(view["report_available"] and not access)
+    access = view["report_access"]          # set by _pulse_member_view, for list and detail alike
     if view["report_available"] and access:
         cut = parse_cut(request, org) if request is not None else {"dim": "all", "value": None}
         cut_ids = _pulse_cut_org_ids(conn, org, cut)

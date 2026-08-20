@@ -5806,3 +5806,15 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
   font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .08em;
   color: var(--ink-faint); padding: var(--s3) var(--s2) var(--s1);
 }
+
+/* Pulse Explore sections. A member wants a different thing in each state — answer it,
+   wait for it, read it, buy it — so each gets a heading, a count, and one line saying
+   what the group IS, rather than one undifferentiated wall of cards. */
+.pulse-section-head { margin: var(--s6) 0 var(--s3); }
+.pulse-section-head .section-title { margin: 0; display: flex; align-items: baseline; gap: var(--s2); }
+.pulse-section-head .caption { margin: var(--s1) 0 0; max-width: 74ch; }
+.pulse-section-n {
+  font-size: var(--fs-caption); font-weight: 600; color: var(--ink-soft);
+  background: var(--surface-sunk); border-radius: var(--radius-xs); padding: 1px var(--s2);
+  font-variant-numeric: tabular-nums;
+}
