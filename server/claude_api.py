@@ -10,8 +10,11 @@ import json
 import logging
 import os
 import re
+import time
 
 import anthropic
+
+import ai_metrics
 
 log = logging.getLogger("lumi")
 
@@ -21,6 +24,10 @@ import practice_axis
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
 
 _client = None
+
+
+def _ms(t0):
+    return int((time.time() - t0) * 1000)
 
 
 def _client_or_none():
@@ -86,9 +93,11 @@ def _log_fallback(surface, err):
         "[lumi] %s fell back to the composed floor: %s", surface, err)
 
 
-def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=True, effort="medium"):
-    """One grounded Claude call via the official SDK. Returns {ok, text} on success
-    or {ok: False, error} otherwise — the caller always has a deterministic fallback.
+def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=True,
+                effort="medium", surface=None):
+    """One grounded Claude call via the official SDK. Returns {ok, text, call_id} on
+    success or {ok: False, error} otherwise — the caller always has a deterministic
+    fallback.
 
       schema   — optional JSON Schema. When given, the response is constrained to
                  valid JSON (structured outputs), removing the 'model returned
@@ -97,6 +106,10 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
                  strict commentary validator). Counts toward max_tokens, so keep
                  max_tokens generous when it's on.
       effort   — low | medium | high | max — the thinking-depth / token dial.
+      surface  — which product surface is spending. Recorded against tokens and latency
+                 (ai_metrics), and passed back as call_id so the caller can attach its
+                 validator verdict. Measuring HERE means a new surface cannot escape the
+                 bill by forgetting to instrument itself.
     """
     client = _client_or_none()
     if client is None:
@@ -114,23 +127,38 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
         kwargs["thinking"] = {"type": "adaptive"}
     if schema is not None:
         kwargs["output_config"]["format"] = {"type": "json_schema", "schema": schema}
+    _t0 = time.time()
+
+    def _fail(err):
+        ai_metrics.record_call(surface, MODEL, False, latency_ms=_ms(_t0), error=err)
+        return {"ok": False, "error": err}
+
     try:
         resp = client.messages.create(**kwargs)
         text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        _u = getattr(resp, "usage", None)
         # adaptive thinking counts toward max_tokens, so a long think can leave too little
         # budget for the answer. Structured output still yields a well-formed object, just
         # a thin one — which reaches the validator as "missing section X" and reads like a
         # model that ignored the prompt. Name the real cause instead (2026-08-20).
         if getattr(resp, "stop_reason", None) == "max_tokens":
+            # still recorded: a truncated call was paid for, and a surface that keeps
+            # truncating is exactly what the report should surface
+            ai_metrics.record_call(surface, MODEL, False, getattr(_u, "input_tokens", None),
+                                   getattr(_u, "output_tokens", None), _ms(_t0),
+                                   "hit max_tokens (%d)" % max_tokens)
             return {"ok": False, "error": "response hit max_tokens (%d) before finishing — "
                                           "raise max_tokens or lower effort" % max_tokens}
-        return {"ok": True, "text": text}
+        call_id = ai_metrics.record_call(surface, MODEL, True,
+                                         getattr(_u, "input_tokens", None),
+                                         getattr(_u, "output_tokens", None), _ms(_t0))
+        return {"ok": True, "text": text, "call_id": call_id}
     except anthropic.AuthenticationError:
-        return {"ok": False, "error": "Claude API key rejected (401) — check ANTHROPIC_API_KEY"}
+        return _fail("Claude API key rejected (401) — check ANTHROPIC_API_KEY")
     except anthropic.APIStatusError as e:
-        return {"ok": False, "error": "Claude API error %s: %s" % (e.status_code, getattr(e, "message", ""))}
+        return _fail("Claude API error %s: %s" % (e.status_code, getattr(e, "message", "")))
     except Exception as e:                        # network, timeout, SDK/validation error
-        return {"ok": False, "error": str(e)}
+        return _fail(str(e))
 
 
 BOARD_PACK_SYSTEM = """You are writing the narrative for a board-ready HR benchmarking pack
@@ -289,7 +317,7 @@ def generate_board_pack_narrative(payload):
     last_err = None
     for _ in range(2):                          # one retry on a rejected/garbled attempt
         res = call_claude(BOARD_PACK_SYSTEM, user_content, max_tokens=8000,
-                          schema=BOARD_PACK_SCHEMA, effort="high")
+                          schema=BOARD_PACK_SCHEMA, effort="high", surface="board_pack")
         if not res["ok"]:
             last_err = res["error"]
             break                               # API-level failure — a retry won't conjure a key
@@ -299,6 +327,7 @@ def generate_board_pack_narrative(payload):
             last_err = "Model returned non-JSON output"
             continue
         ok, reason = validate_pack_narrative(narrative, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, reason)
         if ok:
             return {"ok": True, "narrative": narrative}
         last_err = "narrative rejected: %s" % reason
@@ -406,7 +435,7 @@ def generate_pulse_narrative(payload):
     last_err = None
     for _ in range(2):
         res = call_claude(PULSE_NARRATIVE_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=4000, schema=PULSE_NARRATIVE_SCHEMA)
+                          max_tokens=4000, schema=PULSE_NARRATIVE_SCHEMA, surface="pulse_narrative")
         if not res["ok"]:
             last_err = res["error"]
             break
@@ -419,6 +448,7 @@ def generate_pulse_narrative(payload):
             last_err = "model returned non-JSON"
             continue
         ok, reason = validate_pulse_narrative(narrative, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, reason)
         if ok:
             return {"ok": True, "narrative": {"summary": narrative["summary"].strip(),
                     "key_findings": [k.strip() for k in narrative["key_findings"]]}, "source": "model"}
@@ -701,7 +731,7 @@ def analyst_answer(question, data_payload):
     content = "QUESTION: %s\n\nDATA:\n%s" % (question, json.dumps(data_payload, ensure_ascii=False))
     last_err = None
     for _ in range(2):                          # one retry on a rejected/garbled attempt
-        res = call_claude(ANALYST_SYSTEM, content, max_tokens=6000, schema=ANALYST_SCHEMA)
+        res = call_claude(ANALYST_SYSTEM, content, max_tokens=6000, schema=ANALYST_SCHEMA, surface="analyst")
         if not res["ok"]:
             return {"ok": False, "error": res["error"]}
         text = res["text"].strip()
@@ -713,6 +743,7 @@ def analyst_answer(question, data_payload):
             last_err = "model returned non-JSON"
             continue
         ok, why, chips = validate_analyst_answer(parts, data_payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "answer": parts["answer"].strip(), "chips": chips}
         last_err = "model output rejected (%s)" % why
@@ -796,7 +827,7 @@ def guide_answer(context):
     last_err = None
     for _ in range(2):                          # one retry on a rejected/garbled attempt
         res = call_claude(GUIDE_SYSTEM, json.dumps(context, ensure_ascii=False),
-                          max_tokens=1500, thinking=False, schema=GUIDE_SCHEMA)
+                          max_tokens=1500, thinking=False, schema=GUIDE_SCHEMA, surface="guide")
         if not res["ok"]:
             return {"ok": False, "error": res["error"]}
         text = res["text"].strip()
@@ -808,6 +839,7 @@ def guide_answer(context):
             last_err = "model returned non-JSON"
             continue
         ok, why, links = validate_guide_answer(parts, context)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "answer": parts["answer"].strip(), "links": links}
         last_err = "model output rejected (%s)" % why
@@ -1089,7 +1121,7 @@ def generate_strategy_statement(payload):
         # six sections of connected prose at effort "high": 4000 shared with adaptive
         # thinking was not enough headroom, so drafts arrived with a section left empty
         res = call_claude(STATEMENT_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=8000, schema=STATEMENT_SCHEMA, effort="high")
+                          max_tokens=8000, schema=STATEMENT_SCHEMA, effort="high", surface="statement")
         if not res.get("ok"):
             last_err = res.get("error")
             break                       # API-level failure — a retry won't conjure a key
@@ -1102,6 +1134,7 @@ def generate_strategy_statement(payload):
             last_err = "model returned non-JSON"
             continue
         ok, why = validate_statement(parts, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "parts": {k: parts[k].strip() for k in STATEMENT_SECTIONS},
                     "source": "model"}
@@ -1224,7 +1257,7 @@ def generate_strategy_commentary(payload):
     # 3000, not 1500: adaptive thinking counts toward max_tokens, and every other
     # thinking generator here sits at 3000-8000 (the only other 1500 turns thinking off).
     res = call_claude(STRATEGY_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                      max_tokens=3000, schema=STRATEGY_SCHEMA)
+                      max_tokens=3000, schema=STRATEGY_SCHEMA, surface="strategy_commentary")
     if not res.get("ok"):
         # this generator used to drop the reason on the floor, so a call that the API
         # rejected outright was indistinguishable from one that simply chose the floor
@@ -1237,6 +1270,7 @@ def generate_strategy_commentary(payload):
             parts = json.loads(text)
             if all(isinstance(parts.get(k), str) and parts.get(k) for k in ("reading", "tensions", "watch")):
                 ok, _why = validate_strategy_commentary(parts, payload)
+                ai_metrics.record_verdict(res.get("call_id"), ok, _why)
                 if ok:
                     return {"ok": True, "parts": parts, "source": "model"}
         except Exception:
@@ -1528,7 +1562,7 @@ def generate_metric_commentary(payload):
     last_note = None
     for _ in range(2):
         res = call_claude(COMMENTARY_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=4000, schema=COMMENTARY_SCHEMA)
+                          max_tokens=4000, schema=COMMENTARY_SCHEMA, surface="metric_commentary")
         if not res["ok"]:
             last_note = res.get("error")
             break                                       # no key / API down — stop retrying
@@ -1541,6 +1575,7 @@ def generate_metric_commentary(payload):
             last_note = "model returned non-JSON"
             continue
         ok, why = validate_commentary(parts, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "parts": {k: parts[k].strip() for k in COMMENTARY_PARTS}, "source": "model"}
         last_note = "model output rejected (%s)" % why
@@ -1811,7 +1846,7 @@ def generate_domain_summary(payload, allow_ai=True):
                 "note": "no ANTHROPIC_API_KEY configured"}
     for _ in range(2):
         res = call_claude(DOMAIN_SUMMARY_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=3000, schema=DOMAIN_SUMMARY_SCHEMA)
+                          max_tokens=3000, schema=DOMAIN_SUMMARY_SCHEMA, surface="domain_summary")
         if not res["ok"]:
             last_note = res.get("error")
             break
@@ -1824,6 +1859,7 @@ def generate_domain_summary(payload, allow_ai=True):
             last_note = "model returned non-JSON"
             continue
         ok, why = validate_domain_summary(parts, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "parts": {k: parts[k].strip() for k in DOMAIN_PARTS}, "source": "model"}
         last_note = "model output rejected (%s)" % why
@@ -1970,7 +2006,7 @@ def generate_strategy_diagnosis(payload):
     last_note = None
     for _ in range(2):
         res = call_claude(DIAGNOSIS_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=5000, schema=DIAGNOSIS_SCHEMA, effort="high")
+                          max_tokens=5000, schema=DIAGNOSIS_SCHEMA, effort="high", surface="diagnosis")
         if not res["ok"]:
             last_note = res.get("error")
             break
@@ -1983,6 +2019,7 @@ def generate_strategy_diagnosis(payload):
             last_note = "model returned non-JSON"
             continue
         ok, why = validate_diagnosis(parts, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             clean = {"summary": parts["summary"].strip(),
                      "findings": [{k: f[k].strip() for k in ("headline", "detail", "option")}
@@ -2122,7 +2159,7 @@ def generate_action_plan(payload):
     last_note = None
     for _ in range(2):
         res = call_claude(PLAN_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                          max_tokens=5000, schema=PLAN_SCHEMA, effort="high")
+                          max_tokens=5000, schema=PLAN_SCHEMA, effort="high", surface="action_plan")
         if not res["ok"]:
             last_note = res.get("error")
             break
@@ -2135,6 +2172,7 @@ def generate_action_plan(payload):
             last_note = "model returned non-JSON"
             continue
         ok, why = validate_plan(parts, payload)
+        ai_metrics.record_verdict(res.get("call_id"), ok, why)
         if ok:
             return {"ok": True, "source": "model",
                     "parts": {"summary": parts["summary"].strip(),

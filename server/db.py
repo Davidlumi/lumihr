@@ -315,6 +315,24 @@ CREATE TABLE IF NOT EXISTS credit_ledger (
 );
 CREATE INDEX IF NOT EXISTS ix_credit_ledger_org ON credit_ledger(org_id, created_at);
 
+-- One row per paid model call: what it cost, and whether its output survived the
+-- validator. Written at the call_claude choke point so a new AI surface cannot
+-- silently escape measurement. See ai_metrics.py.
+CREATE TABLE IF NOT EXISTS ai_calls (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    surface        TEXT NOT NULL,             -- board_pack | analyst | guide | ...
+    model          TEXT NOT NULL,             -- the model string actually used
+    ok             INTEGER NOT NULL,          -- did the API return at all
+    error          TEXT,
+    input_tokens   INTEGER,
+    output_tokens  INTEGER,
+    latency_ms     INTEGER,
+    accepted       INTEGER,                   -- validator verdict; NULL = never reported
+    reject_reason  TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ix_ai_calls_when ON ai_calls(created_at, surface);
+
 CREATE TABLE IF NOT EXISTS generation_jobs (
     job_id          TEXT PRIMARY KEY,
     org_id          TEXT NOT NULL REFERENCES orgs(org_id),
