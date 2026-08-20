@@ -4,6 +4,9 @@
 NOT a gate, and deliberately outside the qa_ namespace: it spends real money on David's
 key, so it must never join run_gates.sh (which runs every gate with ANTHROPIC_API_KEY='').
 
+Covers every call_claude site in claude_api.py — keep it that way: a surface that is
+not on this list is a surface nobody is checking.
+
 It exists because the AI firewall makes a broken model path invisible. Every generator in
 claude_api falls back to a deterministic floor and returns 200 with plausible prose, so a
 surface that has NEVER once used the model reads exactly like a healthy one from outside.
@@ -56,6 +59,11 @@ def main():
             break
 
     calls = [
+        # Ask lumi is ONE route with two model paths: a comparison question goes to
+        # analyst_answer (cited, strict), anything else to guide_answer. Both are swept,
+        # because "the analyst works" says nothing about the guide and vice versa.
+        ("ask lumi (compare)",  "/api/analyst",             {"question": "How do we compare on employer pension contribution?"}),
+        ("ask lumi (how-to)",   "/api/analyst",             {"question": "How do I create a pulse survey?"}),
         ("metric commentary",   "/api/metric-commentary",   {"question_id": qid, "cut": "all", "force": 1}),
         ("domain summary",      "/api/domain-summary",      {"domain": DOMAIN, "cut": "all", "force": 1}),
         ("strategy statement",  "/api/strategy/statement",  {"force": 1}),

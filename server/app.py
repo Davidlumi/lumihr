@@ -4399,15 +4399,21 @@ async def analyst(request: Request):
             resp = {"answer": "The closest matches don't have enough peer data to show safely "
                               "yet — try a broader question, or open the metric itself for the "
                               "full picture.",
-                    "chips": chips, "matched": qids, "fallback": True}
+                    "chips": chips, "matched": qids, "fallback": True,
+                    "source": "deterministic"}
         else:
             resp = {"answer": "Here's where you stand on the closest matches to your question:\n\n"
                               + "\n\n".join(lines),
-                    "chips": chips, "matched": qids, "fallback": True}
+                    "chips": chips, "matched": qids, "fallback": True,
+                    "source": "deterministic"}
         _analyst_log(conn, org, user, question, intent, qids, "fallback", resp["answer"])
         return resp
     _analyst_log(conn, org, user, question, intent, qids, "model", res["answer"])
-    return {"answer": res["answer"], "chips": res["chips"], "matched": qids}
+    # `source` on the wire, like every other AI surface: this route recorded model-vs-fallback
+    # in _analyst_log but never told the caller, so Ask lumi was the one surface whose
+    # provenance could not be checked from outside — exactly the blind spot that let three
+    # dead model paths run for months (2026-08-20).
+    return {"answer": res["answer"], "chips": res["chips"], "matched": qids, "source": "model"}
 
 
 def _depluralise(question):
