@@ -87,6 +87,30 @@
       "env": {
         "LUMI_BASE_URL": "http://localhost:8068"
       }
+    },
+    {
+      "name": "lumi-throwaway-conc",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app:app",
+        "--port",
+        "8073"
+      ],
+      "cwd": "server",
+      "port": 8073,
+      "autoPort": false,
+      "env": {
+        "LUMI_BASE_URL": "http://localhost:8073",
+        "LUMI_DB": "/private/tmp/claude-501/-Applications-Lumi-Project/eab138a8-46d2-40c2-9324-b262e4a7efba/scratchpad/conc_lumi.db",
+        "LUMI_IDENTITY_DB": "/private/tmp/claude-501/-Applications-Lumi-Project/eab138a8-46d2-40c2-9324-b262e4a7efba/scratchpad/conc_identity.db",
+        "LUMI_AI_LIVE": "",
+        "LUMI_AI_INSIGHTS_ENABLED": "on",
+        "LUMI_AI_DAILY_CALL_CAP": "120",
+        "LUMI_SEED_DEMO": "on",
+        "ANTHROPIC_API_KEY": ""
+      }
     }
   ]
 }

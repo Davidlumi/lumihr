@@ -5311,6 +5311,14 @@ jobs_mod.register("reward_document", _reward_document_job_runner)
 async def job_reward_document(request: Request):
     """Start the reward document's four generations in the background."""
     user, org = require_user(request)
+    # The document is written FROM a completed strategy. Without one the job started,
+    # spawned a thread, and only then died on "No completed strategy to read" — the
+    # member watching a preparing screen that fails a moment later. Found by running
+    # twelve organisations at once (2026-08-20): all twelve had this shape. Refuse here,
+    # where the answer is honest and instant.
+    if _strategy_commentary_payload(request, user, org) is None:
+        raise HTTPException(404, "Set your reward strategy first — the document is written "
+                                 "from it.")
     # four paid calls behind one POST — the same hourly ceiling every other AI surface
     # answers to, checked here so a refusal is immediate rather than a job that dies
     _ai_generation_or_429(org)
