@@ -5818,3 +5818,33 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
   background: var(--surface-sunk); border-radius: var(--radius-xs); padding: 1px var(--s2);
   font-variant-numeric: tabular-nums;
 }
+
+/* The Pulse page takes the full content column like the benchmark; it was capped at
+   1120 while .content allows 1320, so the grid ran narrow with air either side. */
+.pulse-page-wide { max-width: none; margin: 0 auto; }
+
+/* The credit balance: a chip that states an entitlement, not a floating statistic.
+   It used .pulse-head-stat — a 30px display number with a caption under it and no
+   container — which read as a stray number in the corner (David 2026-08-20). */
+.pulse-credit-chip {
+  display: inline-flex; align-items: center; gap: var(--s3); flex: none;
+  background: var(--blue-tint); color: var(--blue-deep);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  border-radius: var(--radius-sm); padding: var(--s2) var(--s3);
+}
+.pulse-credit-chip .pcc-text { display: flex; flex-direction: column; line-height: 1.25; }
+.pulse-credit-chip .pcc-text b { font-size: var(--fs-body); }
+.pulse-credit-chip .pcc-text .caption { color: inherit; opacity: .78; }
+.pulse-credit-chip.none {
+  background: var(--surface-sunk); color: var(--ink-soft); border-color: var(--border);
+}
+.pulse-credit-chip .pcc-cta {
+  font-size: var(--fs-label); font-weight: 600; color: var(--blue-deep);
+  text-decoration: none; border-left: 1px solid var(--border); padding-left: var(--s3); margin-left: var(--s1);
+}
+.pulse-credit-chip .pcc-cta:hover { text-decoration: underline; }
+
+/* Four how-it-works steps no longer fit one row comfortably at the card's width — they
+   wrap to two clean pairs rather than four squeezed columns with laddered text. */
+.pulse-how { flex-wrap: wrap; }
+.pulse-how-step { flex: 1 1 clamp(14rem, 44%, 22rem); text-align: left; }

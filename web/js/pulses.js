@@ -168,10 +168,13 @@ window.PulsesPage = function ({ me, tab }) {
       <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}</div>
       ${nextStep(p) ? html`<div class="pulse-action"><${Icon} name="info" size=${11} /> ${nextStep(p)}</div>` : null}</article>`;
 
+  // FOUR steps: results publishing at close is the rule that shapes the whole product and
+  // it was the one step the journey never showed (David 2026-08-20).
   const howSteps = html`<div class="pulse-how">
     <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
     <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
     <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">One credit · opens to all members</span></div></div>
+    <div class="pulse-how-step"><span class="pulse-how-num">4</span><div><b>Results</b><span class="caption">Published to everyone who took part, when it closes</span></div></div>
   </div>`;
 
   const runView = () => {
@@ -186,10 +189,10 @@ window.PulsesPage = function ({ me, tab }) {
         <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}><${Icon} name="close" size=${13} /></button>
       </div>`}
       ${!pulses.length ? html`
-        <div class="card pulse-first" style=${{ maxWidth: "640px", margin: "var(--s4) auto 0", padding: "var(--s7) var(--s6)", textAlign: "center" }}>
+        <div class="card pulse-first" style=${{ maxWidth: "820px", margin: "var(--s4) auto 0", padding: "var(--s7) var(--s6)", textAlign: "center" }}>
           <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
           <b>Ask the community a question only lumi can answer</b>
-          <p class="caption" style=${{ margin: "var(--s1) auto var(--s5)", maxWidth: "42ch" }}>Pay equity, four-day weeks, AI in reward — your questions, answered as anonymised 5+-organisation aggregates.</p>
+          <p class="caption" style=${{ margin: "var(--s1) auto var(--s5)", maxWidth: "44ch" }}>Pay equity, four-day weeks, AI in reward — ask the question your own data can't answer.</p>
           ${howSteps}
           <button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
         </div>` : html`
@@ -199,23 +202,38 @@ window.PulsesPage = function ({ me, tab }) {
         </div>
         <div class="pulse-grid">${pulses.map(orgRow)}</div>
         <div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} />
-          <span>Build → we review → you request the launch → it opens to the community. Launching uses one credit.</span></div>`}`;
+          <span>Build → we review → you request the launch → it opens to the community → results publish when it closes. Launching uses one credit.</span></div>`}`;
   };
 
   const taken = !isAdmin && data ? data.pulses.filter(p => p.participated).length : 0;
   return html`
-    <div class="pulse-page" style=${{ maxWidth: "1120px", margin: "0 auto" }}>
+    <div class="pulse-page pulse-page-wide">
       <div class="pulse-head">
         <div class="pulse-head-l">
           <h1 class="display-title" style=${{ margin: 0 }}>Pulse</h1>
           <p class="pulse-lead">${isRun
-            ? "Design a pulse and launch it to the lumi community — answers come back as anonymised 5+-organisation aggregates."
-            : "Short, timely community deep-dives on reward — take part free to unlock each report."}</p>
+            ? "Design a pulse and launch it to the lumi community. Answers come back as anonymised 5+-organisation aggregates when it closes."
+            : "Short, timely community deep-dives on reward. Taking part is free, and unlocks the report for you when the pulse closes."}</p>
         </div>
         ${!isAdmin && taken ? html`<div class="pulse-head-stat"><b class="num">${taken}</b><span class="caption">pulse${taken === 1 ? "" : "s"} taken</span></div>` : null}
-        ${isRun && org && org.credits ? html`<div class=${"pulse-head-stat pulse-credits" + (org.credits.balance ? "" : " none")}
-            title=${org.credits.balance ? "One credit launches one pulse" : "Contact lumi to add credits"}>
-          <b class="num">${org.credits.balance}</b><span class="caption">credit${org.credits.balance === 1 ? "" : "s"}</span></div>` : null}
+        ${/* A display-size number floating at the top right read as a stray statistic — it
+              had no container, no baseline to sit on and never said what a credit buys.
+              It is a chip now, anchored to the header, and it states the entitlement.
+              (David 2026-08-20) */ ""}
+        ${isRun && org && org.credits ? (() => {
+          const bal = org.credits.balance, cost = org.launch_cost || 1;
+          return html`<div class=${"pulse-credit-chip" + (bal >= cost ? "" : " none")}>
+            <${Icon} name=${bal >= cost ? "zap" : "lock"} size=${15} />
+            <div class="pcc-text">
+              <b>${bal} credit${bal === 1 ? "" : "s"}</b>
+              <span class="caption">${bal >= cost
+                ? "enough for " + (bal === cost ? "one pulse" : Math.floor(bal / cost) + " pulses")
+                : "contact lumi to add more"}</span>
+            </div>
+            ${bal < cost ? html`<a class="pcc-cta" href=${"mailto:hello@lumihr.co.uk?subject=" +
+               encodeURIComponent("More pulse credits")}>Get credits</a>` : null}
+          </div>`;
+        })() : null}
       </div>
       ${isAdmin ? html`<div class="pulse-tabs" role="group" aria-label="Pulse views">
         <a href="#/pulse" class=${"pulse-tab" + (!isRun ? " on" : "")} aria-current=${!isRun ? "page" : undefined}>Explore</a>
