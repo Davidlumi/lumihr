@@ -3,7 +3,7 @@
    give-to-get per pulse, fully independent of the core unlock gate.
    Reuses the submission input components (same file-global functions) and
    the chart primitives — but never the core nav/aggregates. */
-/* global html, useState, useEffect, useRef, api, cutFromURL, cutToURL, Spinner, EmptyState, PageLoading, nav, toast, Icon,
+/* global html, useState, useEffect, useRef, api, cutFromURL, cutToURL, usePopover, Spinner, EmptyState, PageLoading, nav, toast, Icon,
    fmtValue, PercentileBand, OptionBars, OrderedDist, InputForType, exportCardPNG */
 
 // deadline urgency — a relative read with a "soon" flag for the blue "closing soon" cue
@@ -69,7 +69,7 @@ window.PulsesPage = function ({ me, tab }) {
   // The call to action has to tell the truth about the new gate: while a pulse is open
   // there IS no report to view, however fully you answered (David 2026-08-20).
   const cardCta = (p) =>
-    p.accepting ? (p.participated ? "You're in — results at close"
+    p.accepting ? (p.participated ? "Results at close"
                  : p.joined ? "Finish your answers" : "Take part (free)")
     : p.report_locked ? "Locked — get access"
     : p.report_available ? "View report" : "View";
@@ -89,8 +89,11 @@ window.PulsesPage = function ({ me, tab }) {
       ${p.teaser ? html`<div class="pulse-card-teaser"><b>${p.teaser.stat}</b><span> on ${p.teaser.on}</span></div>` : null}
       ${momentum(p)}
       <div class="pulse-card-foot">
-        ${p.participated ? html`<span class="pulse-taken"><${Icon} name="check" size=${12} /> You've taken part</span>`
-          : p.joined ? html`<span class="caption">Started — not yet submitted</span>` : html`<span></span>`}
+        ${/* "You've taken part" next to "You're in — results at close" said it twice, and the
+              longer half squeezed the shorter one onto two lines. The chip states the fact,
+              the CTA states what happens next. (David 2026-08-20) */ ""}
+        ${p.participated ? html`<span class="pulse-taken"><${Icon} name="check" size=${12} /> Taken part</span>`
+          : p.joined ? html`<span class="caption">Started</span>` : html`<span></span>`}
         <span class="pulse-card-cta">${cardCta(p)} <span aria-hidden="true">→</span></span>
       </div>
     </article>`;
@@ -466,18 +469,22 @@ function printPulse(report) {
    is the default: it is the honest headline for a pulse, and a member narrows from it. */
 function PulseCutPicker({ cut, onCut }) {
   const [cuts, setCuts] = useState(null);
-  const [open, setOpen] = useState(false);
+  // usePopover is what every other menu on the platform uses: Escape closes it, a click
+  // outside closes it, and it flips upward when it would not fit below. Rolling a bare
+  // useState here left a menu that could only be dismissed by re-clicking the trigger.
+  const { open, setOpen, pos, wrapRef, popRef } = usePopover(cuts ? "ready" : "loading");
   useEffect(() => { api("/api/cuts").then(setCuts).catch(() => {}); }, []);
   const cur = cut || { dim: "all" };
   const label = cur.label || "All participating organisations";
   const pick = (dim, value) => { setOpen(false); onCut({ dim, value }); };
   return html`
-    <div class="pulse-cutwrap">
+    <div class="pulse-cutwrap" ref=${wrapRef}>
       <button class=${"btn small" + (cur.dim !== "all" ? " on" : "")} aria-haspopup="menu"
         aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
         <${Icon} name="filter" size=${13} /> ${label}</button>
       ${open && cuts && html`
-        <div class="cmp-menu pulse-cutmenu" role="menu">
+        <div ref=${popRef} class=${"cmp-menu pulse-cutmenu" + (pos.up ? " up" : "")} role="menu"
+          style=${pos.maxH ? { maxHeight: pos.maxH + "px" } : null}>
           <button class="cutopt" role="menuitem" onClick=${() => pick("all", null)}>All participating organisations</button>
           ${cuts.twin_available ? html`<button class="cutopt" role="menuitem" onClick=${() => pick("twin", null)}>Peer Twin</button>` : null}
           ${(cuts.groups || []).length ? html`<div class="cutgrp">Your peer groups</div>` : null}

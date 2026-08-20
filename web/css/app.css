@@ -5848,3 +5848,10 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
    wrap to two clean pairs rather than four squeezed columns with laddered text. */
 .pulse-how { flex-wrap: wrap; }
 .pulse-how-step { flex: 1 1 clamp(14rem, 44%, 22rem); text-align: left; }
+
+/* Explore tiles were sitting at the grid's 320px floor — three columns of minimum-width
+   cards carrying a title, a description, a teaser and a footer. A higher floor gives two
+   comfortable columns at 1280 and three at full width, matching the report's card size. */
+.pulse-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.pulse-card-foot { flex-wrap: wrap; row-gap: var(--s2); }
+.pulse-taken { white-space: nowrap; }
