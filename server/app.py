@@ -5160,8 +5160,20 @@ def _job_notify(job_id):
 
 
 def _start_job(kind, org, user, params, runner_args):
-    """Create the row, hand back the id, and run the work behind it."""
+    """Create the row, hand back the id, and run the work behind it.
+
+    ONE RUNNING JOB PER ORG PER KIND. Every start spawns a daemon thread and several paid
+    calls, and nothing stopped a member (or two open tabs) from starting twenty — the
+    reward-document route had no guard whatsoever until 2026-08-20. A second request now
+    ATTACHES to the job already running instead of racing it: the caller gets that job's id,
+    watches the same progress, and no second thread or call exists. Better than a refusal,
+    because two tabs on the same document is a thing people actually do."""
     conn = get_conn()
+    live = conn.execute(
+        "SELECT job_id FROM generation_jobs WHERE org_id=? AND kind=? AND status='running' "
+        "ORDER BY created_at DESC LIMIT 1", (org["org_id"], kind)).fetchone()
+    if live:
+        return {"job_id": live["job_id"], "notify_email": None, "attached": True}
     notify = None
     if (params or {}).get("notify"):
         notify = identity.user_email(user["user_id"])
@@ -5266,6 +5278,7 @@ async def job_reward_plan(request: Request):
     user, org = require_user(request)
     if user["role"] not in ("admin", "contributor"):
         raise HTTPException(403, "Rebuilding the plan is for Admins and Contributors.")
+    _ai_generation_or_429(org)
     body = await _json(request)
     return _start_job("reward_plan", org, user, {"notify": bool(body.get("notify"))},
                       {"org_id": org["org_id"], "user_id": user["user_id"]})
@@ -5278,6 +5291,9 @@ jobs_mod.register("reward_document", _reward_document_job_runner)
 async def job_reward_document(request: Request):
     """Start the reward document's four generations in the background."""
     user, org = require_user(request)
+    # four paid calls behind one POST — the same hourly ceiling every other AI surface
+    # answers to, checked here so a refusal is immediate rather than a job that dies
+    _ai_generation_or_429(org)
     body = await _json(request)
     return _start_job("reward_document", org, user,
                       {"notify": bool(body.get("notify"))},
