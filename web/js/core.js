@@ -611,6 +611,20 @@ window.fmtDate = function (d) {
   return isNaN(dt) ? "" : dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };
 
+// Compact "how long ago" for timestamps the server wrote. SQLite's datetime('now')
+// is UTC with no zone marker, so it MUST be read as UTC — without the Z a browser in
+// BST parses it as local and a document that landed a moment ago reads "1h ago".
+window.fmtAgo = function (ts) {
+  if (!ts) return "";
+  const dt = new Date(/[TZ]/.test(ts) ? ts : ts.replace(" ", "T") + "Z");
+  if (isNaN(dt)) return "";
+  const mins = Math.round((Date.now() - dt.getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + " min ago";
+  if (mins < 60 * 24) return Math.round(mins / 60) + "h ago";
+  return fmtDate(dt);
+};
+
 // ------------------------------------------------- brandbar live height ----
 // The navy brandbar grows past --brandbar-h when its right cluster wraps
 // (≤860px). Sticky offsets (sidebar, settings rail) read

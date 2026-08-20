@@ -1215,10 +1215,20 @@ function NotificationBell({ me }) {
   const load = () => api("/api/notifications").then(setData).catch(() => {});
   useEffect(() => { load(); const t = setInterval(load, 120000); return () => clearInterval(t); }, []);
   useMenuClose(ref, open, setOpen);
-  if (!data || !data.inbox_enabled) return null;        // inbox switched off → no bell
+  const docs = (data && data.documents) || [];
+  // inbox off silences the SIGNAL half only — a document this member generated is still
+  // theirs to collect, so the bell stays when one is waiting (2026-08-20)
+  if (!data || (!data.inbox_enabled && !docs.length)) return null;
   const unread = data.unread || 0;
   const events = data.events || [];
+  const sigOutstanding = data.signals_unactioned || 0;
+  const badge = data.badge != null ? data.badge : unread;
   const markAll = async () => { await api("/api/notifications/read", { method: "POST", body: { all: true } }).catch(() => {}); load(); };
+  const openDoc = (d) => {
+    setOpen(false);
+    api("/api/notifications/read", { method: "POST", body: { job_ids: [d.job_id] } }).catch(() => {});
+    if (d.url) nav(d.url);
+  };
   const openEvent = (ev) => {
     setOpen(false);
     api("/api/notifications/read", { method: "POST", body: { event_ids: [ev.id] } }).catch(() => {});
@@ -1228,17 +1238,38 @@ function NotificationBell({ me }) {
   return html`
     <div class="notif-bell" ref=${ref}>
       <button class=${"notif-btn" + (open ? " active" : "")} aria-expanded=${open}
-        aria-label=${"Notifications" + (unread ? " — " + unread + " unread" : "")} onClick=${() => setOpen(!open)}>
+        aria-label=${"Notifications" + (badge ? " — " + badge + " waiting" : "")} onClick=${() => setOpen(!open)}>
         <${Icon} name="bell" size=${17} />
-        ${unread > 0 && html`<span class="notif-badge">${unread > 99 ? "99+" : unread}</span>`}
+        ${badge > 0 && html`<span class="notif-badge">${badge > 99 ? "99+" : badge}</span>`}
       </button>
       ${open && html`
         <div class="card notif-pop" role="group">
           <div class="notif-head">
             <b>Notifications</b>
-            ${unread > 0 ? html`<button class="notif-mark" onClick=${markAll}>Mark all read</button>` : null}
+            ${(unread > 0 || docs.some(d => !d.read)) ? html`<button class="notif-mark" onClick=${markAll}>Mark all read</button>` : null}
           </div>
-          ${events.length === 0 ? html`
+          ${/* Documents this member asked for that have landed. They lead the panel: a thing
+                you requested and are waiting on outranks a change you did not ask about. */ ""}
+          ${docs.length > 0 && html`
+            <div class="notif-group">
+              <div class="notif-group-head notif-head-ready"><${Icon} name="file-text" size=${12} /> Ready</div>
+              ${docs.map(d => html`
+                <button key=${d.job_id} class=${"notif-row notif-row-doc" + (d.read ? "" : " unread")} onClick=${() => openDoc(d)}>
+                  <span class="notif-row-title">Ready</span>
+                  <span class="notif-row-body">Your ${d.label} is ready — ${fmtAgo(d.finished_at)}</span>
+                </button>`)}
+            </div>`}
+          ${/* The backlog, counted David's way (2026-08-20): every live signal with no action
+                on it, not just the new ones — so it falls only when signals are triaged. */ ""}
+          ${sigOutstanding > 0 && html`
+            <div class="notif-group">
+              <div class="notif-group-head notif-head-todo"><${Icon} name="flag" size=${12} /> To action</div>
+              <button class="notif-row notif-row-signals" onClick=${() => { setOpen(false); nav("/signals"); }}>
+                <span class="notif-row-title">Signals</span>
+                <span class="notif-row-body">${sigOutstanding} signal${sigOutstanding === 1 ? "" : "s"} you haven't actioned yet</span>
+              </button>
+            </div>`}
+          ${events.length === 0 && docs.length === 0 && sigOutstanding === 0 ? html`
             <div class="notif-empty"><span class="notif-empty-ring"><${Icon} name="bell" size=${18} /></span>
               <div class="caption">No changes yet. When your position against the market moves — a flag appears, clears, or shifts — it lands here.</div></div>` :
           html`<div class="notif-list">

@@ -5881,3 +5881,11 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 }
 /* the reward document's preparing state stands where the document will be */
 .rr-preparing { max-width: 460px; margin: var(--s7) auto; }
+
+/* Bell: the two non-signal sources (2026-08-20). Ready = a document the member asked for
+   and is waiting on; To action = the untriaged signal backlog. Both reuse .notif-row so
+   the type scale, hover and unread rail are the ones already in the panel. */
+.notif-group-head.notif-head-ready { color: var(--blue); }
+.notif-group-head.notif-head-todo { color: var(--ink-soft); }
+.notif-row.notif-row-doc.unread { border-left-color: var(--blue); }
+.notif-row-signals { border-left-color: transparent; }

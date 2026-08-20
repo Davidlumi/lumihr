@@ -3768,15 +3768,19 @@ async def signals_seen(request: Request):
 # ----------------------------------------------------------- notifications ----
 @app.get("/api/notifications")
 async def list_notifications(request: Request):
-    """The bell: this user's admitted change events (newest first) + unread
-    count. Org-scoped via the session, like everywhere. Inbox-off → empty."""
+    """The bell: this user's admitted change events (newest first), the documents they
+    asked for that have since landed, and how many live signals they have not triaged.
+    Org-scoped via the session, like everywhere.
+
+    inbox_enabled is the SIGNAL-ALERT preference, so switching it off silences change
+    events and the signal backlog — not a board pack the member generated themselves.
+    That is a thing they asked for and are waiting on, not an alert they opted out of."""
     user, org = require_user(request)
     conn = get_conn()
     urow = conn.execute("SELECT notify_prefs_json FROM users WHERE user_id=?", (user["user_id"],)).fetchone()
     prefs = notifications.user_prefs(urow["notify_prefs_json"] if urow else "{}")
-    if not prefs["inbox_enabled"]:
-        return {"unread": 0, "events": [], "inbox_enabled": False}
-    rows = conn.execute(
+    inbox_on = bool(prefs["inbox_enabled"])
+    rows = [] if not inbox_on else conn.execute(
         "SELECT e.*, r.read_at FROM notification_reads r JOIN notification_events e ON e.id=r.event_id "
         "WHERE r.user_id=? AND r.suppressed_reason IS NULL AND e.org_id=? "
         "ORDER BY e.detected_at DESC, e.id DESC LIMIT 100",
@@ -3792,7 +3796,75 @@ async def list_notifications(request: Request):
     # mirroring L4 demoting a confirming signal off the home briefing while keeping it findable.
     out.sort(key=lambda e: bool(e.get("confirm")))   # stable → confirm to the bottom, order otherwise kept
     unread = sum(1 for e in out if not e["read"] and not e.get("confirm"))
-    return {"unread": unread, "events": out, "inbox_enabled": True}
+
+    # Documents the member asked for that have since landed. A finished generation_jobs row
+    # IS the notification — no second table, no second source of truth to fall out of step.
+    # Kept to this user's own jobs: "your board pack is ready" is not news to a colleague
+    # who never asked for one.
+    # UNREAD ONLY, and capped: the bell says what is waiting, not where documents live —
+    # every pack this member has ever made is already one click away in the export menu.
+    # Opening one (or Mark all read) takes it out of here, which is what makes the badge
+    # reachable at all.
+    docs = []
+    for r in conn.execute(
+            "SELECT job_id, kind, result_id, finished_at, bell_read_at FROM generation_jobs "
+            "WHERE org_id=? AND user_id=? AND status='done' AND bell_read_at IS NULL "
+            "AND finished_at >= datetime('now','-14 day') "
+            "ORDER BY finished_at DESC LIMIT 5", (org["org_id"], user["user_id"])):
+        spec = jobs_mod.KINDS.get(r["kind"]) or {}
+        docs.append({"job_id": r["job_id"], "kind": r["kind"],
+                     "label": spec.get("label", "document"),
+                     "url": _job_result_path(r), "finished_at": r["finished_at"],
+                     "read": r["bell_read_at"] is not None})
+    # counted separately from the capped list above, or a member with six waiting documents
+    # would see a badge of five — the badge must be the truth, not the length of a preview
+    docs_unread = conn.execute(
+        "SELECT COUNT(*) FROM generation_jobs WHERE org_id=? AND user_id=? AND status='done' "
+        "AND bell_read_at IS NULL AND finished_at >= datetime('now','-14 day')",
+        (org["org_id"], user["user_id"])).fetchone()[0]
+
+    # Signals sitting untouched. David's ruling 2026-08-20: the badge counts EVERY live
+    # signal with no action row — not just the ones new since the last visit — so the number
+    # is the real backlog rather than something that resets by opening a page. It only falls
+    # when a signal is actually prioritised, saved, dismissed or snoozed.
+    signals_unactioned = _unactioned_signal_count(conn, org, user) if inbox_on else 0
+
+    return {"unread": unread, "events": out, "inbox_enabled": inbox_on,
+            "documents": docs, "documents_unread": docs_unread,
+            "signals_unactioned": signals_unactioned,
+            # one number for the badge: everything actually waiting on this member
+            "badge": unread + docs_unread + signals_unactioned}
+
+
+def _unactioned_signal_count(conn, org, user):
+    """How many of the org's live signals this member has not triaged.
+
+    Built from org_signals — the same request-free set the nightly sweep uses — because
+    signal_state is only as fresh as the last sweep (off by default), and a badge fed by a
+    stale snapshot would quietly count signals that no longer exist. Returns 0 rather than
+    raising: a bell that 500s over a count is worse than a bell without one."""
+    try:
+        if not contribution_state(conn, org)["insights_unlocked"]:
+            return 0                       # locked org has no signals to action
+        # same lazy snooze-expiry the overview does, so a snooze that has run out counts as
+        # untouched again here too rather than staying "actioned" until the page is opened
+        conn.execute(
+            "DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND status='snoozed' "
+            "AND snooze_until IS NOT NULL AND snooze_until <= datetime('now')",
+            (org["org_id"], user["user_id"]))
+        conn.commit()
+        # Triage identity is SIG_ID, not question_id: a matrix signal is "qid::row_id" so each
+        # row triages independently (signals.py:944). signal_actions stores that sig_id in its
+        # question_id column, so joining on question_id silently under-counts the actioned set
+        # by every per-row signal — the bell read 48 where the Signals page showed 47.
+        actioned = {r["question_id"] for r in conn.execute(
+            "SELECT question_id FROM signal_actions WHERE org_id=? AND user_id=?",
+            (org["org_id"], user["user_id"]))}
+        return sum(1 for sig in org_signals(conn, org)
+                   if (sig.get("sig_id") or sig.get("question_id")) not in actioned)
+    except Exception:                      # noqa: BLE001
+        log.exception("[lumi] unactioned signal count failed for org %s", org["org_id"])
+        return 0
 
 
 @app.post("/api/notifications/read")
@@ -3803,11 +3875,21 @@ async def mark_notifications_read(request: Request):
     if body.get("all"):
         conn.execute("UPDATE notification_reads SET read_at=datetime('now') WHERE user_id=? AND read_at IS NULL",
                      (user["user_id"],))
+        # "Mark all read" clears the ready-document items too — they live in the same bell,
+        # so leaving them lit after the member has said "I've seen these" would be a lie.
+        # It does NOT touch signals: those clear by being actioned, never by being glanced at.
+        conn.execute("UPDATE generation_jobs SET bell_read_at=datetime('now') "
+                     "WHERE user_id=? AND status='done' AND bell_read_at IS NULL",
+                     (user["user_id"],))
     else:
         ids = [int(i) for i in (body.get("event_ids") or []) if str(i).isdigit()][:500]
         if ids:
             conn.executemany("UPDATE notification_reads SET read_at=datetime('now') WHERE user_id=? AND event_id=?",
                              [(user["user_id"], i) for i in ids])
+        jids = [str(x) for x in (body.get("job_ids") or [])][:50]
+        if jids:
+            conn.executemany("UPDATE generation_jobs SET bell_read_at=datetime('now') "
+                             "WHERE user_id=? AND job_id=?", [(user["user_id"], x) for x in jids])
     conn.commit()
     return {"ok": True}
 
@@ -4992,7 +5074,12 @@ def _job_result_path(row):
     if row["kind"] == "boardpack" and row["result_id"]:
         return "/boardpack/" + row["result_id"]
     if row["kind"] == "reward_document":
-        return "/reward-document"
+        # /strategy, NOT /reward-document: strategy and plan became ONE document on
+        # 2026-08-16 and it lives on the strategy page (app.js:452 folds /plan and
+        # /report/* into it). /reward-document is not a route at all — it fell through
+        # to the benchmark page, so the bell row and the email both landed the member
+        # somewhere they did not ask to be.
+        return "/strategy"
     return None
 
 

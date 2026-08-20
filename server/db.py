@@ -328,6 +328,7 @@ CREATE TABLE IF NOT EXISTS generation_jobs (
     error           TEXT,
     notify_email    TEXT,                      -- set ⇒ email this address on completion
     notified_at     TEXT,                      -- set once, so a retry cannot double-send
+    bell_read_at    TEXT,                      -- NULL = still unread in the notification bell
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
     finished_at     TEXT
@@ -757,7 +758,9 @@ def init_schema(conn=None):
     conn = conn or get_conn()
     conn.executescript(SCHEMA)
     # migration-lite for existing databases
-    for ddl in ("ALTER TABLE orgs ADD COLUMN clock_start TEXT",
+    for ddl in (# a finished board pack / reward document is a bell item until opened
+                "ALTER TABLE generation_jobs ADD COLUMN bell_read_at TEXT",
+                "ALTER TABLE orgs ADD COLUMN clock_start TEXT",
                 "ALTER TABLE orgs ADD COLUMN insights_unlocked_at TEXT",
                 "ALTER TABLE orgs ADD COLUMN reminders_json TEXT NOT NULL DEFAULT '[]'",
                 "ALTER TABLE orgs ADD COLUMN unionised_level TEXT",
