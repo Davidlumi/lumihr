@@ -23,6 +23,45 @@ import practice_axis
 # Current flagship; the env override lets ops pin a specific model without a code change.
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
 
+# PER-SURFACE MODEL AND EFFORT. One model for ten surfaces was never right: the board
+# pack writes seven sections of board prose from 19k tokens of evidence, while Ask lumi's
+# guide answer writes about 113 tokens telling someone where a button is. Both were paying
+# flagship latency.
+#
+# Every surface here is validated the same way whichever model writes it — the grounding,
+# directive, legal and jargon screens do not care — so the acceptance rate in ai_calls is
+# a real measure of whether a cheaper model is good enough, not a guess. Change one with
+# LUMI_AI_MODEL_<SURFACE> / LUMI_AI_EFFORT_<SURFACE> (upper case), no deploy needed.
+SURFACE_MODEL = {
+    # short, strict, and structurally simple: it picks from a supplied feature list and
+    # writes two sentences. Measured at 113 output tokens on the flagship.
+    "guide": os.environ.get("LUMI_AI_MODEL_GUIDE", "claude-haiku-4-5-20251001"),
+}
+SURFACE_EFFORT = {}
+
+
+def _model_for(surface):
+    return SURFACE_MODEL.get(surface) or MODEL
+
+
+# Not every model takes the thinking-depth dial. Haiku-class models reject
+# output_config.effort outright ("This model does not support the effort parameter",
+# 400) — which, because every generator falls back to a composed floor, showed up as a
+# perfectly normal-looking answer rather than an error (2026-08-20). Sending a parameter
+# a model cannot take is the same silent-floor trap as an unsupported schema constraint.
+_NO_EFFORT_PREFIXES = ("claude-haiku",)
+
+
+def _supports_effort(model):
+    return not (model or "").startswith(_NO_EFFORT_PREFIXES)
+
+
+def _effort_for(surface, requested):
+    env = os.environ.get("LUMI_AI_EFFORT_%s" % (surface or "").upper())
+    if env in ("low", "medium", "high", "max"):
+        return env
+    return SURFACE_EFFORT.get(surface, requested)
+
 _client = None
 
 
@@ -116,12 +155,14 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
         return {"ok": False, "error": "no ANTHROPIC_API_KEY configured"}
     if _ai_cap_reached():
         return {"ok": False, "error": "daily AI call cap reached — using the deterministic fallback"}
+    model = _model_for(surface)
+    effort = _effort_for(surface, effort)
     kwargs = {
-        "model": MODEL,
+        "model": model,
         "max_tokens": max_tokens,
         "system": system,
         "messages": [{"role": "user", "content": user_content}],
-        "output_config": {"effort": effort},
+        "output_config": {"effort": effort} if _supports_effort(model) else {},
     }
     if thinking:
         kwargs["thinking"] = {"type": "adaptive"}
@@ -130,7 +171,7 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
     _t0 = time.time()
 
     def _fail(err):
-        ai_metrics.record_call(surface, MODEL, False, latency_ms=_ms(_t0), error=err)
+        ai_metrics.record_call(surface, model, False, latency_ms=_ms(_t0), error=err)
         return {"ok": False, "error": err}
 
     try:
@@ -144,12 +185,12 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
         if getattr(resp, "stop_reason", None) == "max_tokens":
             # still recorded: a truncated call was paid for, and a surface that keeps
             # truncating is exactly what the report should surface
-            ai_metrics.record_call(surface, MODEL, False, getattr(_u, "input_tokens", None),
+            ai_metrics.record_call(surface, model, False, getattr(_u, "input_tokens", None),
                                    getattr(_u, "output_tokens", None), _ms(_t0),
                                    "hit max_tokens (%d)" % max_tokens)
             return {"ok": False, "error": "response hit max_tokens (%d) before finishing — "
                                           "raise max_tokens or lower effort" % max_tokens}
-        call_id = ai_metrics.record_call(surface, MODEL, True,
+        call_id = ai_metrics.record_call(surface, model, True,
                                          getattr(_u, "input_tokens", None),
                                          getattr(_u, "output_tokens", None), _ms(_t0))
         return {"ok": True, "text": text, "call_id": call_id}
