@@ -289,6 +289,20 @@ CREATE TABLE IF NOT EXISTS signal_state (
 
 -- One row per detected org-level change. Two consumers: the in-app inbox
 -- (every user) and the email digest (opted-in users).
+CREATE TABLE IF NOT EXISTS pulse_report_access (
+    -- A member who did NOT take part can buy sight of a closed pulse report. Separate from
+    -- credits by ruling (David 2026-08-20): a credit runs a pulse, this buys one report,
+    -- and the two are priced independently. Granted by staff after an offline invoice.
+    pulse_id      TEXT NOT NULL REFERENCES pulses(pulse_id),
+    org_id        TEXT NOT NULL REFERENCES orgs(org_id),
+    amount_pence  INTEGER,          -- what they were invoiced, for the record
+    reason        TEXT NOT NULL DEFAULT '',
+    granted_by    TEXT,
+    granted_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (pulse_id, org_id)
+);
+CREATE INDEX IF NOT EXISTS ix_pulse_access_org ON pulse_report_access(org_id);
+
 CREATE TABLE IF NOT EXISTS credit_ledger (
     entry_id      TEXT PRIMARY KEY,
     org_id        TEXT NOT NULL REFERENCES orgs(org_id),

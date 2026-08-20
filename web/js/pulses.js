@@ -3,7 +3,7 @@
    give-to-get per pulse, fully independent of the core unlock gate.
    Reuses the submission input components (same file-global functions) and
    the chart primitives — but never the core nav/aggregates. */
-/* global html, useState, useEffect, useRef, api, Spinner, EmptyState, PageLoading, nav, toast, Icon,
+/* global html, useState, useEffect, useRef, api, cutFromURL, cutToURL, Spinner, EmptyState, PageLoading, nav, toast, Icon,
    fmtValue, PercentileBand, OptionBars, OrderedDist, InputForType, exportCardPNG */
 
 // deadline urgency — a relative read with a "soon" flag for the blue "closing soon" cue
@@ -216,7 +216,22 @@ window.PulseDetailPage = function ({ me, pid }) {
   const [issues, setIssues] = useState({});
   const [savedAt, setSavedAt] = useState(null);
   const [busy, setBusy] = useState(false);
-  const refresh = () => api("/api/pulses/" + pid).then(d => {
+  // The peer cut lives in the hash as ?cut=dim::value — the app's own deep-link contract
+  // (cutFromURL/cutToURL), so a filtered pulse report is shareable and back-button safe
+  // exactly like a filtered benchmark. The API takes it as two params, so convert here.
+  // cutToURL uses history.replaceState, which does NOT fire hashchange — so the picker
+  // drives state directly and the URL follows for shareability, rather than the other way
+  // round. hashchange is still listened for, to catch a back/forward between cut states.
+  const [cutSel, setCutSel] = useState(() => cutFromURL());
+  useEffect(() => {
+    const onHash = () => setCutSel(cutFromURL());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const applyCut = (c) => { setCutSel({ dim: c.dim, value: c.value || null }); cutToURL(c); };
+  const cutQS = cutSel.dim === "all" ? ""
+    : "?cut=" + encodeURIComponent(cutSel.dim) + (cutSel.value ? "&cut_value=" + encodeURIComponent(cutSel.value) : "");
+  const refresh = () => api("/api/pulses/" + pid + cutQS).then(d => {
     setP(d);
     const init = {};
     (d.question_list || []).forEach(q => {
@@ -225,7 +240,7 @@ window.PulseDetailPage = function ({ me, pid }) {
     });
     setDrafts(init);
   }).catch(e => setErr(e.message));
-  useEffect(() => { refresh(); }, [pid]);
+  useEffect(() => { refresh(); }, [pid, cutSel.dim, cutSel.value]);
   if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this pulse" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!p) return html`<${PageLoading} />`;
 
@@ -285,7 +300,42 @@ window.PulseDetailPage = function ({ me, pid }) {
         <span class="pulse-subhead-desc">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating</span>
         <${CloseChip} p=${p} /></p>
 
-      ${p.report && html`<${PulseReport} report=${p.report} pid=${pid} me=${me} />`}
+      ${/* Three states, one gate. Open: nobody has results yet, and saying so is the whole
+            message. Closed but not yours: the card is there, greyed, with the route to buy
+            it. Closed and yours: the report. (David 2026-08-20) */ ""}
+      ${!p.report_available && p.participated && html`
+        <div class="card pulse-waiting">
+          <div class="pulse-empty-ico"><${Icon} name="clock" size=${24} /></div>
+          <b>Your answers are in — results publish when this pulse closes</b>
+          <p class="caption">Nobody sees the cohort while it is still answering, so no one can
+            read the market before choosing their own answer.${p.closes_at
+              ? " Closes " + fmtDate(p.closes_at) + "." : ""}</p>
+        </div>`}
+
+      ${p.report_locked && html`
+        <div class="card pulse-locked">
+          <div class="pulse-lock-body">
+            <div class="pulse-empty-ico"><${Icon} name="lock" size=${24} /></div>
+            <b>This pulse has closed — its report is open to the organisations that took part</b>
+            <p class="caption">You didn't take part in “${p.name}”, so its results are locked.${" "}
+              ${p.participants} organisation${p.participants === 1 ? "" : "s"} answered.${" "}
+              Taking part in a pulse is always free; access to one you missed is bought from lumi.</p>
+            <div class="pulse-lock-actions">
+              <a class="btn primary" href=${"mailto:hello@lumihr.co.uk?subject=" +
+                 encodeURIComponent("Pulse report access — " + p.name)}>Contact lumi for access</a>
+              <button class="btn" onClick=${() => nav("/pulse")}>See open pulses</button>
+            </div>
+            <div class="caption pulse-lock-note">We'll invoice you and open it on your account.</div>
+          </div>
+          ${(p.question_list || []).length ? html`
+            <div class="pulse-lock-peek">
+              <div class="eyebrow">What it asked · ${p.question_list.length} question${p.question_list.length === 1 ? "" : "s"}</div>
+              <ul>${p.question_list.slice(0, 6).map((q, i) => html`<li key=${i}>${q.text}</li>`)}</ul>
+            </div>` : null}
+        </div>`}
+
+      ${p.report && html`<${PulseReport} report=${p.report} pid=${pid} me=${me}
+         cut=${p.cut} onCut=${applyCut} />`}
 
       ${!p.joined && p.accepting && html`
         <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
@@ -376,7 +426,40 @@ function printPulse(report) {
   setTimeout(() => { document.title = t; }, 500);
 }
 
-function PulseReport({ report, pid, me }) {
+/* The peer cut on a pulse report — the SAME vocabulary as the benchmark selector
+   (all / industry / size band / a saved group / Peer Twin), reading /api/cuts so the
+   options are the member's own, not a second list that can drift from it. Whole cohort
+   is the default: it is the honest headline for a pulse, and a member narrows from it. */
+function PulseCutPicker({ cut, onCut }) {
+  const [cuts, setCuts] = useState(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { api("/api/cuts").then(setCuts).catch(() => {}); }, []);
+  const cur = cut || { dim: "all" };
+  const label = cur.label || "All participating organisations";
+  const pick = (dim, value) => { setOpen(false); onCut({ dim, value }); };
+  return html`
+    <div class="pulse-cutwrap">
+      <button class=${"btn small" + (cur.dim !== "all" ? " on" : "")} aria-haspopup="menu"
+        aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
+        <${Icon} name="filter" size=${13} /> ${label}</button>
+      ${open && cuts && html`
+        <div class="cmp-menu pulse-cutmenu" role="menu">
+          <button class="cutopt" role="menuitem" onClick=${() => pick("all", null)}>All participating organisations</button>
+          ${cuts.twin_available ? html`<button class="cutopt" role="menuitem" onClick=${() => pick("twin", null)}>Peer Twin</button>` : null}
+          ${(cuts.groups || []).length ? html`<div class="cutgrp">Your peer groups</div>` : null}
+          ${(cuts.groups || []).map(g => html`<button key=${g.group_id} class="cutopt" role="menuitem"
+             onClick=${() => pick("group", g.group_id)}>${g.name}</button>`)}
+          <div class="cutgrp">Size</div>
+          ${Object.keys(cuts.fte_bands || {}).map(b => html`<button key=${b} class="cutopt" role="menuitem"
+             onClick=${() => pick("fte_band", b)}>${b}</button>`)}
+          <div class="cutgrp">Industry</div>
+          ${Object.keys(cuts.industries || {}).map(i => html`<button key=${i} class="cutopt" role="menuitem"
+             onClick=${() => pick("industry", i)}>${i}</button>`)}
+        </div>`}
+    </div>`;
+}
+
+function PulseReport({ report, pid, me, cut, onCut }) {
   // the deterministic narrative ships in the payload (opens with it instantly);
   // when the AI surface is live it upgrades to the grounded model narrative.
   // Hooks run unconditionally BEFORE any early return (below_floor).
@@ -402,8 +485,9 @@ function PulseReport({ report, pid, me }) {
       <div class="pulse-pdf-head" aria-hidden="true"><span class="logo">lumi<span>.</span></span> · Pulse report</div>
       <div class="card">
         <div class="qsec-head row spread">
-          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · every answer counted, nothing shown below ${report.floor} organisations${genDate ? " · " + genDate : ""}</span></div>
+          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations${cut && cut.dim !== "all" ? " in " + cut.label : ""} · every answer counted, nothing shown below ${report.floor} organisations${genDate ? " · " + genDate : ""}</span></div>
           <div class="row no-print" style=${{ gap: "var(--s2)" }}>
+            ${onCut ? html`<${PulseCutPicker} cut=${cut} onCut=${onCut} />` : null}
             <button class="btn small" onClick=${() => downloadPulseCsv(report)}><${Icon} name="download" size=${13} /> CSV</button>
             <button class="btn small primary" disabled=${printing} onClick=${async () => {
               // A pulse PDF with charts and no observations is a slide deck. Write the read

@@ -5772,3 +5772,37 @@ td.credit-zero { color: var(--unfavourable-ink); font-weight: 600; }
 .pulse-page .pulse-subhead { margin: 0 0 var(--s5); line-height: 1.55; }
 .pulse-page .pulse-subhead .chip { flex: none; }
 .pulse-page-report .pulse-report-doc { margin-top: 0; }
+
+/* ===== Pulse: waiting, locked, and the peer cut (David 2026-08-20) ===========
+   Results publish at close, so a pulse has three report states and each needs to
+   read as deliberate rather than as an error: waiting (you answered, it is still
+   open), locked (it closed and you did not take part), and the report itself. */
+.pulse-waiting, .pulse-locked { padding: var(--s5); margin: var(--s4) 0; text-align: center; }
+.pulse-waiting .caption, .pulse-lock-body .caption { margin: var(--s2) auto 0; max-width: 56ch; }
+
+/* Locked reads GREY — the card is present and legibly out of reach, never a missing
+   thing and never an error tone. */
+.pulse-locked { background: var(--surface-sunk); border: 1px solid var(--border); }
+.pulse-locked .pulse-empty-ico { background: var(--surface); color: var(--ink-soft); }
+.pulse-locked b { color: var(--ink-soft); }
+.pulse-lock-actions { display: flex; gap: var(--s2); justify-content: center; flex-wrap: wrap; margin-top: var(--s4); }
+.pulse-lock-note { margin-top: var(--s2); color: var(--ink-faint); }
+.pulse-lock-peek {
+  margin: var(--s5) auto 0; max-width: 60ch; text-align: left; padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+.pulse-lock-peek ul { margin: var(--s2) 0 0; padding-left: var(--s5); }
+.pulse-lock-peek li { font-size: var(--fs-label); color: var(--ink-soft); margin-bottom: var(--s1); }
+
+/* the cut picker sits with the report's own tools */
+.pulse-cutwrap { position: relative; }
+.pulse-cutmenu { min-width: 17rem; max-height: 60vh; overflow-y: auto; padding: var(--s2); }
+.pulse-cutmenu .cutopt {
+  display: block; width: 100%; text-align: left; background: none; border: 0; cursor: pointer;
+  padding: var(--s2); border-radius: var(--radius-xs); font-size: var(--fs-label); color: var(--ink);
+}
+.pulse-cutmenu .cutopt:hover, .pulse-cutmenu .cutopt:focus-visible { background: var(--surface-sunk); }
+.pulse-cutmenu .cutgrp {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-faint); padding: var(--s3) var(--s2) var(--s1);
+}

@@ -1650,7 +1650,41 @@ async def revoke_invite(token: str, request: Request):
 # data (structural separation — see pulses.py docstring). Fully independent
 # of the core unlock gate in both directions.
 
-def _pulse_member_view(conn, p, org, with_teaser=False):
+def _pulse_cut_org_ids(conn, org, cut):
+    """The org-id set a peer cut resolves to, for intersecting with a pulse cohort.
+
+    Every dimension the benchmark offers is supported, because each one already knows how
+    to name its organisations: a column filter for industry/fte_band, group_org_ids for a
+    saved group, and the twin's own peer list. None means "no filter" (all peers)."""
+    dim = (cut or {}).get("dim") or "all"
+    if dim == "all":
+        return None
+    if dim in ("industry", "fte_band"):
+        val = cut.get("value")
+        if not val:
+            return None
+        return {r[0] for r in conn.execute(
+            "SELECT org_id FROM orgs WHERE %s = ?" % dim, (val,))}
+    if dim == "group":
+        return set(peer_twin.group_org_ids(conn, cut.get("criteria") or {}) or [])
+    if dim == "twin":
+        twin = peer_twin.compute_twin(conn, org["org_id"])
+        return set(twin["peer_org_ids"]) if twin else None
+    return None
+
+
+def _pulse_cut_label(conn, org, cut):
+    dim = (cut or {}).get("dim") or "all"
+    if dim == "all":
+        return "All participating organisations"
+    if dim == "group":
+        return cut.get("label") or "Your peer group"
+    if dim == "twin":
+        return "Peer Twin"
+    return cut.get("value") or "All participating organisations"
+
+
+def _pulse_member_view(conn, p, org, with_teaser=False, request=None):
     part = pulses_mod.participant(p["pulse_id"], org["org_id"], conn)
     n_q = len(uj(p["question_ids_json"], []))
     # PULSE-1: a real member's participant count reads the REAL subset — the
@@ -1710,7 +1744,7 @@ async def pulse_detail(pid: str, request: Request):
         raise HTTPException(404, "Unknown pulse")
     if p["status"] == "draft":
         raise HTTPException(404, "Unknown pulse")   # drafts invisible to members
-    view = _pulse_member_view(conn, p, org)
+    view = _pulse_member_view(conn, p, org, request=request)
     qs = pulses_mod.pulse_questions(p)
     mine = {}
     for r in conn.execute("SELECT question_id, matrix_row_id, value FROM pulse_responses "
@@ -1731,12 +1765,26 @@ async def pulse_detail(pid: str, request: Request):
         else:
             entry["current"] = mine.get((qid, ""))
         view["question_list"].append(entry)
-    # the report: give-to-get scoped to THIS pulse — participants only, PLUS the
-    # sponsor that launched it (a paying self-service owner always sees its
-    # results). Below the floor, the honest holding state is shown (never blank).
+    # THE REPORT GATE, two locks (David 2026-08-20):
+    #   1. TIME — results appear only once the pulse has CLOSED, for everyone including
+    #      the owner. While it is open, a live report would let a member read the cohort
+    #      and then choose their own answer against it.
+    #   2. ACCESS — give-to-get: you took part, you own it, or you bought sight of it.
+    # A member who fails only the second lock still sees the card, locked, with a route to
+    # buy; failing the first, everyone sees the same "results when it closes" state.
     view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
-    if view["participated"] or view["is_owner"]:
-        rep = strip_internal(pulses_mod.pulse_report(pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo")))
+    view["report_available"] = pulses_mod.report_is_available(p)
+    access = pulses_mod.report_access(pid, org["org_id"], conn)
+    view["report_access"] = access
+    view["report_locked"] = bool(view["report_available"] and not access)
+    if view["report_available"] and access:
+        cut = parse_cut(request, org) if request is not None else {"dim": "all", "value": None}
+        cut_ids = _pulse_cut_org_ids(conn, org, cut)
+        view["cut"] = {"dim": cut.get("dim"), "value": cut.get("value"),
+                       "label": _pulse_cut_label(conn, org, cut)}
+        rep = strip_internal(pulses_mod.pulse_report(
+            pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo"),
+            cut_org_ids=cut_ids))
         # thread the org's OWN answer into each report question so the report can
         # mark "you" against the cohort — a benchmark that never shows 'you' isn't one.
         # Values store as the display label (selects), "; "-joined labels (multi), or
@@ -1819,9 +1867,11 @@ async def pulse_commentary(pid: str, request: Request):
         p = pulses_mod.get_pulse(pid, conn)
     except ValueError:
         raise HTTPException(404, "Unknown pulse")
-    part = pulses_mod.participant(pid, org["org_id"], conn)
-    if not (part and part["submission_complete"]):
-        raise HTTPException(403, "Participate in this pulse to see its commentary.")
+    if not pulses_mod.report_is_available(p):
+        raise HTTPException(403, "This pulse is still open — results are published when it closes.")
+    if not pulses_mod.report_access(pid, org["org_id"], conn):
+        raise HTTPException(403, "Take part in a pulse to see its report, or contact lumi "
+                                 "for access to this one.")
     rep = pulses_mod.pulse_report(pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo"))
     entry = next((x for x in rep["questions"] if x["question_id"] == qid), None)
     if entry is None:
@@ -1899,10 +1949,11 @@ async def pulse_narrative(pid: str, request: Request):
         p = pulses_mod.get_pulse(pid, conn)
     except ValueError:
         raise HTTPException(404, "Unknown pulse")
-    part = pulses_mod.participant(pid, org["org_id"], conn)
-    is_owner = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
-    if not ((part and part["submission_complete"]) or is_owner):
-        raise HTTPException(403, "Participate in this pulse to see its report.")
+    if not pulses_mod.report_is_available(p):
+        raise HTTPException(403, "This pulse is still open — results are published when it closes.")
+    if not pulses_mod.report_access(pid, org["org_id"], conn):
+        raise HTTPException(403, "Take part in a pulse to see its report, or contact lumi "
+                                 "for access to this one.")
     # SAME cohort flag as the report the member reads (pre-prod audit 2026-08-12: the
     # narrative was written over the default cohort while the visible report used the
     # real_viewer cohort — the AI could cite figures the page never showed)
@@ -9019,6 +9070,67 @@ async def admin_config(request: Request):
 
 
 # ----- billing: the pulse-launch order ledger ---------------------------------
+# ----- pulse report access: sold offline, granted here (David 2026-08-20) ----
+@app.get("/api/admin/orgs/{org_id}/pulse-access")
+async def admin_org_pulse_access(org_id: str, request: Request):
+    """What this organisation can already see, and every closed pulse it could buy."""
+    require_platform_admin(request)
+    conn = get_conn()
+    granted = pulses_mod.report_access_list(org_id=org_id, conn=conn)
+    got = {g["pulse_id"] for g in granted}
+    sellable = []
+    for r in conn.execute("SELECT pulse_id, name, status, closes_at FROM pulses "
+                          "WHERE status IN ('closed','archived') ORDER BY closes_at DESC"):
+        took_part = conn.execute(
+            "SELECT 1 FROM pulse_participants WHERE pulse_id=? AND org_id=? AND "
+            "submission_complete=1", (r["pulse_id"], org_id)).fetchone()
+        sellable.append({"pulse_id": r["pulse_id"], "name": r["name"], "status": r["status"],
+                         "closes_at": r["closes_at"], "granted": r["pulse_id"] in got,
+                         "participated": bool(took_part)})
+    return {"org_id": org_id, "granted": granted, "pulses": sellable}
+
+
+@app.post("/api/admin/orgs/{org_id}/pulse-access")
+async def admin_org_pulse_access_grant(org_id: str, request: Request):
+    staff = require_platform_admin(request)
+    body = await _json(request)
+    pid = (body.get("pulse_id") or "").strip()
+    if not pid:
+        raise HTTPException(400, "Which pulse? Send a pulse_id.")
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM orgs WHERE org_id=?", (org_id,)).fetchone():
+        raise HTTPException(404, "Unknown organisation")
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    if body.get("revoke"):
+        pulses_mod.revoke_report_access(pid, org_id, conn)
+        _audit(staff, "pulse.access_revoked", "org", org_id, {"pulse_id": pid})
+        return {"ok": True, "granted": False}
+    if not pulses_mod.report_is_available(p):
+        raise HTTPException(400, "That pulse hasn't closed yet — there is no report to sell.")
+    reason = (body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(400, "Add a reason — an invoice number is ideal.")
+    if len(reason) > 200:
+        raise HTTPException(400, "Keep the reason under 200 characters.")
+    amount = body.get("amount_pence")
+    if amount not in (None, ""):
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "amount_pence must be a whole number of pence.")
+        if amount < 0:
+            raise HTTPException(400, "amount_pence cannot be negative.")
+    else:
+        amount = None
+    pulses_mod.grant_report_access(pid, org_id, staff["user_id"], reason, amount, conn)
+    _audit(staff, "pulse.access_granted", "org", org_id,
+           {"pulse_id": pid, "amount_pence": amount, "reason": reason})
+    return {"ok": True, "granted": True}
+
+
 # ----- pulse credits: the backoffice control (David 2026-08-19) ---------------
 @app.get("/api/admin/orgs/{org_id}/credits")
 async def admin_org_credits(org_id: str, request: Request):

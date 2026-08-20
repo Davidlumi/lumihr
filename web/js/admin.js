@@ -318,6 +318,8 @@ function AdminOrgDetail({ orgId, onBack }) {
       <${AdminOrgCreditsPanel} orgId=${orgId} orgName=${o.name} credits=${d.credits}
         ledger=${d.credit_ledger} launchCost=${d.launch_cost} onChanged=${load} />
 
+      <${AdminOrgPulseAccessPanel} orgId=${orgId} orgName=${o.name} />
+
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Terms acceptances</b> <span class="caption">${d.terms.length} · the DPA evidence trail</span></div>
       ${!d.terms.length ? html`<div class="caption">None recorded.</div>` :
       html`<table class="data admin-table">
@@ -331,6 +333,52 @@ function AdminOrgDetail({ orgId, onBack }) {
       </table>`}
     </div>`;
 }
+
+/* Pulse report access (David 2026-08-20). Taking part in a pulse is free and unlocks its
+   report; a member who missed one buys access to that single report. Deliberately NOT a
+   credit — a credit runs a pulse, this opens one closed report, and the two are priced
+   apart. Sold offline, granted here, revocable. */
+function AdminOrgPulseAccessPanel({ orgId, orgName }) {
+  const [d, setD] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [reason, setReason] = useState({});
+  const load = () => api("/api/admin/orgs/" + orgId + "/pulse-access").then(setD).catch(() => setD({ pulses: [] }));
+  useEffect(() => { load(); }, [orgId]);
+  if (!d) return null;
+  const act = async (p, revoke) => {
+    const r = (reason[p.pulse_id] || "").trim();
+    if (!revoke && !r) { toast("Add a reason — an invoice number is ideal.", "error"); return; }
+    if (revoke && !window.confirm("Revoke access to “" + p.name + "” for " + (orgName || "this organisation") + "?")) return;
+    setBusy(p.pulse_id);
+    try {
+      await api("/api/admin/orgs/" + orgId + "/pulse-access",
+        { method: "POST", body: revoke ? { pulse_id: p.pulse_id, revoke: true } : { pulse_id: p.pulse_id, reason: r } });
+      toast(revoke ? "Access revoked." : "Access granted.");
+      setReason(x => ({ ...x, [p.pulse_id]: "" }));
+      load();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(null);
+  };
+  return html`
+    <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Pulse report access</b>
+      <span class="caption">closed pulses · taking part is free, access to a missed one is sold</span></div>
+    ${!(d.pulses || []).length ? html`<div class="caption">No pulse has closed yet — there is nothing to sell.</div>` : html`
+      <table class="data admin-table">
+        <thead><tr><th>Pulse</th><th>Closed</th><th>Status</th><th>Reason / invoice</th><th></th></tr></thead>
+        <tbody>${d.pulses.map(p => html`<tr key=${p.pulse_id}>
+          <td><b>${p.name}</b></td>
+          <td class="caption">${(p.closes_at || "").slice(0, 10)}</td>
+          <td>${p.participated ? html`<span class="admin-yes">Took part — free</span>`
+            : p.granted ? html`<span class="admin-pill">purchased</span>`
+            : html`<span class="caption">No access</span>`}</td>
+          <td>${p.participated || p.granted ? html`<span class="caption">—</span>` : html`
+            <input class="ctl" style=${{ minWidth: "12rem" }} maxlength="200" placeholder="e.g. INV-2051"
+              value=${reason[p.pulse_id] || ""} onInput=${e => setReason(x => ({ ...x, [p.pulse_id]: e.target.value }))} />`}</td>
+          <td>${p.participated ? "" : p.granted
+            ? html`<button class="btn small quiet" disabled=${busy === p.pulse_id} onClick=${() => act(p, true)}>Revoke</button>`
+            : html`<button class="btn small primary" disabled=${busy === p.pulse_id} onClick=${() => act(p, false)}>Grant access</button>`}</td>
+        </tr>`)}</tbody>
+      </table>`}
 
 /* Pulse credits (David 2026-08-19). One credit launches one pulse; every org joins
    with one. There is deliberately NO "set balance to N" — a balance is the sum of its

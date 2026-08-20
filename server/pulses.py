@@ -614,17 +614,81 @@ def participant(pulse_id, org_id, conn=None):
 
 
 # ----------------------------------------------------------------- the report
-def pulse_report(pulse_id, conn=None, real_viewer=False):
+def report_is_available(p):
+    """Results appear only once the pulse has CLOSED — for everyone, the owning
+    organisation included (David 2026-08-20).
+
+    While a pulse is open, a live report would let a member read the cohort's answers and
+    then choose their own against them, and would let the author — who wrote the questions
+    — watch the market answer before committing. Waiting until close removes both, and it
+    is one rule with no exceptions to explain."""
+    return (p["status"] or "") in ("closed", "archived")
+
+
+def report_access(pulse_id, org_id, conn=None):
+    """Why this organisation may (or may not) see the report. Returns a reason string:
+    'participant' | 'owner' | 'purchased' | None."""
+    conn = conn or get_conn()
+    p = get_pulse(pulse_id, conn)
+    if p["owner_org_id"] and p["owner_org_id"] == org_id:
+        return "owner"          # they commissioned it and spent the credit
+    part = participant(pulse_id, org_id, conn)
+    if part and part["submission_complete"]:
+        return "participant"    # give-to-get
+    row = conn.execute("SELECT 1 FROM pulse_report_access WHERE pulse_id=? AND org_id=?",
+                       (pulse_id, org_id)).fetchone()
+    return "purchased" if row else None
+
+
+def grant_report_access(pulse_id, org_id, granted_by, reason="", amount_pence=None, conn=None):
+    conn = conn or get_conn()
+    conn.execute(
+        "INSERT INTO pulse_report_access(pulse_id, org_id, amount_pence, reason, granted_by) "
+        "VALUES (?,?,?,?,?) ON CONFLICT(pulse_id, org_id) DO UPDATE SET "
+        "amount_pence=excluded.amount_pence, reason=excluded.reason, granted_by=excluded.granted_by",
+        (pulse_id, org_id, amount_pence, (reason or "").strip(), granted_by))
+    conn.commit()
+
+
+def revoke_report_access(pulse_id, org_id, conn=None):
+    conn = conn or get_conn()
+    conn.execute("DELETE FROM pulse_report_access WHERE pulse_id=? AND org_id=?",
+                 (pulse_id, org_id))
+    conn.commit()
+
+
+def report_access_list(pulse_id=None, org_id=None, conn=None):
+    conn = conn or get_conn()
+    where, args = [], []
+    if pulse_id:
+        where.append("a.pulse_id=?"); args.append(pulse_id)
+    if org_id:
+        where.append("a.org_id=?"); args.append(org_id)
+    sql = ("SELECT a.*, p.name AS pulse_name, p.status FROM pulse_report_access a "
+           "JOIN pulses p ON p.pulse_id=a.pulse_id")
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    return [dict(r) for r in conn.execute(sql + " ORDER BY a.granted_at DESC", args)]
+
+
+def pulse_report(pulse_id, conn=None, real_viewer=False, cut_org_ids=None):
     """Aggregate the pulse's questions over ITS cohort only — through the
     SAME engine entry point the core uses (aggregate_question_for_orgs), so
     calculation, suppression (n>=5) and matrix/multi handling are identical
-    by construction. Whole-cohort only in v1 (no cuts: opt-in cohorts would
-    suppress every cut)."""
+    by construction.
+
+    cut_org_ids narrows the cohort to a peer cut (the same selector the benchmark uses).
+    The v1 note here said whole-cohort only, because an opt-in cohort would suppress every
+    cut. Measured on a 120-organisation cohort (2026-08-20) that no longer holds — 34 of 39
+    cuts clear the 5-organisation floor — so cuts are served, and any cut that does fall
+    under the floor suppresses exactly as it does on the benchmark."""
     conn = conn or get_conn()
     p = get_pulse(pulse_id, conn)
     qs = pulse_questions(p)
     cohort = {r["org_id"] for r in conn.execute(
         "SELECT org_id FROM pulse_participants WHERE pulse_id=? AND submission_complete=1", (pulse_id,))}
+    if cut_org_ids is not None:
+        cohort &= set(cut_org_ids)
     # PULSE-1 (ruled 2026-08-08): SEEDED_PULSE_VISIBILITY = seed/demo/staff only.
     # A REAL member sees REAL responses only — seeded pulse responses are
     # fabricated answers to a commissioned question, not a market reference; the
