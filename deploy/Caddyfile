@@ -2,16 +2,22 @@
 # TLS terminates here; uvicorn is loopback-only (systemd unit binds 127.0.0.1).
 # Port 80 stays open ONLY for the ACME HTTP challenge + redirect — Caddy does
 # both automatically for a site block named with a public hostname.
+#
+# THREE hostnames, one backend (2026-08-20, David: "nothing to do with Figma"):
+#   lumihr.co.uk      -> the marketing site, served from web/*.html by this app
+#   www.lumihr.co.uk  -> 301 to the apex, so there is one canonical address
+#   app.lumihr.co.uk  -> the platform
+# The marketing site used to be a Figma Sites property; both it and the apex
+# were returning Cloudflare Error 1000 because Figma had never claimed the
+# hostname. The pages already existed in this repo and were already being
+# served, so the apex simply points here now. Cloudflare records for all three
+# MUST stay grey (DNS only) — Caddy needs to answer the ACME challenge itself.
 
-app.lumihr.co.uk {
-	# Automatic HTTPS: certificate issuance + renewal via ACME, no cron to
-	# silently fail (the reason nginx+certbot was rejected — R1a, DECISIONS
-	# 2026-08-08).
+(lumi_common) {
 	encode gzip
 
 	reverse_proxy 127.0.0.1:8060 {
 		# uvicorn sees the member's IP + original scheme
-		header_up X-Forwarded-Proto {scheme}
 		header_up X-Real-IP {remote_host}
 	}
 
@@ -22,6 +28,27 @@ app.lumihr.co.uk {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
 	}
+}
+
+# --- marketing -------------------------------------------------------------
+lumihr.co.uk {
+	import lumi_common
+
+	log {
+		output file /var/log/caddy/lumihr.co.uk.log {
+			mode 0640
+		}
+	}
+}
+
+# one canonical address: www folds into the apex, preserving the path
+www.lumihr.co.uk {
+	redir https://lumihr.co.uk{uri} permanent
+}
+
+# --- the platform ----------------------------------------------------------
+app.lumihr.co.uk {
+	import lumi_common
 
 	# Access logs: 0640 under /var/log/caddy (packaged default), no bearer
 	# tokens ever appear in URLs by design (invite/reset tokens ride fragments
