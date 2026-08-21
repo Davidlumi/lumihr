@@ -1,6 +1,6 @@
 # lumi deployment runbook (R1 family, 2026-08-08)
 
-**Ruled shape:** EC2 (ARM, Ubuntu LTS), eu-west-2, single instance. Caddy terminates
+**Ruled shape:** EC2 (x86, Ubuntu LTS), eu-west-2, single instance. **Launched 2026-08-20 as `m7i-flex.large` (2 vCPU / 8 GB, Intel Xeon 8488C) — x86 chosen over ARM/t4g deliberately, for per-request speed at launch (David, 2026-08-20).** Caddy terminates
 TLS for `app.lumihr.co.uk` (automatic ACME) and proxies to uvicorn on loopback.
 **The DB at launch is SQLite on the instance's EBS volume — that is R1d, ruled.
 Phase 2 attaches RDS to this same instance and becomes a connection-string change,
@@ -36,7 +36,7 @@ provisions infrastructure.
 
 ## 1. Instance
 
-1. EC2: Ubuntu LTS ARM (t4g class), eu-west-2. EBS gp3, encrypted-at-rest ON.
+1. EC2: Ubuntu LTS x86 (m7i-flex class), eu-west-2. EBS gp3, encrypted-at-rest ON.
 2. Tag it; enable termination protection.
 3. `apt update && apt install -y python3-venv caddy` (Caddy from its apt repo).
 4. Create user + tree:
@@ -45,7 +45,7 @@ provisions infrastructure.
    sudo -u lumi mkdir -p /srv/lumi/{app,data,logs,env}
    ```
 5. Clone the repo at the release commit into `/srv/lumi/app`; venv into
-   `/srv/lumi/venv`; `pip install -r server/requirements.txt`.
+   `/srv/lumi/venv`; `pip install -r requirements.txt` (the ROOT manifest — `server/requirements.txt` is a subset missing pydantic, httpx and anyio pins).
 6. Copy the two live stores (SQLite backup API, never cp) into `/srv/lumi/data`;
    point the env at them (below). The stores live OUTSIDE the checkout.
 
@@ -204,3 +204,61 @@ retain-3): `python3 server/backup_lumi.py --tag pre_migration --write --confirme
 
 **Liveness.** `GET /healthz` (unauthenticated) returns `{"status":"ok"}` (200) when
 both stores answer, else 503 — use it for the Caddy upstream check and uptime monitoring.
+
+---
+
+## Build notes from the first production build (2026-08-20)
+
+Everything above was executed against the real instance. What follows is what the
+runbook did not say, and cost time or would have cost correctness.
+
+**The `model: LIVE` assertion in §4 is weaker than it reads.** The boot line is built
+from `_key = bool(os.environ.get("ANTHROPIC_API_KEY"))`, so *any* non-empty string
+satisfies it — the literal placeholder `REPLACE_ME` prints
+`model: LIVE — paid Claude calls (key=present)`. The assertion proves a key is SET, not
+that it WORKS, which is the same silent-fallback class the AI programme exists to fight.
+Liveness must be proven with a real call. Add to §4:
+
+```bash
+# reads the key from the env file, makes one ~14-token call, prints no secret
+sudo -u lumi /srv/lumi/venv/bin/python3 - <<'PY'
+key = next(l.split("=",1)[1].strip() for l in open("/srv/lumi/env/lumi.env")
+           if l.startswith("ANTHROPIC_API_KEY="))
+import anthropic, sys
+if not key or key == "REPLACE_ME": sys.exit("FATAL: no usable key")
+r = anthropic.Anthropic(api_key=key).messages.create(
+    model="claude-haiku-4-5-20251001", max_tokens=8,
+    messages=[{"role":"user","content":"Reply with the single word: alive"}])
+print("AI LIVE:", r.content[0].text.strip())
+PY
+```
+
+The same applies to SMTP: `LUMI_SMTP_HOST` being set proves nothing. Authenticate against
+the relay (EHLO → STARTTLS → LOGIN → QUIT, sending no message) before trusting that MFA
+can deliver. With MFA mandatory, a bad SMTP credential locks everyone out, including you.
+
+**`ubuntu` cannot traverse `/srv/lumi`** (0750 lumi:lumi). Remote `cd /srv/lumi/app`,
+shell globs (`chmod 640 /srv/lumi/data/*.bak`) and anything else expanded by the login
+shell fail with "Permission denied" or "No such file". Use `sudo` with explicit full
+paths, and `git -C /srv/lumi/app` rather than `cd`.
+
+**Never run `caddy validate` under sudo before the first start.** It creates
+`/var/log/caddy/<site>.log` owned `root:root`, and caddy — running as `caddy` — then
+refuses to start with "permission denied" on its own access log. Fix:
+`chown caddy:caddy /var/log/caddy/<site>.log`.
+
+**§6.0 outcome.** `prepare_production_stores.py --write` ran clean. It removes the
+rehearsal ORG as well as its user (271 → 270 orgs), and every remaining org received an
+epoch row — which is precisely the condition that makes the bump visible. Verified
+against a COPY, with SMTP stripped from the environment so nothing could leave even on
+failure: **0 events written**. The naive instruction this replaced wrote 14,238.
+
+**The signal sweep is deliberately OFF at launch** (`LUMI_SIGNAL_SWEEP` unset), and this
+is not an oversight. Four of the five accounts are `@thornbridge.example`; `.example` is
+RFC 2606 reserved and can never receive mail, so every send hard-bounces. An 80% bounce
+rate will get a new Postmark sender paused, which would take MFA delivery down with it.
+Enable the sweep when the first real customer exists — or give the demo accounts
+deliverable addresses first.
+
+**Backups written by the prepare script land 0644.** They contain member data; chmod them
+to 0640 (`lumi.db.pre-prod-prep.bak`, `identity.db.pre-prod-prep.bak`).
