@@ -458,6 +458,8 @@ function cardPosition(c) {
     medianTie = tie > 0 && Math.abs(50 - adj) < tie;
     kind = medianTie ? "mid" : adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
   }
+  const ordSuffix = n => { const v = n % 100; if (v >= 11 && v <= 13) return "th";
+    return ["th", "st", "nd", "rd"][n % 10] || "th"; };
   const pctl = p != null ? Math.round(p) : null;
   return {
     kind,
@@ -466,7 +468,8 @@ function cardPosition(c) {
     label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + (pctl != null ? " · P" + pctl : ""),
     tip: medianTie
       ? "You share the market's median answer — most peers sit exactly where you do, so this reads as on market."
-      : "Your position vs the market, adjusted for whether higher or lower is favourable.",
+      : "Your position vs the market, adjusted for whether higher or lower is favourable."
+        + (pctl != null ? " P" + pctl + " — your value sits at the " + pctl + ordSuffix(pctl) + " percentile of peer answers." : ""),
   };
 }
 window.cardPosition = cardPosition;

@@ -1657,6 +1657,11 @@ const LENS_ORDER = ["attract", "retain", "engage", "save"];
 // "Save" was both this lens and the Save verb on the same card. The lens is about where
 // spend sits — its own description says so — so it is named for that, not for the verb.
 const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Cost" };
+// card-chip wording (review 2026-08-21): the chip speaks outcomes, not internal
+// vocabulary — "Retain lens" meant nothing to an HR reader. The facet menu keeps
+// the short LENS_LABEL forms; LENS_DESC still rides the chip as the tooltip.
+const LENS_CHIP = { attract: "Attracting people", retain: "Keeping people",
+  engage: "Experience of work", save: "Cost" };
 const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
   engage: "how people experience work", save: "where your spend sits vs the market" };
 // legacy fallback tags (the engine now supplies s.tag in plain market language)
@@ -1809,8 +1814,10 @@ function provMark(s) {
   const g = s.anchor_grade;
   if (!g) return null;                                   // UNKNOWN — unmarked, byte-identical
   if (g === "EST")
-    return html`<span class="sig-prov sig-prov-est" tabindex="0" title="Curator estimate — no published source. Treat directionally."> · estimate</span>`;
-  return html`<span class="sig-prov sig-prov-ok" tabindex="0" title=${"Verified anchor (Grade " + g + ")" + (s.anchor_source ? " · " + s.anchor_source : "")}> · verified source</span>`;
+    return html`<span class="sig-prov sig-prov-est indic-flag" tabindex="0" role="note"
+      onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}> · estimate<span class="indic-tip">Curator estimate — no published source. Treat directionally.</span></span>`;
+  return html`<span class="sig-prov sig-prov-ok indic-flag" tabindex="0" role="note"
+    onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}> · verified source<span class="indic-tip">${"Verified against a published source (Grade " + g + ")" + (s.anchor_source ? " — " + s.anchor_source : "") + "."}</span></span>`;
 }
 // The locked Signals state is the single biggest pull to submit data, so it
 // sells the payoff: what signals do, how close you are, and a blurred taste of
@@ -2544,8 +2551,11 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num" title="Organisations comparable on this metric in your default peer group — can be smaller than the metric page's n."> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
-        ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the peer median"}>${s.gap_pct}% ${gapDir}</span>` : null}
-        ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens} lens</span>` : null}
+        ${/* a 100% gap means the value is none/zero — "100% below" beside "you provide
+              none" read as a bug, and the position chip already carries the severity.
+              The % is meaningful only when both sides are non-zero (review 2026-08-21). */ ""}
+        ${s.gap_pct != null && s.gap_pct < 100 ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the peer median"}>${s.gap_pct}% ${gapDir}</span>` : null}
+        ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_CHIP[s.lens] || (LENS_LABEL[s.lens] || s.lens)}</span>` : null}
         ${s.alignment ? html`<span class="brf-strat" title=${ALIGN_LABEL[s.alignment]}><${StrategyGlyph} alignment=${s.alignment} w=${32} /></span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
@@ -3062,6 +3072,11 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="sp-ctl-band">
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo}
             inline=${true} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+          ${/* the trust surface follows the selector wherever it goes (review 2026-08-21):
+                the Overview and metric page already pair them; the category grid was the
+                one benchmark surface reading n-less. Same chip, same n rule. */ ""}
+          ${me.contribution && me.contribution.insights_unlocked ? html`<${ConfidenceChip}
+            n=${cutSize(cut, cuts, me.peer_pool)} window=${me.peer_pool && me.peer_pool.collection_window} />` : null}
           <${FilterBar} f=${f} on=${onF} cards=${_typed} sigMap=${sigMap}
             stratOn=${((prefs && prefs._overview) || {}).apply_strategy !== false} />
         </div>
