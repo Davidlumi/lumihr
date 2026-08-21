@@ -253,6 +253,23 @@
       .board + .board{margin-top:90px;}
     }
 
+    /* ============================ signals band ============================= */
+    .band-signals{background:var(--tile);border-top:1px solid var(--line-cool);
+        border-bottom:1px solid var(--line-cool);}
+    .sig-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1020px;
+        margin:0 auto;}
+    .sig-step{position:relative;background:#fff;border:1px solid var(--line-cool);
+        border-radius:16px;padding:26px 24px;}
+    .sig-step h3{font-size:17.5px;letter-spacing:-0.015em;display:flex;gap:10px;align-items:baseline;}
+    .sig-step h3::before{content:"";width:9px;height:9px;border-radius:50%;
+        background:var(--coral);flex:none;position:relative;top:-1px;}
+    .sig-step p{font-size:14.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55;}
+    .sig-step:not(:last-child)::after{content:"→";position:absolute;right:-16px;top:50%;
+        transform:translateY(-50%);color:var(--blue);font-size:18px;font-weight:700;z-index:1;}
+    @media (max-width:860px){ .sig-steps{grid-template-columns:1fr;}
+        .sig-step:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-24px;
+        transform:translateX(-50%);} }
+
     /* ================================ coverage ============================== */
     .cov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
     .cov-chip{background:#fff;border:1px solid var(--line);border-radius:14px;
@@ -565,19 +582,6 @@
 
         <div class="board">
           <div class="board-copy reveal">
-            <span class="eyebrow">Signals</span>
-            <h2>It watches the market, so you don't have to.</h2>
-            <p class="b-body">When your position moves — or a practice becomes common among peers that you don't offer — lumi flags it, ranks it against your strategy, and emails the right person. Every signal carries its evidence and sample size; save, snooze or dismiss the rest.</p>
-            <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
-          </div>
-          <div class="board-visual reveal">
-            <div class="app-card"><img src="/static/mkt/crop-signals.webp" width="1700" height="679" loading="lazy"
-              alt="Two signals in close up: maternity and adoption pay and occupational sick pay flagged below the peer median, each with its evidence, sample size and save, snooze or dismiss actions." /></div>
-          </div>
-        </div>
-
-        <div class="board flip">
-          <div class="board-copy reveal">
             <span class="eyebrow">The gap register</span>
             <h2>Every practice, against the market.</h2>
             <p class="b-body">One sortable register of everything your peers have in place and where you stand on each — filter it by section, download it as CSV, take it to the meeting.</p>
@@ -590,7 +594,7 @@
           </div>
         </div>
 
-        <div class="board">
+        <div class="board flip">
           <div class="board-copy reveal">
             <span class="eyebrow">Strategy &amp; plan</span>
             <h2>From position to a plan the board can sign.</h2>
@@ -603,6 +607,58 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+
+    <!-- ========================= SIGNALS · 24/7 ============================ -->
+    <section class="band-signals" id="signals">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">Signals · 24/7 benchmarking</span>
+          <h2>We watch the market,<br/>and tell you.</h2>
+          <p>A survey answers once a year. lumi re-reads your position every time the pool moves — and when something crosses a threshold, it lands in the right inbox with the evidence attached.</p>
+        </div>
+        <div class="sig-steps reveal">
+          <div class="sig-step">
+            <h3>The market moves</h3>
+            <p>A peer adopts a practice you don't offer, a median shifts, your percentile crosses a band.</p>
+          </div>
+          <div class="sig-step">
+            <h3>lumi re-reads your position</h3>
+            <p>Every metric, against your peer cut, automatically — nobody has to remember to check.</p>
+          </div>
+          <div class="sig-step">
+            <h3>The right person hears</h3>
+            <p>An email with the evidence and the sample size. Save it, snooze it, or take it to the meeting.</p>
+          </div>
+        </div>
+        <div class="reveal" style="max-width:960px;margin:52px auto 0;">
+          <div class="app-card"><img src="/static/mkt/crop-signals.webp" width="1700" height="679" loading="lazy"
+            alt="Two live signals: maternity and adoption pay and occupational sick pay flagged below the peer median, each with its evidence, sample size and save, snooze or dismiss actions." /></div>
+        </div>
+        <div class="reveal" style="text-align:center;margin-top:44px;">
+          <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================ PULSE ============================== -->
+    <section id="pulse">
+      <div class="wrap">
+        <div class="board">
+          <div class="board-copy reveal">
+            <span class="eyebrow">Pulse</span>
+            <h2>When the benchmark can't answer, ask the market.</h2>
+            <p class="b-body">Some questions are too new for any annual survey. A Pulse puts them to the membership directly — a short, focused survey, results back in days, under the same n&nbsp;≥&nbsp;5 anonymity as everything else. The report lands in the product and becomes part of your evidence.</p>
+            <div class="b-quote">A real Pulse: EU Pay Transparency readiness, answered by members while the topic was still live.</div>
+            <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/crop-pulse.webp" width="900" height="779" loading="lazy"
+              alt="A closed Pulse report card: EU Pay Transparency readiness 2026, three questions, 46.2 percent chose Planning, 13 members participating, with a View report link." /></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -700,16 +756,6 @@
       </div>
     </section>
 
-    <!-- ================================ PULSE =============================== -->
-    <section style="padding-top:0;">
-      <div class="wrap-narrow" style="text-align:center;">
-        <span class="eyebrow">Pulse</span>
-        <h2 style="font-size:clamp(26px,3.2vw,36px);margin-top:14px;">Need an answer the benchmark doesn't hold?</h2>
-        <p style="margin:16px auto 0;color:var(--ink-soft);max-width:52ch;">Run a Pulse — a focused survey put to the membership, with results back in days. Ask the question the annual survey never will.</p>
-        <p style="margin-top:22px;"><a class="arrow-link" data-demo href="https://cal.com/lumi/demo">Ask about Pulse in a demo</a></p>
-      </div>
-    </section>
-
     <!-- ================================= FAQ ================================ -->
     <section class="alt" id="faq" style="border-top:1px solid var(--line);">
       <div class="wrap">
@@ -772,6 +818,8 @@
           <div class="foot-col">
             <h3>Product</h3>
             <a href="#product">Product tour</a>
+            <a href="#signals">Signals</a>
+            <a href="#pulse">Pulse</a>
             <a href="#coverage">What we benchmark</a>
             <a href="/methodology">Methodology</a>
             <a href="/pricing">Pricing</a>
