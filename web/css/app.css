@@ -4240,15 +4240,17 @@ textarea:focus-visible, [tabindex]:focus-visible {
    printed inside. Soft gauge tones = the platform's one RAG fill (identical to the donut).
    Flex, not absolute, so segments self-size; a per-segment min-width floor (set inline) keeps
    every numeral inside its own block — no floating labels, no JS measuring. */
-.di-bar { position: relative; display: flex; height: 20px; border-radius: var(--radius-xs); overflow: hidden;
-  background: var(--surface-sunk); }
-/* the bar as a machined object (2026-07-09 polish): a 1px ink perimeter over the fills gives the
-   edge definition the pastels can't provide themselves */
-.di-bar::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent); }
-.di-fill { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden;
+/* SEPARATED SEGMENTS (David 2026-08-21): a 3px breather between fills instead of butted
+   edges — the same premium read as a segmented progress meter. The 1px ink perimeter that
+   used to ride the whole bar (2026-07-09 "machined object" polish) now rides each segment,
+   so the pastels keep their edge definition; the track goes transparent so the gaps show
+   the card, not a sunk strip. Colours, type and counts are untouched. */
+.di-bar { position: relative; display: flex; gap: 3px; height: 20px;
+  border-radius: var(--radius-xs); background: transparent; }
+.di-fill { position: relative; display: flex; align-items: center; justify-content: center;
+  min-width: 0; overflow: hidden; border-radius: var(--radius-xs);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; line-height: 1; font-variant-numeric: tabular-nums; }
-.di-fill + .di-fill { border-left: 1px solid var(--surface); }
 .di-fill-below { background: var(--gauge-below); color: var(--below-ink); }
 .di-fill-on    { background: var(--gauge-on);    color: var(--on-ink); }
 .di-fill-above { background: var(--gauge-above); color: var(--above-ink); }
@@ -4260,7 +4262,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--differs) 30%, var(--surface)); }
 /* indicative (thin coverage): hatch the WHOLE bar (every band is thin, not just amber) and sit
    each count on a small solid chip so the citable digit stays crisp over the stripes */
-.di-bar-ind::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+.di-bar-ind .di-fill::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: inherit;
   background-image: repeating-linear-gradient(135deg, transparent, transparent 5px,
     color-mix(in srgb, var(--ink) 11%, transparent) 5px, color-mix(in srgb, var(--ink) 11%, transparent) 10px); }
 .di-bar-ind .di-fillnum { position: relative; background: var(--surface); border-radius: 3px; padding: 0 4px; }
