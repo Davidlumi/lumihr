@@ -14,13 +14,13 @@
   <meta property="og:title" content="lumi · UK reward benchmarking for HR teams" />
   <meta property="og:description" content="See where your benefits, policies and reward practices really stand against 220 UK organisations — every figure cited with its peer group and sample size." />
   <meta property="og:url" content="https://lumihr.co.uk/" />
-  <meta property="og:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
+  <meta property="og:image" content="https://lumihr.co.uk/static/mkt/og.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="lumi · UK reward benchmarking for HR teams" />
   <meta name="twitter:description" content="See where your benefits, policies and reward practices really stand against 220 UK organisations — every figure cited with its peer group and sample size." />
-  <meta name="twitter:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
-  <meta property="og:image:alt" content="lumi — a UK reward benchmarking dashboard showing where an organisation stands against its peers" />
-  <meta name="twitter:image:alt" content="lumi — a UK reward benchmarking dashboard showing where an organisation stands against its peers" />
+  <meta name="twitter:image" content="https://lumihr.co.uk/static/mkt/og.jpg" />
+  <meta property="og:image:alt" content="The lumi Overview — a UK reward benchmarking dashboard showing where an organisation stands against its peers" />
+  <meta name="twitter:image:alt" content="The lumi Overview — a UK reward benchmarking dashboard showing where an organisation stands against its peers" />
   <meta property="og:locale" content="en_GB" />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
   <script type="application/ld+json">
@@ -71,550 +71,304 @@
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="/lumi_favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <meta name="theme-color" content="#2048B0" />
+  <meta name="theme-color" content="#14264F" />
   <style>
-    /* ============================== tokens ============================== */
+    /* ================================ tokens ================================ */
     :root{
-      --blue:#2048B0; --blue-deep:#1E3A8A; --navy:#14264F; --navy-deep:#0E1B3A;
-      --coral:#F08C6E; --coral-deep:#E0744F;
-      --ink:#211B26; --ink-soft:#5B5560; --ink-faint:#6B6570;
-      --paper:#FBF9F6; --surface:#fff; --tile:#EAF0FB; --tile-deep:#DCE6F9; --line:#ECE7E0;
-      --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC;
-      --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      --maxw:1180px; --r:18px; --r-sm:12px; --r-lg:20px; --r-xl:28px;
-      --coral-text:#C2521F;
-      --fs-caption:13px; --fs-body:15px; --fs-body-lg:17px; --fs-lede:19px; --fs-h3:20px;
-      --fs-h2:clamp(30px,3.6vw,44px); --fs-cta:clamp(28px,3.4vw,42px);
-      --sec-y:92px;
-      --shadow:0 1px 2px rgba(20,38,79,.05),0 12px 34px rgba(20,38,79,.08);
-      --shadow-big:0 2px 6px rgba(20,38,79,.06),0 28px 70px rgba(20,38,79,.14);
+      --navy:#14264F; --navy-deep:#0E1B3A; --blue:#2048B0; --blue-deep:#1E3A8A;
+      --blue-bright:#2E62D9; --coral:#F08C6E; --coral-deep:#E0744F;
+      --ink:#211B26; --ink-soft:#575061; --ink-faint:#837D8C;
+      --paper:#FAF7F2; --tile:#EAF0FB; --white:#FFFFFF; --line:#E8E3DC;
+      --line-cool:#DCE4F2;
+      --head:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+      --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+      --shadow-app:0 2px 6px rgba(20,38,79,.06),0 24px 64px -24px rgba(20,38,79,.28);
+      --r-app:14px;
     }
-    *{box-sizing:border-box;}
+    *{margin:0;padding:0;box-sizing:border-box;}
     html{scroll-behavior:smooth;}
-    body{margin:0;font-family:var(--body);color:var(--ink);background:var(--paper);
-      line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-      overflow-x:hidden;}
-    a{color:inherit;text-decoration:none;}
-    h1,h2,h3{font-family:var(--head);font-weight:700;line-height:1.08;letter-spacing:-.015em;margin:0;}
-    h3{line-height:1.2;}
-    p{margin:0;}
-    img,svg{max-width:100%;}
-    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
-    .eyebrow{font-family:var(--head);font-weight:700;font-size:13px;letter-spacing:.1em;
-      text-transform:uppercase;color:var(--blue);display:inline-flex;align-items:center;gap:8px;}
-    .eyebrow::before{content:"";width:22px;height:2px;background:var(--coral);border-radius:2px;}
-    :focus-visible{outline:2.5px solid var(--blue);outline-offset:3px;border-radius:6px;}
+    @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+    body{font-family:var(--body);color:var(--ink);background:var(--white);
+         font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+    img{max-width:100%;height:auto;display:block;}
+    a{color:var(--blue-bright);text-decoration:none;}
+    ::selection{background:rgba(240,140,110,.35);}
 
-    /* ============================== buttons ============================= */
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 26px;
-      border-radius:999px;font-family:var(--head);font-weight:600;font-size:15.5px;cursor:pointer;
-      border:1.5px solid transparent;white-space:nowrap;
-      transition:transform .14s ease,box-shadow .18s ease,background .18s ease,color .18s ease,border-color .18s ease;}
-    .btn:hover{transform:translateY(-1.5px);}
-    .btn:active{transform:translateY(0);}
-    .btn-primary{background:var(--blue);color:#fff;box-shadow:0 8px 22px rgba(32,72,176,.30);}
-    .btn-primary:hover{background:var(--blue-deep);box-shadow:0 12px 30px rgba(32,72,176,.38);}
-    .btn-primary .arr{transition:transform .18s ease;}
-    .btn-primary:hover .arr{transform:translateX(3px);}
-    .btn-ghost{background:transparent;color:var(--blue);border-color:rgba(32,72,176,.30);}
-    .btn-ghost:hover{border-color:var(--blue);background:rgba(32,72,176,.05);}
-    .btn-light{background:#fff;color:var(--navy);box-shadow:0 8px 24px rgba(20,38,79,.22);}
-    .btn-light:hover{box-shadow:0 14px 34px rgba(20,38,79,.28);}
-    .btn-sm{height:44px;padding:0 20px;font-size:14.5px;}
+    .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+    .wrap-narrow{max-width:840px;margin:0 auto;padding:0 28px;}
 
-    /* ================================ nav ================================ */
-    header.nav{position:sticky;top:0;z-index:80;background:rgba(251,249,246,.85);
-      backdrop-filter:saturate(150%) blur(12px);-webkit-backdrop-filter:saturate(150%) blur(12px);
-      border-bottom:1px solid transparent;transition:border-color .2s ease,box-shadow .2s ease;}
-    header.nav.scrolled{border-bottom-color:var(--line);box-shadow:0 4px 24px rgba(20,38,79,.06);}
-    .nav-row{display:flex;align-items:center;justify-content:space-between;height:74px;gap:18px;}
-    .nav-logo{display:flex;align-items:center;flex:none;}
-    .nav-logo img{height:30px;width:auto;display:block;}
-    .nav-links{display:flex;align-items:center;gap:32px;}
-    .nav-links a{font-size:15px;color:var(--ink-soft);font-weight:500;position:relative;padding:6px 0;}
-    .nav-links a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;
-      background:var(--coral);border-radius:2px;transition:right .2s ease;}
-    .nav-links a:hover{color:var(--ink);}
-    .nav-links a:hover::after{right:0;}
-    .nav-cta{display:flex;align-items:center;gap:12px;flex:none;}
-    .nav-toggle{display:none;width:44px;height:44px;flex:none;align-items:center;justify-content:center;
-      border:1px solid var(--line);background:var(--surface);border-radius:12px;color:var(--ink);cursor:pointer;}
-    .nav-toggle svg{width:22px;height:22px;}
-    .mobile-nav{display:none;}
-    @media(max-width:960px){
-      .nav-links{display:none;}
-      .nav-toggle{display:inline-flex;}
-      .mobile-nav{display:block;position:fixed;left:0;right:0;top:74px;z-index:79;background:var(--paper);
-        border-bottom:1px solid var(--line);box-shadow:0 12px 30px rgba(20,38,79,.10);padding:8px 0 16px;
-        opacity:0;visibility:hidden;transform:translateY(-10px);
-        transition:opacity .2s ease,transform .2s ease,visibility .2s ease;}
-      .mobile-nav.open{opacity:1;visibility:visible;transform:none;}
-      .mobile-nav a{display:flex;align-items:center;min-height:52px;padding:0 24px;color:var(--ink);
-        font-family:var(--head);font-weight:600;font-size:16px;border-bottom:1px solid var(--line);}
-      .mobile-nav .mn-cta{display:block;padding:16px 24px 4px;border-bottom:none;}
-      .mobile-nav .mn-cta .btn{width:100%;height:50px;}
+    h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-0.03em;
+             line-height:1.06;text-wrap:balance;color:var(--ink);}
+    .eyebrow{font-family:var(--head);font-weight:700;font-size:12.5px;
+             letter-spacing:.14em;text-transform:uppercase;color:var(--blue);}
+    .on-dark .eyebrow{color:var(--coral);}
+    .lede{font-size:19px;line-height:1.65;color:var(--ink-soft);max-width:60ch;}
+
+    /* ================================ buttons =============================== */
+    .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--head);
+         font-weight:700;font-size:16px;padding:14px 26px;border-radius:999px;
+         transition:transform .15s ease,box-shadow .15s ease,background .15s ease;}
+    .btn-primary{background:var(--navy);color:#fff;box-shadow:0 1px 2px rgba(14,27,58,.3);}
+    .btn-primary:hover{background:var(--blue-deep);transform:translateY(-1px);
+         box-shadow:0 8px 24px -8px rgba(20,38,79,.5);}
+    .btn-ghost{color:var(--navy);background:transparent;border:1.5px solid var(--line);}
+    .btn-ghost:hover{border-color:var(--navy);}
+    .on-dark .btn-primary{background:#fff;color:var(--navy);}
+    .on-dark .btn-primary:hover{background:var(--paper);}
+    .arrow-link{font-family:var(--head);font-weight:700;font-size:16px;color:var(--blue-bright);
+         display:inline-flex;align-items:center;gap:6px;}
+    .arrow-link:hover{gap:10px;}
+    .arrow-link::after{content:"→";transition:inherit;}
+    .btn:focus-visible,.arrow-link:focus-visible,a:focus-visible{outline:2.5px solid var(--blue-bright);outline-offset:3px;border-radius:4px;}
+
+    /* ================================== nav ================================= */
+    #topnav{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.86);
+            backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+            border-bottom:1px solid transparent;transition:border-color .2s,box-shadow .2s;}
+    #topnav.scrolled{border-bottom-color:var(--line);box-shadow:0 4px 24px -12px rgba(20,38,79,.12);}
+    .nav-inner{display:flex;align-items:center;gap:34px;height:68px;}
+    .nav-logo img{height:30px;width:auto;}
+    .nav-links{display:flex;gap:28px;flex:1;justify-content:center;}
+    .nav-links a{font-family:var(--head);font-weight:600;font-size:15px;color:var(--ink-soft);}
+    .nav-links a:hover{color:var(--navy);}
+    .nav-cta{display:flex;align-items:center;gap:18px;}
+    .nav-cta .signin{font-family:var(--head);font-weight:600;font-size:15px;color:var(--ink-soft);}
+    .nav-cta .signin:hover{color:var(--navy);}
+    .nav-cta .btn{padding:10px 20px;font-size:15px;}
+    @media (max-width:920px){ .nav-links{display:none;} }
+    @media (max-width:560px){ .nav-cta .signin{display:none;} }
+
+    /* ================================== hero ================================ */
+    .hero{background:var(--paper);position:relative;overflow:hidden;
+          padding:92px 0 0;}
+    .hero-field{position:absolute;inset:0;pointer-events:none;}
+    .hero-copy{position:relative;text-align:center;max-width:880px;margin:0 auto;padding:0 28px;}
+    .hero h1{font-size:clamp(44px,7.2vw,82px);margin-top:20px;}
+    .hero h1 .accent{position:relative;white-space:nowrap;}
+    .hero h1 .accent svg{position:absolute;left:0;right:0;bottom:-.12em;width:100%;height:.16em;}
+    .hero .lede{margin:26px auto 0;font-size:20px;}
+    .hero-cta{display:flex;gap:14px;justify-content:center;align-items:center;
+              margin-top:36px;flex-wrap:wrap;}
+    .hero-notes{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;
+                margin-top:26px;font-size:14px;color:var(--ink-faint);}
+    .hero-notes span{display:inline-flex;align-items:center;gap:8px;}
+    .hero-notes .dot{width:7px;height:7px;border-radius:50%;background:var(--coral);flex:none;}
+    .hero-shot{position:relative;max-width:1080px;margin:64px auto -2px;padding:0 28px;}
+
+    /* the product, framed */
+    .app-card{background:#fff;border-radius:var(--r-app);overflow:hidden;
+              box-shadow:var(--shadow-app);border:1px solid rgba(20,38,79,.08);}
+    .app-bar{display:flex;align-items:center;gap:7px;height:38px;padding:0 16px;
+             background:linear-gradient(#FCFBF9,#F4F1EC);border-bottom:1px solid var(--line);}
+    .b-dot{width:10px;height:10px;border-radius:50%;background:#E3DED6;}
+    .b-addr{font-size:12px;color:var(--ink-faint);margin-left:10px;font-family:var(--body);}
+
+    /* =============================== proof band ============================= */
+    .proofband{background:var(--white);border-bottom:1px solid var(--line);}
+    .proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;
+                padding:52px 28px;}
+    .pstat{text-align:center;}
+    .p-num{font-family:var(--head);font-weight:800;font-size:clamp(34px,4vw,48px);
+           letter-spacing:-0.03em;color:var(--navy);font-variant-numeric:tabular-nums;}
+    .p-lbl{font-size:14px;color:var(--ink-soft);margin-top:6px;line-height:1.45;}
+    @media (max-width:760px){ .proof-grid{grid-template-columns:repeat(2,1fr);gap:34px 20px;padding:44px 20px;} }
+
+    /* ============================ section scaffold ========================== */
+    section{padding:110px 0;}
+    .sec-head{text-align:center;max-width:760px;margin:0 auto 58px;}
+    .sec-head h2{font-size:clamp(32px,4.6vw,52px);margin-top:16px;}
+    .sec-head p{margin:18px auto 0;color:var(--ink-soft);font-size:18px;max-width:56ch;}
+    .on-dark{background:var(--navy);color:#EAF0FB;}
+    .on-dark h1,.on-dark h2,.on-dark h3{color:#fff;}
+    .on-dark .sec-head p,.on-dark .lede{color:#B9C6E4;}
+    .alt{background:var(--paper);}
+
+    /* =============================== dark billboard ========================= */
+    .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:54px;}
+    .why-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+              border-radius:16px;padding:28px 26px;}
+    .why-card h3{font-size:19px;letter-spacing:-0.015em;line-height:1.3;}
+    .why-card p{font-size:15.5px;color:#B9C6E4;margin-top:10px;line-height:1.55;}
+    .why-pivot{text-align:center;margin-top:54px;font-family:var(--head);font-weight:600;
+               font-size:clamp(19px,2.4vw,24px);letter-spacing:-0.015em;color:#fff;
+               max-width:34ch;margin-left:auto;margin-right:auto;line-height:1.4;}
+    .why-pivot .u{border-bottom:3px solid var(--coral);padding-bottom:2px;}
+    @media (max-width:860px){ .why-grid{grid-template-columns:1fr;} }
+
+    /* ================================ digest ================================ */
+    .digest{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+    .dig-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;
+              padding:26px 24px;transition:transform .18s ease,box-shadow .18s ease;}
+    .dig-card:hover{transform:translateY(-3px);box-shadow:0 16px 40px -20px rgba(20,38,79,.25);}
+    .dig-card .d-ic{width:38px;height:38px;border-radius:11px;background:var(--tile);
+              display:flex;align-items:center;justify-content:center;color:var(--blue);}
+    .dig-card h3{font-size:17.5px;margin-top:16px;letter-spacing:-0.015em;}
+    .dig-card p{font-size:14.5px;color:var(--ink-soft);margin-top:7px;line-height:1.5;}
+    @media (max-width:860px){ .digest{grid-template-columns:1fr 1fr;} }
+    @media (max-width:560px){ .digest{grid-template-columns:1fr;} }
+
+    /* ============================== billboards ============================== */
+    .board{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:64px;
+           align-items:center;}
+    .board.flip{grid-template-columns:1fr minmax(300px,420px);}
+    .board.flip .board-copy{order:2;}
+    .board.flip .board-visual{order:1;}
+    .board-copy h2{font-size:clamp(30px,3.6vw,44px);margin-top:16px;}
+    .board-copy .b-body{margin-top:20px;color:var(--ink-soft);font-size:17.5px;line-height:1.65;}
+    .board-copy .b-quote{margin-top:18px;padding:14px 18px;background:var(--tile);
+           border-radius:12px;font-size:15px;color:var(--blue-deep);font-weight:500;
+           border-left:3px solid var(--coral);}
+    .board-copy .arrow-link{margin-top:26px;}
+    .board + .board{margin-top:130px;}
+    @media (max-width:900px){
+      .board,.board.flip{grid-template-columns:1fr;gap:34px;}
+      .board.flip .board-copy{order:1;} .board.flip .board-visual{order:2;}
+      .board + .board{margin-top:90px;}
     }
-    @media(max-width:520px){.nav-cta .btn-ghost{display:none;}}
 
-    /* sticky mobile CTA — the page is long; keep Book a demo reachable */
-    .mobile-cta{display:none;}
-    @media(max-width:720px){
-      .mobile-cta{display:block;position:fixed;left:0;right:0;bottom:0;z-index:70;
-        padding:10px 16px calc(10px + env(safe-area-inset-bottom));
-        background:rgba(251,249,246,.92);backdrop-filter:saturate(150%) blur(10px);
-        -webkit-backdrop-filter:saturate(150%) blur(10px);border-top:1px solid var(--line);}
-      .mobile-cta .btn{width:100%;height:50px;}
-      body{padding-bottom:78px;}
-    }
+    /* ================================ coverage ============================== */
+    .cov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    .cov-chip{background:#fff;border:1px solid var(--line);border-radius:14px;
+              padding:20px 20px;font-family:var(--head);font-weight:700;font-size:16px;
+              display:flex;align-items:center;gap:12px;color:var(--navy);}
+    .cov-chip .cdot{width:9px;height:9px;border-radius:50%;background:var(--blue);opacity:.75;flex:none;}
+    .cov-note{text-align:center;margin-top:34px;color:var(--ink-soft);font-size:15.5px;}
+    @media (max-width:900px){ .cov-grid{grid-template-columns:1fr 1fr;} }
 
-    /* ================================ hero =============================== */
-    .hero{position:relative;padding:92px 0 84px;overflow:hidden;}
-    .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
-      background:
-        radial-gradient(52rem 30rem at 82% -6%, rgba(32,72,176,.10), transparent 62%),
-        radial-gradient(38rem 24rem at -8% 30%, rgba(240,140,110,.10), transparent 60%);}
-    .hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
-      background-image:linear-gradient(rgba(32,72,176,.045) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(32,72,176,.045) 1px,transparent 1px);
-      background-size:44px 44px;
-      -webkit-mask-image:radial-gradient(46rem 30rem at 78% 12%,#000 30%,transparent 72%);
-              mask-image:radial-gradient(46rem 30rem at 78% 12%,#000 30%,transparent 72%);}
-    .hero .wrap{position:relative;z-index:1;}
-    .hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:64px;align-items:center;}
-    .hero h1{font-size:clamp(40px,5.2vw,64px);}
-    .hero h1 .accent{color:var(--blue);position:relative;white-space:nowrap;}
-    .hero h1 .accent svg{position:absolute;left:0;right:0;bottom:-10px;width:100%;height:12px;}
-    .hero .lede{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:24px;max-width:44ch;line-height:1.6;}
-    .hero .lede b{color:var(--ink);font-weight:600;}
-    .hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap;}
-    .hero-note{margin-top:20px;font-size:14px;color:var(--ink-faint);display:flex;align-items:center;gap:9px;}
-    .dot{width:9px;height:9px;border-radius:50%;background:var(--coral);display:inline-block;flex:none;}
-    @media(max-width:980px){.hero-grid{grid-template-columns:1fr;gap:52px;}.hero{padding:60px 0 56px;}}
+    /* ================================== how ================================= */
+    .how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:step;}
+    .how-card{position:relative;border:1px solid var(--line);border-radius:18px;
+              padding:34px 28px 30px;background:#fff;}
+    .how-card::before{counter-increment:step;content:counter(step);
+              font-family:var(--head);font-weight:800;font-size:15px;color:#fff;
+              background:var(--navy);width:32px;height:32px;border-radius:50%;
+              display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+    .how-card h3{font-size:20px;}
+    .how-card p{font-size:15.5px;color:var(--ink-soft);margin-top:10px;line-height:1.55;}
+    @media (max-width:860px){ .how-grid{grid-template-columns:1fr;} }
 
-    /* ------------------------ hero product visual ----------------------- */
-    .stage{position:relative;}
-    .app-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-      box-shadow:var(--shadow-big);overflow:hidden;}
-    .app-bar{display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;
-      background:linear-gradient(180deg,#FDFCFA,#F7F4EF);border-bottom:1px solid var(--line);}
-    .app-bar .b-dot{width:9px;height:9px;border-radius:50%;background:#E3DED6;}
-    .app-bar .b-dot:nth-child(1){background:#F1B8A6;}
-    .app-bar .b-addr{margin-left:10px;flex:1;height:22px;border-radius:7px;background:#F1EDE6;
-      display:flex;align-items:center;padding:0 10px;font-size:11px;color:var(--ink-faint);font-weight:500;}
-    .app-body{padding:22px 22px 20px;}
-    .app-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px;}
-    .app-title{font-family:var(--head);font-weight:700;font-size:15.5px;}
-    .app-peer{font-size:11.5px;color:var(--ink-faint);}
-    .arc-row{display:flex;align-items:center;gap:20px;margin-bottom:18px;}
-    .arc-read{min-width:0;}
-    .arc-read .r1{font-family:var(--head);font-weight:700;font-size:16.5px;line-height:1.25;}
-    .arc-read .r2{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.45;}
-    .dom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-    .dom{border:1px solid var(--line);border-radius:11px;padding:9px 10px 8px;background:#FDFCFA;}
-    .dom .d-name{font-family:var(--head);font-weight:600;font-size:10.5px;color:var(--ink-soft);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .dom .d-band{height:5px;border-radius:3px;background:var(--tile);position:relative;margin-top:7px;}
-    .dom .d-band i{position:absolute;top:-2.5px;width:10px;height:10px;border-radius:50%;
-      background:var(--blue);border:2px solid #fff;box-shadow:0 1px 3px rgba(20,38,79,.3);}
-    .dom.hot .d-band i{background:var(--coral-deep);}
-    @media(max-width:520px){.dom-grid{grid-template-columns:repeat(2,1fr);}}
+    /* ================================ trust ================================= */
+    .trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:8px;}
+    .trust-card h3{font-size:16.5px;display:flex;gap:10px;align-items:baseline;}
+    .trust-card h3::before{content:"";width:8px;height:8px;border-radius:50%;
+             background:var(--coral);flex:none;position:relative;top:-1px;}
+    .trust-card p{font-size:14.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55;}
+    .trust-links{display:flex;gap:34px;justify-content:center;margin-top:52px;flex-wrap:wrap;}
+    @media (max-width:860px){ .trust-grid{grid-template-columns:1fr 1fr;} }
+    @media (max-width:560px){ .trust-grid{grid-template-columns:1fr;} }
 
-    /* floating chips over the stage */
-    .float{position:absolute;background:var(--surface);border:1px solid var(--line);
-      border-radius:14px;box-shadow:var(--shadow-big);padding:13px 15px;}
-    .float-sig{right:-14px;top:-26px;width:236px;animation:bob 7s ease-in-out infinite;}
-    .float-sig .s-head{display:flex;align-items:center;gap:7px;font-family:var(--head);
-      font-weight:700;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--amber);}
-    .float-sig .s-body{font-size:12px;color:var(--ink);margin-top:6px;line-height:1.45;}
-    .float-sig .s-meta{font-size:10.5px;color:var(--ink-faint);margin-top:6px;}
-    .float-dist{left:-26px;bottom:-34px;width:270px;animation:bob 8s ease-in-out 1.2s infinite;}
-    .float-dist .f-title{display:flex;justify-content:space-between;align-items:center;gap:8px;
-      font-family:var(--head);font-weight:700;font-size:12px;}
-    .float-dist .pill{font-size:10px;padding:3px 8px;}
-    .float-dist .f-meta{font-size:10.5px;color:var(--ink-faint);margin-top:2px;}
-    @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
-    @media(max-width:1120px){.float-dist{left:-8px;}.float-sig{right:-6px;}}
-    @media(max-width:520px){.float-sig{width:200px;top:-20px;}.float-dist{width:230px;bottom:-26px;}}
+    /* ============================ pricing + pulse =========================== */
+    .price-line{display:flex;align-items:center;justify-content:space-between;gap:34px;
+                background:var(--navy);color:#fff;border-radius:22px;padding:44px 52px;flex-wrap:wrap;}
+    .price-line .pl-num{font-family:var(--head);font-weight:800;font-size:clamp(34px,4vw,46px);
+                letter-spacing:-0.03em;font-variant-numeric:tabular-nums;}
+    .price-line .pl-num small{font-size:.45em;font-weight:700;color:#B9C6E4;letter-spacing:0;}
+    .price-line p{color:#B9C6E4;font-size:16px;max-width:44ch;}
+    @media (max-width:760px){ .price-line{padding:36px 30px;} }
 
-    .pill{font-family:var(--head);font-weight:700;font-size:12px;padding:5px 11px;border-radius:999px;}
-    .pill-good{background:var(--good-tint);color:var(--good);}
-    .pill-amber{background:var(--amber-tint);color:var(--amber);}
+    /* ================================== faq ================================= */
+    .faq-list{max-width:800px;margin:0 auto;}
+    .faq-list details{border-bottom:1px solid var(--line);}
+    .faq-list summary{font-family:var(--head);font-weight:700;font-size:17.5px;
+        padding:22px 40px 22px 2px;cursor:pointer;list-style:none;position:relative;
+        letter-spacing:-0.015em;}
+    .faq-list summary::-webkit-details-marker{display:none;}
+    .faq-list summary::after{content:"+";position:absolute;right:6px;top:50%;
+        transform:translateY(-50%);font-weight:600;font-size:22px;color:var(--blue);
+        transition:transform .18s ease;}
+    .faq-list details[open] summary::after{transform:translateY(-50%) rotate(45deg);}
+    .faq-list details p{padding:0 40px 24px 2px;color:var(--ink-soft);font-size:15.5px;line-height:1.65;}
 
-    /* ============================ proof band ============================= */
-    .proofband{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);}
-    .proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:34px 0;}
-    .pstat{text-align:center;padding:0 8px;}
-    .pstat .p-num{font-family:var(--head);font-weight:800;font-size:clamp(26px,3vw,36px);
-      color:var(--blue);letter-spacing:-.02em;line-height:1.05;}
-    .pstat .p-lbl{font-size:13.5px;color:var(--ink-soft);margin-top:5px;line-height:1.4;}
-    @media(max-width:820px){.proof-grid{grid-template-columns:repeat(2,1fr);gap:26px 12px;}}
+    /* ================================ final CTA ============================= */
+    .final{padding:130px 0;position:relative;overflow:hidden;}
+    .final .sec-head{margin-bottom:0;}
+    .final h2{font-size:clamp(36px,5vw,58px);}
+    .final .hero-cta{margin-top:40px;}
+    .final .sub{margin-top:26px;font-size:15px;color:#8FA2CE;}
+    .final .sub a{color:#B9C6E4;font-weight:600;}
 
-    /* =========================== sector marquee ========================== */
-    .sectors{padding:34px 0 8px;overflow:hidden;}
-    .sectors .s-lead{text-align:center;font-size:13px;color:var(--ink-faint);font-weight:500;
-      letter-spacing:.05em;text-transform:uppercase;font-family:var(--head);margin-bottom:20px;}
-    .marquee{position:relative;overflow:hidden;
-      -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-              mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
-    .marquee-track{display:flex;gap:12px;width:max-content;animation:slide 46s linear infinite;padding:2px 0 14px;}
-    .marquee:hover .marquee-track{animation-play-state:paused;}
-    @keyframes slide{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-    .chip{font-size:13.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);
-      border-radius:999px;padding:8px 16px;white-space:nowrap;flex:none;}
+    /* ================================= footer =============================== */
+    footer{background:var(--navy-deep);color:#8FA2CE;padding:64px 0 40px;font-size:14.5px;}
+    .foot-row{display:grid;grid-template-columns:minmax(220px,1fr) 2fr;gap:60px;}
+    .foot-logo img{height:30px;width:auto;}
+    .foot-blurb{margin-top:16px;max-width:30ch;line-height:1.6;}
+    .foot-links{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+    .foot-col h3{font-family:var(--head);font-size:13px;letter-spacing:.1em;
+        text-transform:uppercase;color:#fff;margin-bottom:16px;font-weight:700;}
+    .foot-col a{display:block;color:#8FA2CE;padding:5px 0;}
+    .foot-col a:hover{color:#fff;}
+    .foot-base{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+        border-top:1px solid rgba(255,255,255,.1);margin-top:54px;padding-top:26px;font-size:13.5px;}
+    @media (max-width:860px){ .foot-row{grid-template-columns:1fr;gap:40px;}
+      .foot-links{grid-template-columns:1fr 1fr;} }
 
-    /* ============================= sections ============================== */
-    section{padding:var(--sec-y) 0;}
-    .sec-head{max-width:680px;margin:0 auto 56px;text-align:center;}
-    .sec-head h2{font-size:var(--fs-h2);}
-    .sec-head p{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:16px;line-height:1.6;}
-    @media(max-width:720px){:root{--sec-y:64px;}}
-
-    /* ============================ pain cards ============================= */
-    .pains{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
-    .pain{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:30px 28px;
-      position:relative;overflow:hidden;}
-    .pain::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--coral);opacity:.75;}
-    .pain h3{font-size:18.5px;margin-bottom:9px;letter-spacing:-.01em;}
-    .pain p{color:var(--ink-soft);font-size:15px;}
-    .pain .p-tag{font-family:var(--head);font-weight:700;font-size:11px;letter-spacing:.08em;
-      text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:14px;}
-    .pivot{max-width:640px;margin:52px auto 0;text-align:center;font-family:var(--head);
-      font-weight:600;font-size:clamp(19px,2.2vw,23px);line-height:1.45;color:var(--ink);}
-    .pivot b{color:var(--blue);}
-    @media(max-width:860px){.pains{grid-template-columns:1fr;}}
-
-    /* ============================ tour modules =========================== */
-    .tour{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:44px 0;}
-    .tour + .tour{border-top:1px solid var(--line);}
-    .tour .t-copy h3{font-size:clamp(24px,2.8vw,32px);margin:14px 0 14px;}
-    .tour .t-copy p{color:var(--ink-soft);font-size:16.5px;max-width:46ch;}
-    .tour .t-points{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:11px;}
-    .tour .t-points li{display:flex;gap:11px;align-items:flex-start;font-size:15px;color:var(--ink-soft);}
-    .tour .t-points li b{color:var(--ink);font-weight:600;}
-    .tour .t-points .tick{width:19px;height:19px;flex:none;border-radius:6px;background:var(--good-tint);
-      color:var(--good);display:inline-flex;align-items:center;justify-content:center;margin-top:2px;}
-    .tour .t-points .tick svg{width:11px;height:11px;}
-    .tour.flip .t-copy{order:2;}
-    .tour.flip .t-visual{order:1;}
-    @media(max-width:920px){.tour{grid-template-columns:1fr;gap:34px;padding:34px 0;}
-      .tour.flip .t-copy{order:1;}.tour.flip .t-visual{order:2;}}
-
-    .shot{background:var(--surface);border:1px solid var(--line);border-radius:20px;
-      box-shadow:var(--shadow-big);padding:24px;position:relative;}
-    .shot .sh-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
-    .shot .sh-title{font-family:var(--head);font-weight:700;font-size:15px;}
-    .shot .sh-sub{font-size:11.5px;color:var(--ink-faint);}
-
-    /* signals mock */
-    .sig-row{display:flex;align-items:center;gap:13px;padding:12px 4px;border-top:1px solid var(--line);}
-    .sig-row:first-of-type{border-top:none;}
-    .sig-ic{width:34px;height:34px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;}
-    .sig-ic.warm{background:var(--amber-tint);color:var(--amber);}
-    .sig-ic.cool{background:var(--tile);color:var(--blue);}
-    .sig-main{flex:1;min-width:0;}
-    .sig-t{font-family:var(--head);font-weight:600;font-size:13.5px;line-height:1.3;}
-    .sig-m{font-size:11.5px;color:var(--ink-faint);margin-top:2px;}
-    .sig-bar{width:74px;flex:none;}
-    .sig-bar .sb-track{height:5px;border-radius:3px;background:var(--tile);overflow:hidden;}
-    .sig-bar .sb-fill{height:100%;border-radius:3px;background:var(--coral-deep);}
-    .sig-bar .sb-lbl{font-size:10px;color:var(--ink-faint);text-align:right;margin-top:3px;}
-
-    /* board pack mock */
-    .pack-fan{position:relative;height:360px;}
-    .page{position:absolute;background:#fff;border:1px solid var(--line);border-radius:10px;
-      box-shadow:var(--shadow-big);width:225px;height:318px;padding:18px 16px;overflow:hidden;}
-    .page .pg-rule{height:4px;width:52px;border-radius:2px;background:var(--blue);margin-bottom:12px;}
-    .page .pg-title{font-family:var(--head);font-weight:800;font-size:13px;line-height:1.3;}
-    .page .pg-cap{font-size:9px;color:var(--ink-faint);margin-top:4px;}
-    .page .pg-line{height:6px;border-radius:3px;background:#F1EDE6;margin-top:8px;}
-    .page .pg-line.w60{width:60%;} .page .pg-line.w80{width:80%;} .page .pg-line.w45{width:45%;}
-    .page-1{left:0;top:36px;transform:rotate(-5deg);z-index:1;}
-    .page-2{left:calc(50% - 112px);top:0;z-index:3;}
-    .page-3{right:0;top:44px;transform:rotate(5deg);z-index:2;}
-    .pg-stat{display:flex;gap:8px;margin-top:12px;}
-    .pg-stat .ps{flex:1;background:#F7F4EF;border-radius:7px;padding:8px 7px;}
-    .pg-stat .ps b{display:block;font-family:var(--head);font-size:13px;color:var(--blue);}
-    .pg-stat .ps span{font-size:7.5px;color:var(--ink-faint);line-height:1.2;display:block;margin-top:2px;}
-    .pg-tbl{margin-top:12px;border-top:1px solid var(--line);}
-    .pg-tr{display:flex;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid #F1EDE6;
-      font-size:8.5px;color:var(--ink-soft);}
-    .pg-tr b{color:var(--ink);font-weight:600;}
-    .pg-tr .neg{color:var(--coral-text);font-weight:700;}
-    @media(max-width:520px){.pack-fan{height:300px;}.page{width:180px;height:258px;}
-      .page-2{left:calc(50% - 90px);}}
-
-    /* ============================ how it works =========================== */
-    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;}
-    .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:32px 28px;
-      position:relative;transition:transform .16s ease,box-shadow .2s ease;}
-    .step:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
-    .step .num{font-family:var(--head);font-weight:800;font-size:15px;color:#fff;background:var(--blue);
-      width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
-    .step h3{font-size:19.5px;margin-bottom:8px;}
-    .step p{color:var(--ink-soft);font-size:15px;}
-    .coop{max-width:720px;margin:44px auto 0;text-align:center;background:var(--tile);
-      border:1px solid var(--tile-deep);border-radius:var(--r-sm);padding:20px 26px;
-      font-size:15px;color:var(--ink);line-height:1.6;}
-    .coop b{font-weight:600;}
-    @media(max-width:860px){.steps{grid-template-columns:1fr;}}
-
-    /* ============================ trust band ============================= */
-    .trustband{background:linear-gradient(160deg,var(--navy-deep),var(--navy) 55%,var(--blue-deep));
-      border-radius:var(--r-xl);padding:72px 56px;position:relative;overflow:hidden;color:#fff;}
-    .trustband::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;
-      background:radial-gradient(circle,rgba(240,140,110,.28),transparent 68%);}
-    .trustband .sec-head{margin-bottom:44px;}
-    .trustband .sec-head h2{color:#fff;}
-    .trustband .sec-head p{color:rgba(255,255,255,.75);}
-    .trustband .eyebrow{color:#9FB6E8;}
-    .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 34px;position:relative;z-index:1;}
-    .tcell{display:flex;gap:15px;align-items:flex-start;}
-    .tcell .t-ic{width:42px;height:42px;flex:none;border-radius:12px;background:rgba(255,255,255,.09);
-      border:1px solid rgba(255,255,255,.14);color:#B9CBF2;display:flex;align-items:center;justify-content:center;}
-    .tcell h3{font-family:var(--head);font-size:16.5px;margin:1px 0 6px;color:#fff;}
-    .tcell p{color:rgba(255,255,255,.72);font-size:14px;line-height:1.55;}
-    @media(max-width:920px){.tgrid{grid-template-columns:1fr 1fr;}.trustband{padding:56px 34px;}}
-    @media(max-width:640px){.tgrid{grid-template-columns:1fr;}}
-
-    /* =========================== demo section =========================== */
-    .demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;}
-    .dcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:30px 28px;}
-    .dcard .d-ic{width:44px;height:44px;border-radius:12px;background:var(--tile);color:var(--blue);
-      display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
-    .dcard h3{font-family:var(--head);font-size:17.5px;margin:0 0 7px;}
-    .dcard p{color:var(--ink-soft);font-size:14.5px;}
-    .demo-note{text-align:center;margin-top:34px;font-size:14.5px;color:var(--ink-faint);}
-    @media(max-width:860px){.demo-grid{grid-template-columns:1fr;}}
-
-    /* ================================ FAQ ================================ */
-    .faq{max-width:760px;margin:0 auto;}
-    .faq details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);
-      margin-bottom:12px;overflow:hidden;}
-    .faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
-      gap:14px;padding:19px 24px;font-family:var(--head);font-weight:600;font-size:16.5px;}
-    .faq summary::-webkit-details-marker{display:none;}
-    .faq summary .fx{flex:none;width:24px;height:24px;border-radius:50%;background:var(--tile);color:var(--blue);
-      display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;
-      transition:transform .18s ease;}
-    .faq details[open] summary .fx{transform:rotate(45deg);}
-    .faq .fa{padding:0 24px 20px;color:var(--ink-soft);font-size:15px;line-height:1.65;max-width:62ch;}
-
-    /* ============================= final CTA ============================= */
-    .cta-band{background:linear-gradient(135deg,var(--navy-deep),var(--blue-deep) 60%,var(--blue));color:#fff;
-      border-radius:var(--r-xl);padding:72px 56px;text-align:center;position:relative;overflow:hidden;}
-    .cta-band::before{content:"";position:absolute;left:-70px;bottom:-90px;width:280px;height:280px;border-radius:50%;
-      background:radial-gradient(circle,rgba(240,140,110,.30),transparent 68%);}
-    .cta-band::after{content:"";position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;
-      background:radial-gradient(circle,rgba(159,182,232,.25),transparent 70%);}
-    .cta-band h2{color:#fff;font-size:var(--fs-cta);position:relative;z-index:1;}
-    .cta-band p{color:rgba(255,255,255,.82);font-size:18px;margin:18px auto 34px;max-width:48ch;position:relative;z-index:1;}
-    .cta-band .cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
-    .cta-logo{height:30px;margin-bottom:26px;position:relative;z-index:1;}
-
-    /* ================================ footer ============================= */
-    footer{padding:60px 0 42px;border-top:1px solid var(--line);}
-    .foot-row{display:flex;justify-content:space-between;align-items:flex-start;gap:34px;flex-wrap:wrap;}
-    .foot-logo img{height:28px;}
-    .foot-blurb{color:var(--ink-soft);font-size:14px;max-width:34ch;margin-top:14px;line-height:1.6;}
-    .foot-links{display:flex;gap:52px;flex-wrap:wrap;}
-    .foot-col h3{font-family:var(--head);font-weight:700;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
-      color:var(--ink-faint);margin:0 0 13px;}
-    .foot-col a{display:flex;align-items:center;min-height:44px;color:var(--ink-soft);font-size:14.5px;padding:4px 0;}
-    .foot-col a:hover{color:var(--ink);}
-    .foot-base{margin-top:44px;padding-top:24px;border-top:1px solid var(--line);
-      display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-faint);}
-
-    /* ------------------------ dashboards mock --------------------------- */
-    .dtabs{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;}
-    .dtab{font-family:var(--head);font-weight:600;font-size:11.5px;color:var(--ink-soft);background:#F7F4EF;
-      border:1px solid var(--line);border-radius:999px;padding:5px 11px;display:inline-flex;align-items:center;gap:6px;}
-    .dtab b{background:#E3DED6;color:var(--ink-soft);border-radius:999px;font-size:9.5px;padding:1px 6px;font-weight:700;}
-    .dtab.on{background:var(--blue);color:#fff;border-color:var(--blue);}
-    .dtab.on b{background:rgba(255,255,255,.25);color:#fff;}
-    .dtab.plus{color:var(--blue);background:transparent;border-style:dashed;}
-    .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .dmini{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:#FDFCFA;}
-    .dmini-h{display:flex;align-items:center;justify-content:space-between;gap:8px;
-      font-family:var(--head);font-weight:700;font-size:12px;color:var(--ink);}
-    .dmini-sub{font-size:10px;color:var(--ink-faint);margin-top:3px;}
-    @media(max-width:520px){.dgrid{grid-template-columns:1fr;}}
-
-    /* ------------------------- metric index ---------------------------- */
-    .mindex{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-    .marea{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px 24px 20px;
-      transition:transform .16s ease,box-shadow .2s ease;}
-    .marea:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
-    .marea.ma-wide{grid-column:span 3;}
-    .ma-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px;}
-    .ma-name{font-family:var(--head);font-weight:700;font-size:19px;letter-spacing:-.01em;}
-    .ma-n{font-family:var(--head);font-weight:700;font-size:12px;color:#fff;background:var(--blue);
-      border-radius:999px;padding:3px 10px;flex:none;}
-    .ma-desc{color:var(--ink-soft);font-size:14px;margin-bottom:14px;line-height:1.5;}
-    .ma-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:7px;}
-    .ma-list.ma-list-wide{grid-template-columns:1fr 1fr;gap:7px 22px;}
-    .ma-list li{position:relative;padding-left:18px;font-size:13.5px;color:var(--ink);line-height:1.4;}
-    .ma-list li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;
-      background:var(--coral);}
-    .mindex-note{text-align:center;margin-top:26px;font-size:13.5px;color:var(--ink-faint);}
-    .depth-list{display:grid;gap:6px;}
-    .depth-list span{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-soft);
-      border-bottom:1px solid var(--line);padding-bottom:5px;}
-    .depth-list span b{color:var(--ink);font-weight:700;font-family:var(--head);}
-    @media(max-width:960px){.mindex{grid-template-columns:1fr 1fr;}.marea.ma-wide{grid-column:span 2;}
-      .ma-list.ma-list-wide{grid-template-columns:1fr;}}
-    @media(max-width:640px){.mindex{grid-template-columns:1fr;}.marea.ma-wide{grid-column:span 1;}}
-
-    /* -------------------------- pulse callout -------------------------- */
-    .pulsecta{background:var(--tile);border:1px solid var(--tile-deep);border-radius:28px;padding:52px 48px;}
-    .pulsecta .eyebrow{color:var(--blue);}
-    .pulsecta h2{font-size:clamp(26px,3vw,36px);margin-top:12px;}
-    .pulsecta > .pc-copy > p{font-size:17px;color:var(--ink-soft);margin-top:14px;max-width:60ch;}
-    .pc-paths{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:32px;}
-    .pc-path{display:flex;gap:15px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);
-      border-radius:var(--r-sm);padding:22px 22px;}
-    .pc-path .pc-ic{width:44px;height:44px;flex:none;border-radius:12px;background:var(--tile);color:var(--blue);
-      display:flex;align-items:center;justify-content:center;}
-    .pc-path h3{font-family:var(--head);font-size:17px;margin:2px 0 6px;}
-    .pc-path p{color:var(--ink-soft);font-size:14px;line-height:1.55;}
-    @media(max-width:820px){.pc-paths{grid-template-columns:1fr;}.pulsecta{padding:38px 28px;}}
-
-    /* =============================== reveal ============================== */
-    /* testimonials */
-    .voices{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
-    .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
-    .vcard{border:1px solid var(--line);border-radius:16px;padding:26px 26px 24px;display:flex;flex-direction:column;background:var(--paper);}
-    .vcard .vqm{color:var(--coral);font-family:Georgia,"Times New Roman",serif;font-size:46px;line-height:.5;height:22px;}
-    .vcard .vq{font-size:15.5px;line-height:1.6;color:var(--ink);margin-top:8px;}
-    .vcard .vattr{margin-top:auto;padding-top:20px;font-size:13px;color:var(--ink-soft);}
-    .vcard .vattr b{display:block;color:var(--ink);font-weight:600;font-family:var(--head);font-size:13.5px;}
-    @media(max-width:920px){.vgrid{grid-template-columns:1fr 1fr;}}
-    @media(max-width:640px){.vgrid{grid-template-columns:1fr;}}
-    .quotemark{color:var(--coral);font-family:Georgia,serif;font-size:56px;line-height:0;}
-
-    .reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease;}
+    /* ================================ reveal ================================ */
+    .reveal{opacity:0;transform:translateY(22px);
+            transition:opacity .7s cubic-bezier(.2,.6,.2,1),transform .7s cubic-bezier(.2,.6,.2,1);}
     .reveal.in{opacity:1;transform:none;}
-    @media(prefers-reduced-motion:reduce){
+    @media (prefers-reduced-motion:reduce){
       .reveal{opacity:1;transform:none;transition:none;}
-      .btn:hover,.step:hover{transform:none;}
-      .float-sig,.float-dist{animation:none;}
-      .marquee-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto;}
-      .mobile-nav{transition:none;}
-      html{scroll-behavior:auto;}
+      .dig-card,.btn{transition:none;}
     }
   </style>
 </head>
 <body>
 
-  <header class="nav" id="topnav">
-    <div class="wrap nav-row">
-      <a class="nav-logo" href="/" aria-label="lumi home"><img src="/static/lumi_horizontal.svg" alt="lumi" /></a>
+  <!-- ================================= NAV ================================= -->
+  <header id="topnav">
+    <div class="wrap nav-inner">
+      <a class="nav-logo" href="/" aria-label="lumi home"><img src="/static/lumi_horizontal.svg" alt="lumi" width="88" height="30" /></a>
       <nav class="nav-links" aria-label="Primary">
         <a href="#product">Product</a>
-        <a href="#coverage">Coverage</a>
+        <a href="#how">How it works</a>
+        <a href="/methodology">Methodology</a>
         <a href="/pricing">Pricing</a>
         <a href="/security">Security</a>
-        <a href="#faq">FAQ</a>
       </nav>
       <div class="nav-cta">
-        <a class="btn btn-ghost btn-sm" href="/app">Sign in</a>
-        <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
-        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobilenav">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-        </button>
+        <a class="signin" href="/app">Sign in</a>
+        <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
       </div>
     </div>
-    <nav class="mobile-nav" id="mobilenav" aria-label="Primary (mobile)">
-      <a href="#product">Product</a>
-      <a href="#coverage">Coverage</a>
-      <a href="/pricing">Pricing</a>
-      <a href="/security">Security</a>
-      <a href="#faq">FAQ</a>
-      <a href="/app">Sign in</a>
-      <div class="mn-cta"><a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a></div>
-    </nav>
   </header>
 
-  <main>
+  <main id="main-content">
+
     <!-- ================================ HERO ================================ -->
-    <section class="hero" style="padding-bottom:100px;">
-      <div class="wrap hero-grid">
-        <div>
-          <span class="eyebrow">UK reward benchmarking, built by its members</span>
-          <h1 style="margin-top:18px;">Know exactly where your <span class="accent">reward stands<svg viewBox="0 0 220 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 60 2, 160 2, 217 8" fill="none" stroke="#F08C6E" stroke-width="4.5" stroke-linecap="round"/></svg></span></h1>
-          <p class="lede">lumi benchmarks the <b>whole of reward except base pay</b> — benefits, pension, time off, wellbeing and the
-            policies around pay — against <b>220 UK organisations</b>. Every figure cited with its <b>peer group and sample size</b>, ready for the board.</p>
-          <div class="hero-cta">
-            <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo
-              <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-            <a class="btn btn-ghost" href="#product">Explore the product</a>
-          </div>
-          <div class="hero-note"><span class="dot"></span> Built for HR teams, not just reward specialists — leads and gaps in plain English, nothing to integrate.</div>
-          <div class="hero-note" style="margin-top:9px;"><span class="dot"></span> First cited comparison in minutes · a board-ready pack the same day · <a href="/sample-board-pack" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600;">see a sample&nbsp;&rarr;</a></div>
+    <section class="hero" style="padding-top:88px;padding-bottom:0;">
+      <svg class="hero-field" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+        <g fill="#2048B0" opacity="0.10">
+          <circle cx="90"  cy="120" r="5"/><circle cx="215" cy="330" r="4"/>
+          <circle cx="150" cy="540" r="6"/><circle cx="320" cy="90"  r="4"/>
+          <circle cx="60"  cy="400" r="4"/><circle cx="280" cy="620" r="5"/>
+          <circle cx="1350" cy="150" r="5"/><circle cx="1240" cy="360" r="4"/>
+          <circle cx="1310" cy="560" r="6"/><circle cx="1130" cy="110" r="4"/>
+          <circle cx="1395" cy="420" r="4"/><circle cx="1180" cy="640" r="5"/>
+        </g>
+        <circle cx="1268" cy="248" r="7" fill="#F08C6E" opacity="0.9"/>
+      </svg>
+      <div class="hero-copy">
+        <span class="eyebrow">The UK reward benchmarking co-operative</span>
+        <h1>Know exactly where your <span class="accent">reward stands<svg viewBox="0 0 220 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 60 2, 160 2, 217 8" fill="none" stroke="#F08C6E" stroke-width="4.5" stroke-linecap="round"/></svg></span></h1>
+        <p class="lede">lumi benchmarks the <b>whole of reward except base pay</b> — benefits, pension, time off, wellbeing and the policies around pay — against <b>220 UK organisations</b>. Every figure cited with its peer group and sample size, ready for the board.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+          <a class="arrow-link" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack</a>
         </div>
-
-        <!-- faithful recreation of the real product: overview arc + domain tiles,
-             with a floating signal + benchmark card. Illustrative demo figures. -->
-        <div class="stage reveal" aria-label="A preview of the lumi benchmark dashboard, showing an overall market position with domain-by-domain detail, a flagged signal, and a cited benchmark figure">
-          <div class="app-card">
-            <div class="app-bar" aria-hidden="true">
-              <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
-              <span class="b-addr">lumihr.co.uk/app</span>
-            </div>
-            <div class="app-body">
-              <div class="app-head">
-                <span class="app-title">Where you stand</span>
-                <span class="app-peer">All peers · 220 organisations</span>
-              </div>
-              <div class="arc-row">
-                <svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label="Gauge showing overall position broadly in line with the market">
-                  <circle cx="66" cy="66" r="54" fill="none" stroke="#EAF0FB" stroke-width="13"/>
-                  <circle cx="66" cy="66" r="54" fill="none" stroke="#2048B0" stroke-width="13"
-                    stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="105"
-                    transform="rotate(-90 66 66)"/>
-                  <text x="66" y="61" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="800" font-size="23" fill="#211B26">69%</text>
-                  <text x="66" y="79" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#8E8893">of metrics in line</text>
-                </svg>
-                <div class="arc-read">
-                  <div class="r1">Broadly in line with the market</div>
-                  <div class="r2">36 of 52 answered metrics sit within the middle half of similar organisations.</div>
-                </div>
-              </div>
-              <div class="dom-grid" aria-hidden="true">
-                <div class="dom"><div class="d-name">Pay practice</div><div class="d-band"><i style="left:58%;"></i></div></div>
-                <div class="dom"><div class="d-name">Pensions</div><div class="d-band"><i style="left:48%;"></i></div></div>
-                <div class="dom"><div class="d-name">Health</div><div class="d-band"><i style="left:61%;"></i></div></div>
-                <div class="dom"><div class="d-name">Benefits</div><div class="d-band"><i style="left:66%;"></i></div></div>
-                <div class="dom hot"><div class="d-name">Time off</div><div class="d-band"><i style="left:18%;"></i></div></div>
-                <div class="dom"><div class="d-name">Incentives</div><div class="d-band"><i style="left:44%;"></i></div></div>
-                <div class="dom"><div class="d-name">Wellbeing</div><div class="d-band"><i style="left:52%;"></i></div></div>
-                <div class="dom"><div class="d-name">Governance</div><div class="d-band"><i style="left:38%;"></i></div></div>
-              </div>
-            </div>
+        <div class="hero-notes">
+          <span><span class="dot"></span>Nothing to integrate</span>
+          <span><span class="dot"></span>First comparison in minutes</span>
+          <span><span class="dot"></span>Board pack the same day</span>
+        </div>
+      </div>
+      <div class="hero-shot reveal">
+        <div class="app-card">
+          <div class="app-bar" aria-hidden="true">
+            <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
+            <span class="b-addr">app.lumihr.co.uk</span>
           </div>
-
-          <div class="float float-sig" aria-hidden="true">
-            <div class="s-head">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-              Signal
-            </div>
-            <div class="s-body">Private medical cover is common among your peers — you don't offer it.</div>
-            <div class="s-meta">Practice differs from market · n=213</div>
-          </div>
-
-          <div class="float float-dist" aria-hidden="true">
-            <div class="f-title">Employer pension contribution <span class="pill pill-good">Above market</span></div>
-            <div class="f-meta">All peers · n=181</div>
-            <svg viewBox="0 0 240 62" width="100%" style="margin-top:8px;">
-              <rect x="58" y="22" width="118" height="16" rx="5" fill="#EAF0FB"/>
-              <line x1="14" y1="30" x2="226" y2="30" stroke="#E3DED6" stroke-width="2"/>
-              <line x1="117" y1="18" x2="117" y2="42" stroke="#8E8893" stroke-width="2"/>
-              <text x="117" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="8.5" fill="#8E8893">P50 · 6%</text>
-              <line x1="172" y1="12" x2="172" y2="30" stroke="#2048B0" stroke-width="2"/>
-              <circle cx="172" cy="10" r="4.5" fill="#F08C6E"/>
-              <text x="172" y="52" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="9" fill="#2048B0">You · 8%</text>
-            </svg>
-          </div>
+          <img src="/static/mkt/hero-overview.webp" width="2200" height="1375" fetchpriority="high"
+               alt="The lumi Overview: a Where-you-stand dial showing the organisation moderately below market on 259 readings, and position by category across eight reward areas with signals and strategy columns." />
         </div>
       </div>
     </section>
@@ -631,65 +385,157 @@
 
     <!-- ===== SOCIAL PROOF (logo strip) — the #1 conversion lever from the persona test.
          David: paste 4-6 real member logos + one attributed quote, then uncomment. Do NOT ship placeholder/fake logos.
-    <div class="logos" style="border-bottom:1px solid var(--line);background:var(--surface);">
+    <div style="border-bottom:1px solid var(--line);background:var(--white);">
       <div class="wrap" style="padding:26px 24px;text-align:center;">
-        <div style="font-family:var(--head);font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:18px;">Reward teams already benchmarking with lumi</div>
+        <div style="font-family:var(--head);font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:18px;">Reward teams already benchmarking with lumi</div>
         <div style="display:flex;gap:36px;flex-wrap:wrap;justify-content:center;align-items:center;opacity:.8;">
-          [ real member logos here — <img src="/static/logos/example.svg" alt="Example Ltd" style="height:30px;" /> ]
+          [ real member logos here ]
         </div>
       </div>
     </div>
     -->
 
-    <!-- =========================== SECTOR MARQUEE ========================== -->
-    <div class="sectors" aria-label="Sectors represented in the benchmark">
-      <div class="s-lead">Real reward data from members across the UK economy</div>
-      <div class="marquee">
-        <div class="marquee-track">
-          <span class="chip">Manufacturing &amp; Engineering</span><span class="chip">Construction &amp; Infrastructure</span>
-          <span class="chip">Retail &amp; Consumer Goods</span><span class="chip">Logistics &amp; Transport</span>
-          <span class="chip">Hospitality &amp; Leisure</span><span class="chip">Public Sector</span>
-          <span class="chip">Media &amp; Creative</span><span class="chip">Education</span>
-          <span class="chip">Professional Services</span><span class="chip">Healthcare &amp; Life Sciences</span>
-          <span class="chip">Financial Services</span><span class="chip">Technology &amp; Software</span>
-          <span class="chip">Energy &amp; Utilities</span><span class="chip">Charity &amp; Non-Profit</span>
-          <span class="chip" aria-hidden="true">Manufacturing &amp; Engineering</span><span class="chip" aria-hidden="true">Construction &amp; Infrastructure</span>
-          <span class="chip" aria-hidden="true">Retail &amp; Consumer Goods</span><span class="chip" aria-hidden="true">Logistics &amp; Transport</span>
-          <span class="chip" aria-hidden="true">Hospitality &amp; Leisure</span><span class="chip" aria-hidden="true">Public Sector</span>
-          <span class="chip" aria-hidden="true">Media &amp; Creative</span><span class="chip" aria-hidden="true">Education</span>
-          <span class="chip" aria-hidden="true">Professional Services</span><span class="chip" aria-hidden="true">Healthcare &amp; Life Sciences</span>
-          <span class="chip" aria-hidden="true">Financial Services</span><span class="chip" aria-hidden="true">Technology &amp; Software</span>
-          <span class="chip" aria-hidden="true">Energy &amp; Utilities</span><span class="chip" aria-hidden="true">Charity &amp; Non-Profit</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================ PAIN → PIVOT ============================ -->
-    <section id="why" style="padding-top:78px;">
+    <!-- ============================ WHY (dark) ============================== -->
+    <section class="on-dark" id="why">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">Sound familiar?</span>
-          <h2 style="margin-top:14px;">The reward review is coming.<br/>The evidence isn't.</h2>
+          <span class="eyebrow">Why lumi exists</span>
+          <h2>The reward review is coming.<br/>The evidence isn't.</h2>
         </div>
-        <div class="pains">
-          <div class="pain reveal">
-            <span class="p-tag">The annual survey</span>
-            <h3>A PDF that ages the day it lands</h3>
-            <p>Traditional reward surveys arrive months after the data was collected, in one fixed peer cut — and cost thousands to repeat.</p>
+        <div class="why-grid">
+          <div class="why-card reveal">
+            <h3>The survey is 18 months old</h3>
+            <p>By the time the PDF lands, the market it describes has moved. You're defending this year's budget with last year's data.</p>
           </div>
-          <div class="pain reveal">
-            <span class="p-tag">Free benchmarks</span>
-            <h3>Numbers you can't stand behind</h3>
-            <p>Scraped or self-reported figures with no method, no sample size, no peer definition. Try citing one to your Remuneration Committee.</p>
+          <div class="why-card reveal">
+            <h3>The peer group isn't yours</h3>
+            <p>A fixed cut, chosen by someone else, that you can't change without commissioning another study.</p>
           </div>
-          <div class="pain reveal">
-            <span class="p-tag">The spreadsheet</span>
-            <h3>Stitched together every single year</h3>
-            <p>HR teams rebuild the same comparison deck before every reward review — copying numbers between tabs and hoping nothing slipped.</p>
+          <div class="why-card reveal">
+            <h3>So decisions run on gut feel</h3>
+            <p>And when the board asks "are we competitive?", a hunch — however experienced — is not an answer that holds.</p>
           </div>
         </div>
-        <p class="pivot reveal">lumi replaces all three for everything except base pay — <b>one living benchmark that sits alongside your salary survey</b> — built from real member data,
-          cited on every figure, and ready whenever the board asks.</p>
+        <p class="why-pivot reveal">lumi replaces the snapshot with a <span class="u">living benchmark</span> — real data from real UK employers, updated as members contribute.</p>
+      </div>
+    </section>
+
+    <!-- ============================== DIGEST ================================ -->
+    <section id="digest">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">lumi in thirty seconds</span>
+          <h2>Six things to know</h2>
+        </div>
+        <div class="digest">
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <h3>Answer once</h3>
+            <p>A guided questionnaire — about an hour, and "not applicable" always counts. No integration, no data feed.</p>
+          </div>
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <h3>See your position</h3>
+            <p>240+ metrics, each one read for you in plain English — where you lead, where you lag, where you match the market.</p>
+          </div>
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></div>
+            <h3>Cited, always</h3>
+            <p>Every figure carries its peer group and sample size. Nothing you can't defend when the CFO leans forward.</p>
+          </div>
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+            <h3>Signals find you</h3>
+            <p>When your position moves, or peers adopt something you don't offer, lumi emails the right person — with the evidence.</p>
+          </div>
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <h3>Board-ready</h3>
+            <p>A cited board pack and a versioned reward strategy &amp; plan, generated from your live position — the same day.</p>
+          </div>
+          <div class="dig-card reveal">
+            <div class="d-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+            <h3>Anonymous by floor</h3>
+            <p>Only aggregates, never answers — and any figure resting on fewer than 5 organisations is suppressed everywhere.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ BILLBOARDS ============================== -->
+    <section class="alt" id="product" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+      <div class="wrap">
+
+        <div class="board">
+          <div class="board-copy reveal">
+            <span class="eyebrow">Your data</span>
+            <h2>An hour of answers. Not an integration.</h2>
+            <p class="b-body">lumi asks about practices and policies, never employee records — so there's no HRIS connection, no data feed, and far less for IT and InfoSec to review. Your first answer produces a live comparison immediately.</p>
+            <br/>
+            <a class="arrow-link" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/tour-yourdata.webp" width="1800" height="1125" loading="lazy"
+              alt="The Your data screen: a guided questionnaire with progress by section and validation as answers are entered." /></div>
+          </div>
+        </div>
+
+        <div class="board flip">
+          <div class="board-copy reveal">
+            <span class="eyebrow">The benchmark</span>
+            <h2>Every answer becomes a position.</h2>
+            <p class="b-body">Each metric shows where you sit against your peer cut — the distribution, your percentile, and a plain-English read anyone on the team can repeat in a meeting.</p>
+            <div class="b-quote">"You answered 'No' — about 5 in 10 similar organisations did the same."</div>
+            <a class="arrow-link" href="/methodology">How the numbers are made</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/tour-benchmark.webp" width="1800" height="1125" loading="lazy"
+              alt="Benchmark cards for Pay: distributions with the organisation's own answer highlighted, plain-English reads, percentile chips and sample sizes." /></div>
+          </div>
+        </div>
+
+        <div class="board">
+          <div class="board-copy reveal">
+            <span class="eyebrow">Signals</span>
+            <h2>It watches the market, so you don't have to.</h2>
+            <p class="b-body">When your position moves — or a practice becomes common among peers that you don't offer — lumi flags it, ranks it against your strategy, and emails the right person. Every signal carries its evidence and sample size; save, snooze or dismiss the rest.</p>
+            <br/>
+            <a class="arrow-link" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/tour-signals.webp" width="1800" height="1125" loading="lazy"
+              alt="The Signals inbox: prioritised flags such as maternity and adoption pay below peer median, each with evidence, sample size and save, snooze or dismiss actions." /></div>
+          </div>
+        </div>
+
+        <div class="board flip">
+          <div class="board-copy reveal">
+            <span class="eyebrow">The gap register</span>
+            <h2>Every practice, against the market.</h2>
+            <p class="b-body">One sortable register of everything your peers have in place and where you stand on each — filter it by section, download it as CSV, take it to the meeting.</p>
+            <br/>
+            <a class="arrow-link" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/tour-register.webp" width="1800" height="1125" loading="lazy"
+              alt="The full gap register: every practice with your status, market prevalence, sector prevalence and sample size, downloadable as CSV." /></div>
+          </div>
+        </div>
+
+        <div class="board">
+          <div class="board-copy reveal">
+            <span class="eyebrow">Strategy &amp; plan</span>
+            <h2>From position to a plan the board can sign.</h2>
+            <p class="b-body">Set out what you intend your reward to do, see exactly where it sits against that intent, and generate a cited strategy &amp; plan — versioned, approved, and exportable as a PDF that looks like you had a design team.</p>
+            <br/>
+            <a class="arrow-link" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+          </div>
+          <div class="board-visual reveal">
+            <div class="app-card"><img src="/static/mkt/tour-strategy.webp" width="1800" height="1125" loading="lazy"
+              alt="The Reward Strategy and Plan document: a navy cover page with areas benchmarked, commitments off strategy and proposed actions, with version history and Save as PDF." /></div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -698,692 +544,179 @@
       <div class="wrap">
         <div class="sec-head">
           <span class="eyebrow">See it in action</span>
-          <h2 style="margin-top:14px;">From first answer to board pack</h2>
-          <p>A real recording of the live product — where you stand, the signals worth acting on, and the dashboards your team builds.</p>
+          <h2>From first answer to board pack</h2>
+          <p>Real screens from the live product — the demo organisation&#39;s benchmark, not a mock-up.</p>
         </div>
         <div class="reveal" style="max-width:960px;margin:0 auto;">
           <div class="app-card">
             <div class="app-bar" aria-hidden="true">
               <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
-              <span class="b-addr">lumihr.co.uk/app · live recording</span>
+              <span class="b-addr">app.lumihr.co.uk · the live product</span>
             </div>
-            <img src="/static/lumi-platform-tour.webp" width="1120" height="700" loading="lazy" style="width:100%;height:auto;display:block;background:url(/static/lumi-platform-tour-poster.jpg) center/cover no-repeat, var(--paper);"
-              alt="A screen recording of the lumi platform: the Overview benchmark for a demo organisation, the Signals list, and a saved dashboard." />
+            <img src="/static/mkt/lumi-tour.webp" width="1120" height="700" loading="lazy"
+              style="background:url(/static/mkt/lumi-tour-poster.jpg) center/cover no-repeat,var(--paper);"
+              alt="A screen recording of lumi: the Overview benchmark, the Signals inbox, benchmark cards for Pay, and the reward strategy document." />
           </div>
-          <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">A real screen recording of lumi — the demo organisation's live benchmark, not a mock-up.</div>
         </div>
       </div>
     </section>
 
-    <!-- ============================ PRODUCT TOUR ============================ -->
-    <section id="product" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-top:88px;">
+    <!-- ============================== COVERAGE ============================== -->
+    <section class="alt" id="coverage" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">The product</span>
-          <h2 style="margin-top:14px;">Everything your team works in</h2>
-          <p>Five surfaces, one source of truth — the real product your team lives in from day one.</p>
+          <span class="eyebrow">Coverage</span>
+          <h2>The whole of reward, except base pay</h2>
+          <p>240+ live metrics across eight areas — the parts of the package a salary survey never covers.</p>
         </div>
-
-        <!-- 1 · position -->
-        <div class="tour">
-          <div class="t-copy">
-            <span class="eyebrow">Your position</span>
-            <h3>One honest read of where you stand</h3>
-            <p>The moment you answer, lumi places you against your peers — overall, and domain by domain.
-              Switch peer group and the whole picture re-reads instantly.</p>
-            <ul class="t-points">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Choose your lens:</b> all peers, your sector, your size — or organisations most like you.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Eight areas of reward,</b> each with its own read — pay, pensions, health, benefits, time off and family, incentives and recognition, wellbeing, and governance.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Leads and gaps called out</b> in plain English — no chart-decoding required.</span></li>
-            </ul>
-          </div>
-          <div class="t-visual reveal">
-            <div class="shot">
-              <div class="sh-head"><span class="sh-title">Position by category</span><span class="sh-sub">All peers · 220 orgs</span></div>
-              <svg viewBox="0 0 480 250" width="100%" role="img" aria-label="Bar chart of category positions against the peer median">
-                <line x1="20" y1="125" x2="460" y2="125" stroke="#E3DED6" stroke-width="1.6" stroke-dasharray="4 4"/>
-                <text x="460" y="117" text-anchor="end" font-family="Inter,sans-serif" font-size="10" fill="#8E8893">market median</text>
-                <g font-family="Inter,sans-serif" font-size="10" fill="#5B5560" text-anchor="middle">
-                  <rect x="29"  y="72"  width="34" height="53"  rx="5" fill="#2048B0"/><text x="46"  y="243">Pay practice</text>
-                  <rect x="84"  y="98"  width="34" height="27"  rx="5" fill="#2048B0" opacity=".82"/><text x="101" y="243">Pensions</text>
-                  <rect x="140" y="88"  width="34" height="37"  rx="5" fill="#2048B0" opacity=".82"/><text x="157" y="243">Health</text>
-                  <rect x="195" y="103" width="34" height="22"  rx="5" fill="#2048B0" opacity=".7"/><text x="212" y="243">Benefits</text>
-                  <rect x="251" y="125" width="34" height="58"  rx="5" fill="#E0744F"/><text x="268" y="243">Time off</text>
-                  <rect x="306" y="110" width="34" height="15"  rx="5" fill="#2048B0" opacity=".7"/><text x="323" y="243">Incentives</text>
-                  <rect x="361" y="60"  width="34" height="65"  rx="5" fill="#2048B0"/><text x="378" y="243">Wellbeing</text>
-                  <rect x="417" y="125" width="34" height="30"  rx="5" fill="#E0744F" opacity=".85"/><text x="434" y="243">Governance</text>
-                </g>
-                <g font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="10" text-anchor="middle">
-                  <text x="46"  y="64"  fill="#2048B0">P68</text>
-                  <text x="101" y="90"  fill="#2048B0">P58</text>
-                  <text x="157" y="80"  fill="#2048B0">P61</text>
-                  <text x="212" y="95"  fill="#2048B0">P55</text>
-                  <text x="268" y="196" fill="#C2521F">P27</text>
-                  <text x="323" y="102" fill="#2048B0">P52</text>
-                  <text x="378" y="52"  fill="#2048B0">P72</text>
-                  <text x="434" y="168" fill="#C2521F">P38</text>
-                </g>
-              </svg>
-              <div class="sh-sub" style="margin-top:10px;">Illustrative demo data · every figure in the product cites percentile, peer group and n</div>
-            </div>
-          </div>
+        <div class="cov-grid reveal">
+          <div class="cov-chip"><span class="cdot"></span>Pay practice</div>
+          <div class="cov-chip"><span class="cdot"></span>Pensions &amp; savings</div>
+          <div class="cov-chip"><span class="cdot"></span>Health &amp; protection</div>
+          <div class="cov-chip"><span class="cdot"></span>Benefits &amp; lifestyle</div>
+          <div class="cov-chip"><span class="cdot"></span>Time off &amp; family</div>
+          <div class="cov-chip"><span class="cdot"></span>Incentives &amp; recognition</div>
+          <div class="cov-chip"><span class="cdot"></span>Wellbeing</div>
+          <div class="cov-chip"><span class="cdot"></span>Governance &amp; transparency</div>
         </div>
-
-        <!-- 2 · evidence -->
-        <div class="tour flip">
-          <div class="t-copy">
-            <span class="eyebrow">The evidence</span>
-            <h3>Every figure arrives ready to defend</h3>
-            <p>Behind every read is the full distribution — quartiles, median, your position, and the number of
-              organisations it rests on. Nothing is ever a black box.</p>
-            <ul class="t-points">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Percentile, peer group and n</b> travel with every number — on screen and in every export.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Medians and percentiles, not averages</b> — one unusual organisation can't skew your read.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Pin, download or share</b> any card — charts export with the citation baked in.</span></li>
-            </ul>
-          </div>
-          <div class="t-visual reveal">
-            <div class="shot">
-              <div class="sh-head">
-                <span class="sh-title">Annual leave allowance (days)</span>
-                <span class="pill pill-amber">Below market</span>
-              </div>
-              <div class="sh-sub">All peers · n=96</div>
-              <svg viewBox="0 0 480 150" width="100%" style="margin-top:12px;" role="img" aria-label="Distribution of annual leave allowance with your position below the peer median">
-                <rect x="130" y="52" width="212" height="30" rx="7" fill="#EAF0FB"/>
-                <line x1="36" y1="67" x2="446" y2="67" stroke="#E3DED6" stroke-width="2"/>
-                <line x1="236" y1="46" x2="236" y2="88" stroke="#8E8893" stroke-width="2.2"/>
-                <text x="236" y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" fill="#8E8893">P50 · 25 days</text>
-                <text x="36"  y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#6B6570">P10</text>
-                <text x="446" y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#6B6570">P90</text>
-                <line x1="121" y1="36" x2="121" y2="67" stroke="#E0744F" stroke-width="2.2"/>
-                <polygon points="121,67 113,79 129,79" fill="#E0744F"/>
-                <circle cx="121" cy="30" r="7" fill="#F08C6E"/>
-                <text x="121" y="18" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#C2521F">You · 23</text>
-                <text x="240" y="140" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#5B5560">You give <tspan font-weight="700" fill="#211B26">23 days</tspan> — below about <tspan font-weight="700" fill="#211B26">3 in 4</tspan> similar organisations (P24).</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3 · signals -->
-        <div class="tour">
-          <div class="t-copy">
-            <span class="eyebrow">Signals · proactive</span>
-            <h3>We tell you when it moves</h3>
-            <p>You shouldn't have to remember to log in and check. lumi watches your position for you — when the benchmark
-              updates and something moves (a new gap to peers, a change worth noting), it <b>emails the right people</b>,
-              ranked by what matters. Proactive, not an annual snapshot you have to go and pull.</p>
-            <ul class="t-points">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Proactive email alerts</b> — when your position changes, lumi emails you, so a gap never sits unnoticed until the next reward review.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Severity you can rank by</b> — plain-English flags with the evidence and sample size behind each one; work the biggest first, snooze what can wait.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>We flag, you decide</b> — declare a below-market stance and lumi reads you against your own strategy, never ours.</span></li>
-            </ul>
-          </div>
-          <div class="t-visual reveal">
-            <div class="shot">
-              <div class="sh-head"><span class="sh-title">Signals</span><span class="sh-sub">3 worth a look · emailed to you</span></div>
-              <div class="sig-row">
-                <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
-                <div class="sig-main">
-                  <div class="sig-t">Annual leave sits in the bottom quarter of the market</div>
-                  <div class="sig-m">Below market · all peers · n=96</div>
-                </div>
-                <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:82%;"></div></div><div class="sb-lbl">gap</div></div>
-              </div>
-              <div class="sig-row">
-                <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-                <div class="sig-main">
-                  <div class="sig-t">Private medical cover is common among peers — you don't offer it</div>
-                  <div class="sig-m">Practice differs from market · n=213</div>
-                </div>
-                <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:64%;"></div></div><div class="sb-lbl">prevalence</div></div>
-              </div>
-              <div class="sig-row">
-                <div class="sig-ic cool"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
-                <div class="sig-main">
-                  <div class="sig-t">Enhanced maternity pay is ahead of most of your peers</div>
-                  <div class="sig-m">Ahead of market · all peers · n=142</div>
-                </div>
-                <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:72%;background:var(--blue);"></div></div><div class="sb-lbl">lead</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4 · board pack -->
-        <div class="tour flip">
-          <div class="t-copy">
-            <span class="eyebrow">Board-ready reports</span>
-            <h3>Board-ready in one click</h3>
-            <p>Turn your position into a print-grade, cited board document — executive summary, position by area,
-              the evidence and the £ opportunities — then <b>download it or share a read-only link</b> in seconds.
-              Built to be handed to a NED.</p>
-            <ul class="t-points">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Key findings a NED can quote</b> — every figure in the pack is checked against the underlying data, so it can't cite a number the benchmark doesn't hold.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Download as PDF or CSV, or share a secure link</b> — every dashboard, chart and pack, with logo, peer group and n baked in.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Anything too small to show safely is held back</b> — the anonymity floor follows your data into print.</span></li>
-            </ul>
-            <div style="margin-top:24px;"><a class="btn btn-ghost" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack →</a></div>
-          </div>
-          <div class="t-visual reveal">
-            <a href="/sample-board-pack" target="_blank" rel="noopener" title="Open a sample board pack" style="display:block;">
-            <div class="pack-fan" role="img" aria-label="Three pages of a lumi board pack: cover, position summary and gaps table">
-              <div class="page page-1">
-                <div class="pg-rule"></div>
-                <div class="pg-title">Reward benchmark<br/>board pack</div>
-                <div class="pg-cap">Private &amp; confidential · July 2026</div>
-                <div class="pg-line w80" style="margin-top:16px;"></div>
-                <div class="pg-line w60"></div>
-                <div class="pg-line w80"></div>
-                <div class="pg-line w45"></div>
-                <div class="pg-cap" style="margin-top:14px;">Contents · Executive summary · Position by area · The evidence · Opportunities</div>
-              </div>
-              <div class="page page-2">
-                <div class="pg-rule"></div>
-                <div class="pg-title">Executive summary</div>
-                <div class="pg-cap">All peers · 220 organisations · figures under n=5 suppressed</div>
-                <div class="pg-stat">
-                  <div class="ps"><b>P58</b><span>overall position</span></div>
-                  <div class="ps"><b>36/52</b><span>metrics in line</span></div>
-                  <div class="ps"><b>4</b><span>gaps flagged</span></div>
-                </div>
-                <div class="pg-line w80" style="margin-top:14px;"></div>
-                <div class="pg-line"></div>
-                <div class="pg-line w60"></div>
-                <div class="pg-line w80"></div>
-                <div class="pg-line w45"></div>
-              </div>
-              <div class="page page-3">
-                <div class="pg-rule"></div>
-                <div class="pg-title">Biggest gaps to the market</div>
-                <div class="pg-cap">Each row cites peer group, percentile and n</div>
-                <div class="pg-tbl">
-                  <div class="pg-tr"><b>Annual leave</b><span class="neg">P24 · n=96</span></div>
-                  <div class="pg-tr"><b>Private medical</b><span class="neg">not offered</span></div>
-                  <div class="pg-tr"><b>Enhanced paternity</b><span class="neg">P31 · n=88</span></div>
-                  <div class="pg-tr"><b>Car allowance</b><span>P47 · n=98</span></div>
-                  <div class="pg-tr"><b>Pension</b><span>P74 · n=181</span></div>
-                </div>
-              </div>
-            </div>
-            </a>
-          </div>
-        </div>
-
-        <!-- 5 · dashboards -->
-        <div class="tour">
-          <div class="t-copy">
-            <span class="eyebrow">Dashboards</span>
-            <h3>Build the view you check every week</h3>
-            <p>Pin any metric to a dashboard, drag the cards into the order you think in, and save as many
-              views as you like — one for the board, one for benefits, one for your own weekly scan. They're
-              waiting for you every time you sign in.</p>
-            <ul class="t-points">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Pin, drag and arrange</b> — build a bespoke view from any metric in the benchmark.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Save as many dashboards as you need</b> — and set a shared starting layout for your whole team.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Download or share any dashboard</b> as a PDF or a read-only link, whenever you need it.</span></li>
-            </ul>
-          </div>
-          <div class="t-visual reveal">
-            <div class="shot">
-              <div class="dtabs" aria-hidden="true">
-                <span class="dtab on">Board view <b>6</b></span>
-                <span class="dtab">Benefits <b>4</b></span>
-                <span class="dtab">Time off <b>3</b></span>
-                <span class="dtab plus">+ New</span>
-              </div>
-              <div class="dgrid" aria-hidden="true">
-                <div class="dmini">
-                  <div class="dmini-h"><span>Employer pension</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">All peers · n=181 · <span style="color:var(--good);font-weight:600;">P74</span></div>
-                  <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="44" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="96" y1="12" x2="96" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="142" cy="20" r="4" fill="#2048B0"/></svg>
-                </div>
-                <div class="dmini">
-                  <div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-text);font-weight:600;">P24</span></div>
-                  <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg>
-                </div>
-                <div class="dmini">
-                  <div class="dmini-h"><span>Enhanced maternity</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">All peers · n=142 · <span style="color:var(--good);font-weight:600;">common</span></div>
-                  <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="120" height="8" rx="4" fill="#9DB4EA"/><rect x="12" y="24" width="150" height="8" rx="4" fill="#2048B0"/></svg>
-                </div>
-                <div class="dmini">
-                  <div class="dmini-h"><span>Sabbatical policy</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">All peers · n=168 · <span style="color:var(--ink-soft);font-weight:600;">in line</span></div>
-                  <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="150" height="8" rx="4" fill="#2048B0"/><rect x="12" y="24" width="96" height="8" rx="4" fill="#9DB4EA"/></svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <p class="cov-note">No salaries — deliberately. It's how you tell the board whether the <i>whole package</i> is competitive, not just base pay. <a href="/methodology">Read the methodology</a></p>
       </div>
     </section>
 
-    <!-- ============================= METRIC INDEX =========================== -->
-    <section id="coverage">
-      <div class="wrap">
-        <div class="sec-head">
-          <span class="eyebrow">What we benchmark</span>
-          <h2 style="margin-top:14px;">240+ live metrics, across eight areas of reward</h2>
-          <p>We benchmark <b>how you reward people</b> — benefits, time off, pension, policies and practice:
-            everything in reward <em>except</em> base pay. It's the part a pay survey never covers, built to sit
-            alongside it — not replace it. Here's what's covered.</p>
-        </div>
-        <div class="mindex">
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Pay practice</h3><span class="ma-n">66 metrics</span></div>
-            <p class="ma-desc">How pay is set, structured and communicated — the practice, not the number.</p>
-            <ul class="ma-list">
-              <li>Pay bands visible to employees</li><li>Location basis for remote pay</li>
-              <li>Pay-for-skills maturity</li><li>Overtime &amp; premiums by level</li>
-              <li>Off-cycle increase incidence</li><li>Pay-progression approach</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Pensions &amp; savings</h3><span class="ma-n">23 metrics</span></div>
-            <p class="ma-desc">Pension design and the savings support built around it.</p>
-            <ul class="ma-list">
-              <li>Employer contribution level</li><li>Scheme type (DC, DB, hybrid)</li>
-              <li>Salary sacrifice by default</li><li>NIC-savings sharing</li>
-              <li>Workplace savings vehicles</li><li>Payroll giving</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Health &amp; protection</h3><span class="ma-n">24 metrics</span></div>
-            <p class="ma-desc">Insured benefits and health cover across the workforce.</p>
-            <ul class="ma-list">
-              <li>Private medical eligibility &amp; premiums</li><li>Dental &amp; health cash plans</li>
-              <li>Life assurance multiples</li><li>Income protection</li>
-              <li>Virtual GP access</li><li>Cancer care pathways</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Benefits &amp; lifestyle</h3><span class="ma-n">41 metrics</span></div>
-            <p class="ma-desc">The wider package — from cars to discounts to flexible benefits.</p>
-            <ul class="ma-list">
-              <li>Company car &amp; allowances</li><li>Flexible benefits platform</li>
-              <li>Retail &amp; staff discounts</li><li>EV salary sacrifice</li>
-              <li>Redundancy pay terms</li><li>Optional &amp; voluntary benefits</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Time off &amp; family</h3><span class="ma-n">51 metrics</span></div>
-            <p class="ma-desc">Leave and absence policy, from annual leave to family and wellbeing leave.</p>
-            <ul class="ma-list">
-              <li>Annual leave allowance</li><li>Enhanced maternity, paternity &amp; adoption</li>
-              <li>Occupational sick pay vs SSP</li><li>Sabbaticals &amp; career breaks</li>
-              <li>Volunteering &amp; study leave</li><li>Menopause &amp; compassionate leave</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Incentives &amp; recognition</h3><span class="ma-n">44 metrics</span></div>
-            <p class="ma-desc">Bonus, commission and long-term incentives — and how good work is recognised.</p>
-            <ul class="ma-list">
-              <li>Bonus eligibility &amp; max %</li><li>Long-term incentive types &amp; levels</li>
-              <li>Commission plan structures</li><li>Sign-on &amp; retention bonuses</li>
-              <li>Long-service awards</li><li>Peer-to-peer recognition</li>
-            </ul>
-          </div>
-          <div class="marea reveal">
-            <div class="ma-head"><h3 class="ma-name">Wellbeing</h3><span class="ma-n">19 metrics</span></div>
-            <p class="ma-desc">The support and structure behind employee health and wellbeing.</p>
-            <ul class="ma-list">
-              <li>Employee Assistance Programme</li><li>Mental-health support</li>
-              <li>Financial wellbeing programme</li><li>Wellbeing budget per employee</li>
-              <li>Health screening</li><li>Occupational-health referral SLA</li>
-            </ul>
-          </div>
-          <div class="marea reveal ma-wide">
-            <div class="ma-head"><h3 class="ma-name">Governance &amp; transparency</h3><span class="ma-n">65 metrics</span></div>
-            <p class="ma-desc">The strategy, fairness and transparency framework around reward — increasingly what the board asks about first.</p>
-            <ul class="ma-list ma-list-wide">
-              <li>Gender, ethnicity &amp; disability pay-gap analysis cadence</li><li>EU Pay Transparency Directive readiness</li>
-              <li>Pay-range publication on adverts</li><li>Pay-equity analysis cadence</li>
-              <li>Total reward statements adoption</li><li>Documented reward strategy &amp; pillars</li>
-              <li>Promotion decision governance</li><li>Promotion equity monitoring</li>
-            </ul>
-          </div>
-        </div>
-        <p class="mindex-note reveal">Illustrative examples · the library grows as members ask for new benchmarks — see below.</p>
-        <!-- 2026-07-09 ship review B8 + Pack-3.3: "every metric rests on 150–220" was falsified by the
-             product's own metric cards (9 live metrics below 150, min n=27 — e.g. tronc n=27, LTI n=90),
-             and the depth ranges/cells had drifted +1 vs live /api/methodology (29–36 not 29–37; 8–15 not
-             8–16). Reworded to the defensible truth; figures below re-derived from /api/methodology on
-             2026-07-09 — do NOT hand-edit these counts again, regenerate from the API at deploy. -->
-        <div class="coop reveal" style="max-width:840px;margin-top:34px;">
-          <b>Deep enough to cut with confidence.</b> Most metrics rest on <b>150–220 organisations</b> at the all-peer level
-          — specialist metrics run thinner, and every figure carries its exact <i>n</i> — with <b>29–36</b> organisations
-          in each size band from 50 to 10,000+ employees. Narrow to one of the 14 sectors and you're comparing
-          against <b>8–15 organisations</b> — where virtually every metric still clears the floor. lumi only ever shows a figure
-          backed by at least <b>5 organisations</b> (<i>n</i> = the organisations behind each figure) — so your peer cut is real,
-          or it simply isn't shown.
-          <details style="margin-top:16px;">
-            <summary style="cursor:pointer;font-family:var(--head);font-weight:600;color:var(--blue);font-size:14px;">See depth by sector and size &rarr;</summary>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px 40px;margin-top:16px;text-align:left;">
-              <div>
-                <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By sector &middot; organisations</div>
-                <div class="depth-list">
-                  <span>Manufacturing &amp; Engineering<b>15</b></span><span>Construction &amp; Infrastructure<b>15</b></span>
-                  <span>Retail &amp; Consumer Goods<b>15</b></span><span>Logistics &amp; Transport<b>15</b></span>
-                  <span>Hospitality &amp; Leisure<b>15</b></span><span>Public Sector<b>12</b></span>
-                  <span>Media &amp; Creative<b>10</b></span><span>Education<b>10</b></span>
-                  <span>Professional Services<b>9</b></span><span>Healthcare &amp; Life Sciences<b>9</b></span>
-                  <span>Financial Services<b>9</b></span><span>Technology &amp; Software<b>8</b></span>
-                  <span>Energy &amp; Utilities<b>8</b></span><span>Charity &amp; Non-Profit<b>8</b></span>
-                </div>
-              </div>
-              <div>
-                <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By size band &middot; organisations</div>
-                <div class="depth-list">
-                  <span>50&ndash;249 employees<b>30</b></span><span>250&ndash;999<b>29</b></span>
-                  <span>1,000&ndash;4,999<b>31</b></span><span>5,000&ndash;9,999<b>36</b></span>
-                  <span>10,000+<b>32</b></span>
-                </div>
-                <p style="font-size:12.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;">Cross a sector with a size band and the pool naturally thins — where fewer than 5 organisations sit behind a figure, lumi suppresses it rather than show you something thin. On the demo we'll show the exact depth for <em>your</em> cut.</p>
-              </div>
-            </div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================ PULSE CALLOUT =========================== -->
-    <section id="pulse" style="padding-top:0;">
-      <div class="wrap">
-        <div class="pulsecta reveal">
-          <div class="pc-copy">
-            <span class="eyebrow">Pulse &amp; requests</span>
-            <h2>Can't find the metric you need?</h2>
-            <p>The benchmark should answer <em>your</em> questions. If a metric isn't there yet, you have two ways to get it —
-              and both feed the whole co-operative.</p>
-            <div class="pc-paths">
-              <div class="pc-path">
-                <div class="pc-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-                <div><h3>Create your own pulse survey</h3><p>Build a short survey, send it to the network, and get an anonymised, cited read back — the same suppression rules, the same board-ready charts.</p></div>
-              </div>
-              <div class="pc-path">
-                <div class="pc-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></div>
-                <div><h3>Request a new benchmark</h3><p>Tell us what you want to compare and we'll add it to the library — so next time, it's already there for you and every other member.</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================ HOW IT WORKS ============================ -->
+    <!-- ================================ HOW ================================= -->
     <section id="how">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">How it works</span>
-          <h2 style="margin-top:14px;">Three steps to a benchmark you can trust</h2>
+          <span class="eyebrow">The co-operative</span>
+          <h2>Three steps to a benchmark you can trust</h2>
         </div>
-        <div class="steps">
-          <div class="step reveal"><div class="num">1</div><h3>Add your data</h3>
-            <p>Answer the reward questions that matter — benefits, time off, policies, practice. "Not applicable" counts too.
-              Your very first answer shows a live comparison.</p></div>
-          <div class="step reveal"><div class="num">2</div><h3>Choose your peers</h3>
-            <p>Benchmark against everyone, your sector, your size band, organisations most like you —
-              or a custom peer group you build yourself.</p></div>
-          <div class="step reveal"><div class="num">3</div><h3>Act on the signals</h3>
-            <p>Work the flags that matter, capture your reward strategy, and export the evidence —
-              ready for the next reward review or board meeting.</p></div>
+        <div class="how-grid">
+          <div class="how-card reveal">
+            <h3>Contribute</h3>
+            <p>Answer the guided questionnaire. Your data joins the pool anonymously — that's the co-operative deal, and it's what keeps the benchmark real.</p>
+          </div>
+          <div class="how-card reveal">
+            <h3>Benchmark</h3>
+            <p>See your position against the default peer group, or build your own cut by sector and size in seconds. Every figure cites its sample.</p>
+          </div>
+          <div class="how-card reveal">
+            <h3>Defend</h3>
+            <p>Walk into the reward review with cited evidence — a board pack, a gap register and a strategy — instead of a hunch.</p>
+          </div>
         </div>
-        <div class="coop reveal"><b>lumi is a benchmarking co-operative.</b> Members contribute their real reward data,
-          and everyone benchmarks against the pool — that's why the figures are real, current, and never scraped.</div>
       </div>
     </section>
 
-    <!-- ============================= TESTIMONIALS ========================== -->
-    <section class="voices" id="voices">
+    <!-- =============================== TRUST ================================ -->
+    <section class="alt" id="trust" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">In their words</span>
-          <h2 style="margin-top:14px;">What reward teams say</h2>
-          <p>Attributed by role and sector — the people who benchmark their reward with lumi.</p>
+          <span class="eyebrow">Data you can hand to the board</span>
+          <h2>Deliberately conservative with every number</h2>
         </div>
-        <div class="vgrid">
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">This platform gives the HR team instant credibility in the boardroom with ironclad, defensible financial data.</p>
-            <div class="vattr"><b>Group HR Director</b>Financial Services</div>
+        <div class="trust-grid">
+          <div class="trust-card reveal">
+            <h3>Suppressed below 5</h3>
+            <p>Any figure resting on fewer than 5 organisations is hidden everywhere — on screen, in exports, in board packs.</p>
           </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">We can finally benchmark every facet of total reward, not just base pay. It's the comprehensive view we've been missing.</p>
-            <div class="vattr"><b>Head of Compensation &amp; Benefits</b>Professional Services</div>
+          <div class="trust-card reveal">
+            <h3>Aggregates, never answers</h3>
+            <p>Members only ever see medians and distributions. No one's raw submission is visible to anyone, including us on your behalf.</p>
           </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">lumi's always-on, 24/7 benchmarking gives us a continuous pulse on our benefits and wider reward practices versus the market — shifting our strategy from reactive troubleshooting to proactive risk mitigation.</p>
-            <div class="vattr"><b>VP of Total Rewards</b>FinTech</div>
+          <div class="trust-card reveal">
+            <h3>Every figure cited</h3>
+            <p>Peer group and sample size travel with every number, everywhere it appears — so it survives boardroom scrutiny.</p>
           </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">The ability to visualise exactly where we stand across all our reward practices is a massive step forward for our team.</p>
-            <div class="vattr"><b>HR Director</b>Retail &amp; E-Commerce</div>
+          <div class="trust-card reveal">
+            <h3>UK GDPR, never sold</h3>
+            <p>Your data is used for the shared benchmark and nothing else. Held in the UK, handled under UK GDPR.</p>
           </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">Beautifully designed and exceptionally easy to navigate.</p>
-            <div class="vattr"><b>People Operations Manager</b>Technology</div>
-          </div>
+        </div>
+        <div class="trust-links reveal">
+          <a class="arrow-link" href="/methodology">How the numbers are made</a>
+          <a class="arrow-link" href="/security">Security &amp; data protection</a>
         </div>
       </div>
     </section>
 
-    <!-- ============================ TRUST BAND ============================= -->
-    <section id="trust" style="padding-top:0;">
+    <!-- ============================== PRICING =============================== -->
+    <section id="pricing-teaser">
       <div class="wrap">
-        <div class="trustband reveal">
-          <div class="sec-head">
-            <span class="eyebrow">Data &amp; trust</span>
-            <h2 style="margin-top:14px;">Deliberately conservative with every number</h2>
-            <p>Reward data is sensitive. lumi is built so that every figure is one you — and we — can defend.</p>
+        <div class="price-line reveal">
+          <div>
+            <div class="pl-num">£5,000<small> / year</small></div>
+            <p style="margin-top:10px;">Full membership. Unlimited users and usage — a fraction of one traditional survey, because members share the cost of the pool.</p>
           </div>
-          <div class="tgrid">
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-              <div><h3>Anonymity comes first</h3><p>If fewer than 5 organisations sit behind a figure, it is never shown — on screen, in exports, or in print. No individual organisation's data can be worked out.</p></div>
-            </div>
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg></div>
-              <div><h3>Medians, not averages</h3><p>Every comparison is a median or percentile across valid peer answers, so one unusual organisation can't skew your read.</p></div>
-            </div>
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-              <div><h3>Every figure is cited</h3><p>Percentile, peer group and sample size travel with every number — there is no such thing as an unattributed figure in lumi.</p></div>
-            </div>
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-              <div><h3>Your data stays yours</h3><p>Member data is used for one thing: the benchmark you all share. It is never sold, never passed to third parties, and handled under UK GDPR.</p></div>
-            </div>
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-              <div><h3>A UK pool, for UK decisions</h3><p>Every organisation in the benchmark is a UK employer. No blending with overseas markets that pay differently.</p></div>
-            </div>
-            <div class="tcell">
-              <div class="t-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7h14l-3 5h-8z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div>
-              <div><h3>No agenda at review time</h3><p>lumi has nothing to sell you when the decision lands — it surfaces the gap, cites the evidence, and stops there. The strategy stays yours.</p></div>
-            </div>
-          </div>
-          <div style="text-align:center;margin-top:36px;position:relative;z-index:1;display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">
-            <a href="/methodology" style="color:#fff;font-family:var(--head);font-weight:600;font-size:15px;border-bottom:2px solid var(--coral);padding-bottom:2px;">How the numbers hold up — the methodology &rarr;</a>
-            <a href="/security" style="color:#fff;font-family:var(--head);font-weight:600;font-size:15px;border-bottom:2px solid var(--coral);padding-bottom:2px;">How we protect your data — security &rarr;</a>
-          </div>
+          <a class="btn btn-primary" style="background:#fff;color:var(--navy);" href="/pricing">See pricing</a>
         </div>
       </div>
     </section>
 
-    <!-- TESTIMONIAL — paste a REAL customer quote + attribution below, then uncomment to enable.
-         Do NOT ship a fabricated quote. Structure + styling are ready.
+    <!-- ================================ PULSE =============================== -->
     <section style="padding-top:0;">
-      <div class="wrap">
-        <div class="sec-head" style="margin-bottom:0;">
-          <blockquote style="font-family:var(--head);font-weight:600;font-size:clamp(21px,2.8vw,28px);line-height:1.4;color:var(--ink);margin:0;">“A real customer quote goes here.”</blockquote>
-          <p style="margin-top:18px;font-size:15px;">— Name, Job title, Organisation</p>
-        </div>
+      <div class="wrap-narrow" style="text-align:center;">
+        <span class="eyebrow">Pulse</span>
+        <h2 style="font-size:clamp(26px,3.2vw,36px);margin-top:14px;">Need an answer the benchmark doesn't hold?</h2>
+        <p style="margin:16px auto 0;color:var(--ink-soft);max-width:52ch;">Run a Pulse — a focused survey put to the membership, with results back in days. Ask the question the annual survey never will.</p>
       </div>
     </section>
-    -->
 
-    <!-- ============================ DEMO SECTION ============================ -->
-    <section id="demo" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <!-- ================================= FAQ ================================ -->
+    <section class="alt" id="faq" style="border-top:1px solid var(--line);">
       <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">Book a demo</span>
-          <h2 style="margin-top:14px;">See it on your organisation's data</h2>
-          <p>Twenty minutes, no obligation. We'll show you exactly where you stand — live — and answer anything.</p>
+          <span class="eyebrow">Questions</span>
+          <h2>The questions every HR team asks</h2>
         </div>
-        <figure style="max-width:720px;margin:0 auto 40px;text-align:center;">
-          <span class="quotemark" aria-hidden="true">&ldquo;</span>
-          <blockquote style="font-family:var(--head);font-weight:600;font-size:clamp(19px,2.4vw,24px);line-height:1.4;color:var(--ink);margin:0;">
-            The ROI was immediate: our offer acceptance rates went up, turnover went down, and we finally have a data-driven hiring edge.</blockquote>
-          <figcaption style="margin-top:16px;font-size:14px;color:var(--ink-soft);"><b style="color:var(--ink);font-weight:600;">Chief People Officer</b> · Biotech &amp; Life Sciences</figcaption>
-        </figure>
-        <div class="demo-grid">
-          <div class="dcard reveal">
-            <div class="d-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-            <h3>Your live position</h3>
-            <p>We load a peer group and show where your benefits, policies and reward practices actually sit — with the distribution behind each number.</p>
-          </div>
-          <div class="dcard reveal">
-            <div class="d-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
-            <h3>A board-ready pack</h3>
-            <p>See how lumi turns your position into a cited, board-room document — with anything too small to show safely held back.</p>
-          </div>
-          <div class="dcard reveal">
-            <div class="d-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-            <h3>Your questions answered</h3>
-            <p>Ask anything — how the peer groups work, where the data comes from, or how anonymity is protected.</p>
-          </div>
-        </div>
-        <p class="demo-note"><span class="dot" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>Come as you are — bring a colleague if it helps. You'll see real results on the call, before committing any of your own data.</p>
-        <div style="text-align:center;margin-top:26px;">
-          <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo
-            <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+        <div class="faq-list reveal">
+          <details><summary>I'm not a reward specialist — is this for me?</summary><p>Yes. If a manager has asked whether you're competitive on benefits, leave or pension, lumi answers it in plain English — leads and gaps are called out for you, with no chart-decoding or analyst skills required and nothing to integrate. HRBPs use it to answer a question fast; Heads of Reward use it to prep the board.</p></details>
+          <details><summary>Where does the data come from?</summary><p>From members. lumi is a benchmarking co-operative: every organisation in the pool is a real UK employer that submits its own reward data. Nothing is scraped, purchased or modelled — which is why every figure can cite the number of organisations behind it.</p></details>
+          <details><summary>How do you keep self-reported data reliable?</summary><p>Every metric has one standard definition, so everyone answers the same question the same way; responses are validated as they're entered and out-of-range answers are flagged. Comparisons are medians and percentiles, so a single odd entry can't skew your read.</p></details>
+          <details><summary>Can other members see our data?</summary><p>No. Members only ever see anonymised aggregates — medians and distributions across the pool. Any figure resting on fewer than 5 organisations is suppressed, so no individual organisation's answers can be worked out, and your raw submissions are never exposed.</p></details>
+          <details><summary>How do the proactive signals work?</summary><p>Each time the benchmark recomputes, lumi re-reads your position and compares it to last time. A signal fires when something crosses a threshold — your percentile moves across a band, a practice becomes common among peers that you don't offer, or a gap to the market widens. It is ranked by market gap and emailed to the right people, and you can snooze or dismiss any of them. Every signal carries the evidence and sample size behind it.</p></details>
+          <details><summary>Is our data safe?</summary><p>Yes. Any figure resting on fewer than 5 organisations is suppressed everywhere — on screen, in exports and in board packs. Comparisons are medians and percentiles, so no single organisation's numbers can be reverse-engineered. Your data is used only for the shared benchmark, never sold, and handled under UK GDPR.</p></details>
+          <details><summary>Do you benchmark salaries?</summary><p>No — and that's deliberate. lumi benchmarks the rest of reward: benefits, time off, pension, wellbeing, recognition, and the policies and practices around pay — the things a salary survey never covers. It's how you tell the board whether your whole package is competitive, not just base pay.</p></details>
+          <details><summary>How is this different from a reward survey?</summary><p>A survey is a snapshot in one fixed peer cut, delivered months later as a PDF. lumi is a living benchmark: your position updates as members contribute, signals proactively email you when it changes, you can re-cut the peer group yourself in seconds, and every figure is cited — so it survives boardroom scrutiny.</p></details>
+          <details><summary>Do we need to integrate anything?</summary><p>No. lumi is a guided questionnaire — roughly an hour of answers, nothing to connect. Because we benchmark reward practices and policies (not individual employee records), there is no HRIS integration, no data pulled from your systems, and far less for IT and InfoSec to review.</p></details>
+          <details><summary>Do we have to contribute our own data?</summary><p>Yes — that's the co-operative deal, and it's what keeps the benchmark real. You only see comparisons for questions you've answered yourself, and "not applicable" is a valid answer. Most teams find the first meaningful comparison appears within minutes of starting.</p></details>
+          <details><summary>How long does it take to get value?</summary><p>Your first answer produces a live comparison immediately. A focused hour of data entry typically unlocks a meaningful position across the core domains — and the board pack can be generated the same day.</p></details>
+          <details><summary>What does it cost?</summary><p>£5,000 a year for full membership — unlimited users and usage, a fraction of one traditional reward survey. £10,000 if you'd rather not contribute your own data. Because members share the cost of the pool, it stays well below a survey or a consultant. <a href="/pricing">Full pricing</a></p></details>
         </div>
       </div>
     </section>
 
-    <!-- ================================ FAQ ================================ -->
-    <section id="faq">
-      <div class="wrap">
+    <!-- ============================== FINAL CTA ============================= -->
+    <section class="on-dark final">
+      <svg class="hero-field" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g fill="#EAF0FB" opacity="0.08">
+          <circle cx="120" cy="140" r="5"/><circle cx="260" cy="420" r="4"/>
+          <circle cx="80"  cy="500" r="6"/><circle cx="360" cy="80"  r="4"/>
+          <circle cx="1330" cy="120" r="5"/><circle cx="1230" cy="400" r="4"/>
+          <circle cx="1370" cy="500" r="6"/><circle cx="1150" cy="200" r="4"/>
+        </g>
+        <circle cx="1272" cy="300" r="7" fill="#F08C6E" opacity="0.9"/>
+      </svg>
+      <div class="wrap" style="position:relative;">
         <div class="sec-head">
-          <span class="eyebrow">FAQ</span>
-          <h2 style="margin-top:14px;">The questions every HR team asks</h2>
-        </div>
-        <div class="faq">
-          <details class="reveal">
-            <summary>I'm not a reward specialist — is this for me?<span class="fx">+</span></summary>
-            <div class="fa">Yes. If a manager has asked whether you're competitive on benefits, leave or pension, lumi answers it
-              in plain English — leads and gaps are called out for you, no chart-decoding or analyst skills required, and nothing
-              to integrate. HRBPs use it to answer a question fast; Heads of Reward use it to prep the board. Same tool, different depth.</div>
-          </details>
-          <details class="reveal">
-            <summary>Where does the data come from?<span class="fx">+</span></summary>
-            <div class="fa">From members. lumi is a benchmarking co-operative: every organisation in the pool is a real UK
-              employer that submits its own reward data. Nothing is scraped, purchased or modelled — which is why every
-              figure can cite the number of organisations behind it.</div>
-          </details>
-          <details class="reveal">
-            <summary>How do you keep self-reported data reliable?<span class="fx">+</span></summary>
-            <div class="fa">Every metric has one standard definition, so everyone answers the same question the same way; responses
-              are validated as they're entered and out-of-range answers are flagged. Comparisons are medians and percentiles, so a
-              single odd entry can't skew your read — which is exactly what makes the benchmark comparable and defensible.
-              <a href="/methodology" style="color:var(--blue);font-weight:600;">See the full methodology &rarr;</a></div>
-          </details>
-          <details class="reveal">
-            <summary>Can other members see our data?<span class="fx">+</span></summary>
-            <div class="fa">No. Members only ever see anonymised aggregates — medians and distributions across the pool. Any figure
-              resting on fewer than 5 organisations is suppressed, so no individual organisation's answers can be worked out, and
-              your raw submissions are never exposed to anyone.</div>
-          </details>
-          <details class="reveal">
-            <summary>How do the proactive signals work?<span class="fx">+</span></summary>
-            <div class="fa">Each time the benchmark recomputes — as members contribute or update their data — lumi re-reads your
-              position and compares it to last time. A signal fires when something crosses a threshold: your percentile moves
-              across a band (say, from mid-market to below), a practice becomes common among peers that you don't offer, or a gap
-              to the market widens. It's ranked by market gap and emailed to the right people, and you can snooze or dismiss any of
-              them. Every signal carries the evidence and sample size behind it — never a directive.</div>
-          </details>
-          <details class="reveal">
-            <summary>Is our data safe?<span class="fx">+</span></summary>
-            <div class="fa">Yes — and provably so. Any figure resting on fewer than 5 organisations is suppressed everywhere:
-              on screen, in exports, in board packs. Comparisons are medians and percentiles, so no single organisation's
-              numbers can be reverse-engineered. Your data is used only for the shared benchmark, never sold, and handled
-              under UK GDPR.</div>
-          </details>
-          <details class="reveal">
-            <summary>Do you benchmark salaries?<span class="fx">+</span></summary>
-            <div class="fa">No — and that's deliberate. lumi benchmarks the rest of reward: benefits, time off, pension,
-              wellbeing, recognition, and the policies and practices around pay — the things a salary survey never covers.
-              It's how you tell the board whether your <em>whole</em> package is competitive, not just base pay.</div>
-          </details>
-          <details class="reveal">
-            <summary>How is this different from a reward survey?<span class="fx">+</span></summary>
-            <div class="fa">A survey is a snapshot in one fixed peer cut, delivered months later as a PDF. lumi is a living
-              benchmark: your position updates as members contribute, signals proactively email you when it changes,
-              you can re-cut the peer group yourself in seconds, and every figure is cited — so it survives boardroom scrutiny
-              without a consultant on standby.</div>
-          </details>
-          <details class="reveal">
-            <summary>Do we need to integrate anything?<span class="fx">+</span></summary>
-            <div class="fa">No. lumi is a guided questionnaire — roughly an hour of answers, nothing to connect. Because we
-              benchmark reward <em>practices and policies</em> (not individual employee records), there's no HRIS integration,
-              no data pulled from your systems, and far less for IT and InfoSec to review.</div>
-          </details>
-          <details class="reveal">
-            <summary>Do we have to contribute our own data?<span class="fx">+</span></summary>
-            <div class="fa">Yes — that's the co-operative deal, and it's what keeps the benchmark real. You only see
-              comparisons for questions you've answered yourself, and "not applicable" is a valid answer. Most teams find
-              the first meaningful comparison appears within minutes of starting.</div>
-          </details>
-          <details class="reveal">
-            <summary>How long does it take to get value?<span class="fx">+</span></summary>
-            <div class="fa">Your first answer produces a live comparison immediately. A focused hour of data entry typically
-              unlocks a meaningful position across the core domains — and the board pack can be generated the same day.</div>
-          </details>
-          <details class="reveal">
-            <summary>What does it cost?<span class="fx">+</span></summary>
-            <div class="fa"><b>£5,000 a year</b> for full membership — unlimited users and usage, a fraction of one traditional
-              reward survey. <b>£10,000</b> if you'd rather not contribute your own data. Because members share the cost of the
-              pool, it stays well below a survey or a consultant. Full breakdown on our
-              <a href="/pricing" style="color:var(--blue);font-weight:600;">pricing page</a>.</div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================= FINAL CTA ============================= -->
-    <section style="padding-top:0;">
-      <div class="wrap">
-        <div class="cta-band reveal">
-          <img class="cta-logo" src="/static/lumi_horizontal_reversed.svg" alt="lumi" />
+          <span class="eyebrow">Get started</span>
           <h2>See your position before<br/>the next reward review.</h2>
-          <p>Book a demo and we'll walk you through where you stand against similar UK organisations — live, on real data.</p>
-          <div class="cta-row">
-            <a class="btn btn-light" data-demo href="https://cal.com/lumi/demo">Book a demo
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-            <a class="btn" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55);" href="/app">Sign in</a>
+          <div class="hero-cta">
+            <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+            <a class="arrow-link" style="color:#B9C6E4;" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack</a>
           </div>
+          <p class="sub">Prefer email? <a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a></p>
         </div>
       </div>
     </section>
+
   </main>
 
-  <div class="mobile-cta">
-    <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
-  </div>
-
+  <!-- ================================ FOOTER ================================ -->
   <footer>
     <div class="wrap">
       <div class="foot-row">
         <div class="foot-logo">
-          <img src="/static/lumi_horizontal.svg" alt="lumi" />
+          <img src="/static/lumi_horizontal_reversed.svg" alt="lumi" width="88" height="30" />
           <p class="foot-blurb">UK reward benchmarking for HR and reward teams — grounded, cited, and built on trust.</p>
         </div>
         <div class="foot-links">
@@ -1424,37 +757,27 @@
 
   <script>
     // ── BOOK-A-DEMO ─────────────────────────────────────────────────────────
-    // ONE place to set your scheduler. Replace with your real Calendly / cal.com /
-    // HubSpot meetings link. Every "Book a demo" button (data-demo) points here.
+    // ONE place to set the scheduler. Every "Book a demo" (data-demo) points here.
     var DEMO_URL = "https://cal.com/lumi/demo";   // TODO: swap for the live scheduler URL
     document.querySelectorAll("a[data-demo]").forEach(function(a){
       a.setAttribute("href", DEMO_URL); a.target = "_blank"; a.rel = "noopener";
     });
-  </script>
-  <script>
+
     // nav gains a shadow once the page scrolls
     (function(){
       var nav = document.getElementById("topnav");
-      var onScroll = function(){ nav.classList.toggle("scrolled", window.scrollY > 8); };
-      window.addEventListener("scroll", onScroll, { passive:true }); onScroll();
+      var on = function(){ nav.classList.toggle("scrolled", window.scrollY > 8); };
+      window.addEventListener("scroll", on, {passive:true}); on();
     })();
-    // mobile nav drawer
+
+    // reveal on scroll — no-ops for reduced motion (CSS already shows everything)
     (function(){
-      var t = document.querySelector(".nav-toggle"), m = document.getElementById("mobilenav");
-      if(!t || !m) return;
-      function set(open){ t.setAttribute("aria-expanded", open?"true":"false"); t.setAttribute("aria-label", open?"Close menu":"Open menu"); m.classList.toggle("open", open); }
-      t.addEventListener("click", function(){ set(t.getAttribute("aria-expanded") !== "true"); });
-      m.addEventListener("click", function(e){ if(e.target.closest("a")) set(false); });
-      document.addEventListener("keydown", function(e){ if(e.key === "Escape") set(false); });
-    })();
-    // gentle scroll-reveal (reduced-motion users get everything shown immediately via CSS)
-    (function(){
-      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); }); return;
-      }
-      var io = new IntersectionObserver(function(es){
-        es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
-      }, { threshold:.12 });
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, {rootMargin:"0px 0px -8% 0px", threshold:0.06});
       document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
     })();
   </script>
