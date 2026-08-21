@@ -90,7 +90,7 @@
     @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
     body{font-family:var(--body);color:var(--ink);background:var(--white);
          font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
-    img{max-width:100%;height:auto;display:block;}
+    img,video{max-width:100%;height:auto;display:block;}
     a{color:var(--blue-bright);text-decoration:none;}
     ::selection{background:rgba(240,140,110,.35);}
 
@@ -365,10 +365,13 @@
         <div class="app-card">
           <div class="app-bar" aria-hidden="true">
             <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
-            <span class="b-addr">app.lumihr.co.uk</span>
+            <span class="b-addr">app.lumihr.co.uk · the live product</span>
           </div>
-          <img src="/static/mkt/hero-overview.webp" width="2200" height="1375" fetchpriority="high"
-               alt="The lumi Overview: a Where-you-stand dial showing the organisation moderately below market on 259 readings, and position by category across eight reward areas with signals and strategy columns." />
+          <video id="heroVid" autoplay muted loop playsinline preload="auto"
+                 width="1920" height="1200" poster="/static/mkt/lumi-hero-poster.jpg"
+                 aria-label="A 36-second tour of the live lumi product: the Overview benchmark and where-you-stand dial, the Signals inbox, benchmark cards for Pay, and the reward strategy document.">
+            <source src="/static/mkt/lumi-hero.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
     </section>
@@ -536,28 +539,6 @@
           </div>
         </div>
 
-      </div>
-    </section>
-
-    <!-- ============================ PRODUCT REEL ============================ -->
-    <section id="in-action">
-      <div class="wrap">
-        <div class="sec-head">
-          <span class="eyebrow">See it in action</span>
-          <h2>From first answer to board pack</h2>
-          <p>Real screens from the live product — the demo organisation&#39;s benchmark, not a mock-up.</p>
-        </div>
-        <div class="reveal" style="max-width:960px;margin:0 auto;">
-          <div class="app-card">
-            <div class="app-bar" aria-hidden="true">
-              <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
-              <span class="b-addr">app.lumihr.co.uk · the live product</span>
-            </div>
-            <img src="/static/mkt/lumi-tour.webp" width="1120" height="700" loading="lazy"
-              style="background:url(/static/mkt/lumi-tour-poster.jpg) center/cover no-repeat,var(--paper);"
-              alt="A screen recording of lumi: the Overview benchmark, the Signals inbox, benchmark cards for Pay, and the reward strategy document." />
-          </div>
-        </div>
       </div>
     </section>
 
@@ -762,6 +743,14 @@
     document.querySelectorAll("a[data-demo]").forEach(function(a){
       a.setAttribute("href", DEMO_URL); a.target = "_blank"; a.rel = "noopener";
     });
+
+    // the hero video respects reduced-motion: poster only, no autoplay
+    (function(){
+      var v = document.getElementById("heroVid");
+      if (v && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+        v.removeAttribute("autoplay"); v.removeAttribute("loop"); v.pause();
+      }
+    })();
 
     // nav gains a shadow once the page scrolls
     (function(){
