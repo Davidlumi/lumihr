@@ -14,7 +14,7 @@
 # MUST stay grey (DNS only) — Caddy needs to answer the ACME challenge itself.
 
 (lumi_common) {
-	encode zstd br gzip
+	encode zstd gzip
 
 	# Caching (2026-08-21): versioned assets (?v= bumped every release) live for a
 	# year; marketing imagery a day (filenames are stable but occasionally
