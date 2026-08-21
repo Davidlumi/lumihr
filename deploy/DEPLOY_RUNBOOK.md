@@ -233,9 +233,31 @@ print("AI LIVE:", r.content[0].text.strip())
 PY
 ```
 
-The same applies to SMTP: `LUMI_SMTP_HOST` being set proves nothing. Authenticate against
-the relay (EHLO → STARTTLS → LOGIN → QUIT, sending no message) before trusting that MFA
-can deliver. With MFA mandatory, a bad SMTP credential locks everyone out, including you.
+**SMTP is the same trap, one layer deeper — and the auth probe below is NOT sufficient.**
+`LUMI_SMTP_HOST` being set proves nothing, so authenticate against the relay (EHLO →
+STARTTLS → LOGIN → QUIT, sending no message) before trusting that MFA can deliver. With
+MFA mandatory, a bad credential locks everyone out, including you. **But that probe
+passed on 2026-08-20 while production email was completely undeliverable** (see the
+2026-08-21 entry below): Postmark accepts a message whose `From` is not a verified
+Sender Signature and then silently discards it — no bounce, no error, no Activity row.
+Credentials valid, transport green, mail gone.
+
+So the §4 email assertion is: **send one message and confirm it arrives in a monitored
+inbox.** Nothing short of a delivered message counts. A quick way to make the failure
+speak, if SMTP looks healthy but nothing lands — the HTTP API refuses loudly where SMTP
+stays silent:
+
+```bash
+TOKEN=$(sudo grep '^LUMI_SMTP_PASS=' /srv/lumi/env/lumi.env | cut -d= -f2)
+curl -s -X POST https://api.postmarkapp.com/email \
+  -H "Accept: application/json" -H "Content-Type: application/json" \
+  -H "X-Postmark-Server-Token: $TOKEN" \
+  -d '{"From":"'"$(sudo grep '^LUMI_SMTP_FROM=' /srv/lumi/env/lumi.env | cut -d= -f2- | sed 's/.*<\(.*\)>/\1/')"'","To":"<your-inbox>","Subject":"probe","TextBody":"probe"}'
+```
+
+`LUMI_SMTP_FROM` **must** sit on a domain Postmark shows verified. Ours is
+`mail.lumihr.co.uk` (DKIM + Return-Path verified), NOT the root `lumihr.co.uk` — so the
+From is `lumi <noreply@mail.lumihr.co.uk>`.
 
 **`ubuntu` cannot traverse `/srv/lumi`** (0750 lumi:lumi). Remote `cd /srv/lumi/app`,
 shell globs (`chmod 640 /srv/lumi/data/*.bak`) and anything else expanded by the login
@@ -262,3 +284,31 @@ deliverable addresses first.
 
 **Backups written by the prepare script land 0644.** They contain member data; chmod them
 to 0640 (`lumi.db.pre-prod-prep.bak`, `identity.db.pre-prod-prep.bak`).
+
+
+---
+
+## Access to the box (2026-08-21)
+
+**Do not rely on a `/32` SSH rule.** The operator's connection is behind carrier-grade
+NAT: the egress IP rotates without warning, and the address reported by checkip/ipify is
+not necessarily the source the server sees — so a "My IP" rule can read as correct in the
+console while SSH still times out. Fingerprint: 80/443 reachable, 22 times out (dropped,
+not refused), rule row visibly matching your reported IP.
+
+Working path today: an inbound SSH rule from **`3.8.37.24/29`** (AWS
+`EC2_INSTANCE_CONNECT`, eu-west-2) enables the console's **Connect → EC2 Instance
+Connect** browser terminal from any network. Fetch the CIDR from
+`https://ip-ranges.amazonaws.com/ip-ranges.json` rather than trusting a memorised value:
+
+```bash
+curl -s https://ip-ranges.amazonaws.com/ip-ranges.json | python3 -c "
+import json,sys
+for p in json.load(sys.stdin)['prefixes']:
+    if p['service']=='EC2_INSTANCE_CONNECT' and p['region']=='eu-west-2': print(p['ip_prefix'])"
+```
+
+**The intended end state is no inbound SSH at all:** attach an instance IAM role and use
+SSM Session Manager — shell through the AWS control plane, audit-logged, port 22 closed
+to the internet. The same role is required for the §5 off-box backup, so it is one piece
+of work that closes both.
