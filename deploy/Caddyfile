@@ -14,7 +14,16 @@
 # MUST stay grey (DNS only) — Caddy needs to answer the ACME challenge itself.
 
 (lumi_common) {
-	encode gzip
+	encode zstd br gzip
+
+	# Caching (2026-08-21): versioned assets (?v= bumped every release) live for a
+	# year; marketing imagery a day (filenames are stable but occasionally
+	# regenerated); HTML always revalidates — this is what makes deploys instant
+	# and killed the stale-page cache we hit rebuilding the marketing site.
+	@versioned path /static/css/* /static/js/* /static/vendor/*
+	header @versioned Cache-Control "public, max-age=31536000, immutable"
+	@mkt path /static/mkt/*
+	header @mkt Cache-Control "public, max-age=86400"
 
 	reverse_proxy 127.0.0.1:8060 {
 		# uvicorn sees the member's IP + original scheme
